@@ -6,7 +6,7 @@ Year: 2025
 
 Functionality:
 Connect DISCO_L475VG_IOT01A to Thingspeak via WiFi.
-Transfer: Temperature, Humidity, and Pressure to Thingspeak. 
+Transfer: Temperature, Humidity, and Pressure to a Thingspeak channel. 
 
 Setup:
 - Setup a Thingspeak channel with 3 fields.
