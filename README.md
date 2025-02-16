@@ -11,5 +11,5 @@ Transfer: Temperature, Humidity, and Pressure to Thingspeak.
 Setup:
 - Setup a Thingspeak channel with 3 fields.
 - Clone DISCO_L475VG_IOT01A_Thingspeak into MBED studio
-- Complete the information required in mbed_app,josn
+- Provide the information required in mbed_app,josn
 - Build and run
