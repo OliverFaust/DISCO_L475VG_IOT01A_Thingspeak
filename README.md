@@ -1,5 +1,7 @@
 DISCO_L475VG_IOT01A_Thingspeak
+
 Creator: Dr Oliver Faust
+
 Year: 2025
 
 Functionality:
