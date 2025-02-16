@@ -12,4 +12,5 @@ Setup:
 - Setup a Thingspeak channel with 3 fields.
 - Clone DISCO_L475VG_IOT01A_Thingspeak into MBED studio
 - Provide the information required in mbed_app,josn
-- Build and run
+- Select DISCO-L475VG-IOT01A (B-L475E-IOT01A) as build target. 
+- Build and run.
