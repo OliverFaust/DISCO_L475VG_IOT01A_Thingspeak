@@ -1,5 +1,7 @@
 # Secrets: Wi-Fi SSID/password and ThingSpeak write key. Copy app_secrets.h.template.
 Core/Inc/app_secrets.h
+# Host-side ThingSpeak values (channel ID, read key) for checking uploads. Copy the .template.
+tools/thingspeak_host.env
 
 # Build output (one folder per build configuration)
 Debug/
