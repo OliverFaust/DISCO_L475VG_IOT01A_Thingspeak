@@ -27,13 +27,24 @@ void ConsoleProcess::run()
                 CSP4CMSIS_VERSION_MAJOR, CSP4CMSIS_VERSION_MINOR, CSP4CMSIS_VERSION_PATCH,
                 tskKERNEL_VERSION_NUMBER, static_cast<unsigned long>(SystemCoreClock / 1000000UL));
 
+    bool stackReported = false;
     Sample s{};
     Hts221Check c{};
     for (;;) {
-        Alternative alt(samples_ | s, check_ | c);
+        // The report time is an absolute deadline (kStackReportMs after boot); the ALT needs a
+        // relative timeout, so it is recomputed on every pass. After the report: no timeout
+        // (Forever is the longest timeout, about 49 days; the guard below ignores it).
+        const uint32_t now = osKernelGetTickCount();          // 1 tick = 1 ms
+        const Time left = stackReported ? Forever
+                        : Milliseconds(now >= kStackReportMs ? 0 : kStackReportMs - now);
+        RelTimeoutGuard reportTime(left);
+        Alternative alt(samples_ | s, check_ | c, reportTime);
         switch (alt.priSelect()) {
             case 0: printSample(s); break;
-            default: printCheck(c); break;
+            case 1: printCheck(c); break;
+            default:
+                if (!stackReported) { printStackReport(); stackReported = true; }
+                break;
         }
     }
 }
@@ -93,4 +104,23 @@ void ConsoleProcess::printCheck(const Hts221Check& c)
     format_fixed(b, sizeof b, v.st_humidity_pct, 3);
     format_fixed(e, sizeof e, c.bsp_humidity_pct, 3);
     std::printf("  RH: datasheet formula %s %%, ST driver formula %s %%, BSP_HSENSOR_ReadHumidity() %s %%\r\n", a, b, e);
+}
+
+void ConsoleProcess::printStackReport()
+{
+    printTime(osKernelGetTickCount());
+    std::printf(" Stack high-water marks (smallest free stack so far):\r\n");
+    for (std::size_t i = 0; i < nWatched_; ++i) {
+        const CSProcess& p = *watched_[i];
+        const uint32_t size = static_cast<uint32_t>(p.stackWords());
+        const uint32_t free = p.stackHighWaterMarkWords();
+        if (free == CSP_STACK_HWM_UNAVAILABLE) {
+            std::printf("  %-8s %4lu words, not started\r\n", p.name(), static_cast<unsigned long>(size));
+            continue;
+        }
+        std::printf("  %-8s %4lu words, min free %4lu words, max used %4lu words (%lu %%)\r\n",
+                    p.name(), static_cast<unsigned long>(size), static_cast<unsigned long>(free),
+                    static_cast<unsigned long>(size - free),
+                    static_cast<unsigned long>((size - free) * 100UL / size));
+    }
 }

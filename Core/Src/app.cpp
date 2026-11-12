@@ -41,6 +41,8 @@ void MainApp_Task(void* argument)
     static BufferedChannel<Hts221Check, 1, BufferPolicy::KeepNewest> check;
     static SensorsProcess sensors(samples.writer(), check.writer(), Milliseconds(kSamplePeriodMs));
     static ConsoleProcess console(samples.reader(), check.reader());
+    console.watchStack(sensors);
+    console.watchStack(console);
 
     Run(InParallel(sensors, console), ExecutionMode::StaticNetwork, kNetworkPriority);
     osThreadExit();
