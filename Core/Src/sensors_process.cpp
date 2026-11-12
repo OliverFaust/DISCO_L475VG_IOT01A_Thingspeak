@@ -42,7 +42,9 @@ bool SensorsProcess::initSensors()
     const bool t = BSP_TSENSOR_Init() == TSENSOR_OK;   // temperature from the HTS221
     const bool h = BSP_HSENSOR_Init() == HSENSOR_OK;
     const bool p = BSP_PSENSOR_Init() == PSENSOR_OK;
-    return t && h && p;
+    // The HTS221's calibration is constant (written at the factory): read it once here. It is
+    // read again only if initialisation is repeated after an I2C error.
+    return t && h && p && hts221_calib_read(&calib_);
 }
 
 Sample SensorsProcess::read(uint32_t seq)
@@ -51,10 +53,12 @@ Sample SensorsProcess::read(uint32_t seq)
     Sample s{};
     s.seq           = seq;
     s.time_ms       = osKernelGetTickCount();
-    s.temperature_c = BSP_TSENSOR_ReadTemp();
-    s.humidity_pct  = BSP_HSENSOR_ReadHumidity();
+    int16_t h_out = 0, t_out = 0;
+    const bool raw_ok = hts221_read_raw(&h_out, &t_out);
+    s.temperature_c = hts221_calib_temperature(&calib_, t_out);   // datasheet formula, not
+    s.humidity_pct  = hts221_calib_humidity(&calib_, h_out);      // BSP_TSENSOR_ReadTemp() etc.
     s.pressure_hpa  = BSP_PSENSOR_ReadPressure();
-    s.valid         = sensor_io_error_count() == errors_before;
+    s.valid         = raw_ok && sensor_io_error_count() == errors_before;
     return s;
 }
 

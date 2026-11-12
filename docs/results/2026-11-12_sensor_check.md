@@ -101,5 +101,8 @@ calibration points). The Mbed version used the same driver, so its ThingSpeak da
 
 **Not changed yet.** The project still reports ST's values. `hts221_convert()` already computes the
 datasheet values; switching the Sensors process to them is a small change, to be decided after the
-reference comparison. Self-heating of the board (the HTS221 sits next to the MCU and the Wi-Fi module)
+reference comparison.
+
+*Update, same day:* fixed; the samples now use the datasheet formula (`Core/Src/hts221_calib.c`).
+Results: `2026-11-12_hts221_fix.md`. Self-heating of the board (the HTS221 sits next to the MCU and the Wi-Fi module)
 is a separate effect, not examined here.

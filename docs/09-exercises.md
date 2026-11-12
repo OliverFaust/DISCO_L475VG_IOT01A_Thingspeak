@@ -13,7 +13,8 @@ updates) are added together with the phases they build on.
 ### Observation
 
 The Sensors process is meant to take a sample every 5 s. The phase 1 log
-(`docs/results/2026-11-12_phase1_console.txt`) shows the kernel time of each sample:
+(`docs/results/2026-11-12_phase1_console.txt`, firmware of commit `ede9cdc`) shows the kernel time of
+each sample:
 
 ```
 [    0.008 s] #1  T = 13.87 C  RH = 83.56 %  p = 976.17 hPa
@@ -29,11 +30,13 @@ accumulates: sample 12 is 60 ms later than 11 × 5 s after sample 1.
 
 ### The code
 
-`Core/Src/sensors_process.cpp`, the loop of `SensorsProcess::run()`, reduced to its timing:
+`Core/Src/sensors_process.cpp`, the loop of `SensorsProcess::run()` in phase 1 (commit `ede9cdc`;
+`git show ede9cdc:Core/Src/sensors_process.cpp`), reduced to its timing:
 
 ```cpp
 for (;;) {
-    Sample s = read(++seq);          // s.time_ms = osKernelGetTickCount(), then ~a dozen I2C transfers
+    Sample s = read(++seq);          // s.time_ms = osKernelGetTickCount(), then BSP_TSENSOR_ReadTemp(),
+                                     // BSP_HSENSOR_ReadHumidity(), BSP_PSENSOR_ReadPressure()
     out_ << s;
     RelTimeoutGuard next(period_);   // period_ = Milliseconds(5000) = 5000 ticks (1 tick = 1 ms)
     Alternative alt(next);
@@ -60,6 +63,11 @@ reading three sensor values over I2C at 100 kHz) is added to every period.
    iteration only?)
 4. At 5.005 s per sample: how many samples does the board take in one hour and in one day, instead
    of 720 and 17 280? By how much has the sampling time drifted after one day?
+4b. The current code converts temperature and humidity itself (`hts221_calib.c`, docs/05): one 4-byte
+   HTS221 transfer per sample instead of ST's eight, plus the LPS22HB's three single-byte reads.
+   Predict the new period before you look; then check `docs/results/2026-11-12_hts221_fix_console.txt`
+   (5.001 s). Does your model from question 2 explain both 5.005 s and 5.001 s? (Hint: the timeout
+   counts whole ticks from the tick in which the ALT starts waiting.)
 
 ### Level B: make the period absolute, and measure
 
@@ -110,9 +118,10 @@ for (;;) {
 
 ### Checking your answers
 
-- Q2: the log gives *t*<sub>read</sub> ≈ 5 ms; a bit count of the transfers lands in the same range.
-  If your estimate is far off, recount the transfers per value: ST's drivers re-read the calibration
-  registers on every reading.
+- Q2: 11 transfers with 20 data bytes, about 500 bit times at 10 µs: ≈ 5 ms. If your estimate is far
+  off, recount the transfers per value: ST's drivers re-read the calibration registers on every reading.
+- Q4b: 4 transfers with 7 data bytes ≈ 1.8 ms. A period of 5000 ticks plus the whole ticks that pass
+  during the reading gives 5001 ms here and 5005 ms in phase 1 (5 to 6 ms of reading).
 - Q4: 719.3 samples per hour, 17 263 per day; the drift is 0.1 %, i.e. 86.4 s per day.
 - Q5: the decisive check is the log: constant 5.000 s intervals over at least 60 s.
 - Q6: the wrap happens after 2<sup>32</sup> ms ≈ 49.7 days. Test your reasoning with concrete numbers,

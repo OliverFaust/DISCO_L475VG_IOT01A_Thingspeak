@@ -99,11 +99,11 @@ void ConsoleProcess::printCheck(const Hts221Check& c)
     format_fixed(a, sizeof a, v.temperature_c, 3);
     format_fixed(b, sizeof b, v.st_temperature_c, 3);
     format_fixed(d, sizeof d, c.bsp_temperature_c, 3);
-    std::printf("  T : datasheet formula %s C, ST driver formula %s C, BSP_TSENSOR_ReadTemp() %s C\r\n", a, b, d);
+    std::printf("  T : datasheet formula (samples) %s C, ST driver formula %s C, BSP_TSENSOR_ReadTemp() %s C\r\n", a, b, d);
     format_fixed(a, sizeof a, v.humidity_pct, 3);
     format_fixed(b, sizeof b, v.st_humidity_pct, 3);
     format_fixed(e, sizeof e, c.bsp_humidity_pct, 3);
-    std::printf("  RH: datasheet formula %s %%, ST driver formula %s %%, BSP_HSENSOR_ReadHumidity() %s %%\r\n", a, b, e);
+    std::printf("  RH: datasheet formula (samples) %s %%, ST driver formula %s %%, BSP_HSENSOR_ReadHumidity() %s %%\r\n", a, b, e);
 }
 
 void ConsoleProcess::printStackReport()

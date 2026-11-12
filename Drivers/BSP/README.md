@@ -16,3 +16,7 @@ Licence: BSD-3-Clause (STMicroelectronics), see `B-L475E-IOT01/LICENSE.md` and t
 pins and timing), whereas in this project STM32CubeMX configures I2C2 (`hi2c2` in `Core/Src/main.c`).
 The four `SENSOR_IO_*` functions the sensor drivers call are implemented on `hi2c2` in
 `Core/Src/sensor_io.c`. See `docs/08-how-it-was-made.md`.
+
+Temperature and humidity are not taken from `BSP_TSENSOR_ReadTemp()`/`BSP_HSENSOR_ReadHumidity()`:
+`hts221.c` truncates the HTS221's calibration points, so the project converts with the datasheet
+formula in `Core/Src/hts221_calib.c` (docs/05-code-walkthrough.md). The files here stay unmodified.

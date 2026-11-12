@@ -1,0 +1,46 @@
+# Console capture
+# date:      2026-11-12 11:22:22 UTC
+# commit:    4bc4857-dirty
+# elf:       Debug/DISCO_L475VG_IOT01A_Thingspeak.elf (sha256 d3dca4fd3cc985a9...)
+# compiler:  GCC: (GNU Tools for STM32 14.3.rel1.20251027-0700) 14.3.1 20250623
+# tool:      STM32CubeProgrammer version: 2.22.0
+# flash:     STM32_Programmer_CLI -c port=SWD -w Debug/DISCO_L475VG_IOT01A_Thingspeak.elf -v
+# reset:     STM32_Programmer_CLI -c port=SWD -hardRst
+# probe:     ST-LINK firmware V2J46M31
+# serial:    ST-LINK virtual COM port (/dev/ttyACM0), 115200 8N1, captured for 75 s from before the reset
+# after the capture, read over SWD (program running):
+#   __sbrk_heap_end                = 0x00000000   (0x00000000: malloc() was never called)
+#   xMinimumEverFreeBytesRemaining = 0x00000000   (0x00000000: the FreeRTOS heap was never used)
+# ----------------------------------------------------------------------------------------
+%  p = 976.40 hPa
+DISCO_L475VG_IOT01A_Thingspeak -- phase 1: Sensors + Console
+CSP4CMSIS 3.1.0, FreeRTOS V10.3.1 (CMSIS-RTOS2), SYSCLK 80 MHz
+[    0.025 s] HTS221 check (I2C transfers all OK)
+  WHO_AM_I: HTS221 @0xBE: 0xBC (expect 0xBC), LPS22HB @0xBA: 0xB1 (expect 0xB1)
+  HTS221 CTRL_REG1: 0x85 (expect 0x85: active, BDU, 1 Hz)
+  calibration 0x30..0x3F: 3E 8B A3 10 00 C4 06 00 7A 03 C5 CE FE FF 00 03
+  same 16 registers read one at a time: identical
+  H0_rH_x2 = 62 -> H0 = 31.0 %RH, H1_rH_x2 = 139 -> H1 = 69.5 %RH
+  T0_degC_x8 = 163 -> T0 = 20.375 C, T1_degC_x8 = 272 -> T1 = 34.000 C
+  H0_T0_OUT = 6, H1_T0_OUT = -12603, T0_OUT = -2, T1_OUT = 768
+  raw sample: H_OUT = -16288, T_OUT = -274
+  T : datasheet formula (samples) 15.562 C, ST driver formula 15.055 C, BSP_TSENSOR_ReadTemp() 15.055 C
+  RH: datasheet formula (samples) 80.752 %, ST driver formula 80.106 %, BSP_HSENSOR_ReadHumidity() 80.106 %
+[    0.029 s] #1  T = 15.56 C  RH = 80.75 %  p = 976.40 hPa
+[    5.033 s] #2  T = 15.60 C  RH = 80.73 %  p = 976.35 hPa
+[   10.034 s] #3  T = 15.56 C  RH = 80.82 %  p = 976.40 hPa
+[   15.035 s] #4  T = 15.63 C  RH = 80.79 %  p = 976.31 hPa
+[   20.036 s] #5  T = 15.62 C  RH = 80.75 %  p = 976.35 hPa
+[   25.037 s] #6  T = 15.60 C  RH = 80.68 %  p = 976.55 hPa
+[   30.038 s] #7  T = 15.60 C  RH = 80.70 %  p = 976.45 hPa
+[   35.039 s] #8  T = 15.65 C  RH = 80.75 %  p = 976.39 hPa
+[   40.040 s] #9  T = 15.67 C  RH = 80.75 %  p = 976.44 hPa
+[   45.041 s] #10  T = 15.63 C  RH = 80.73 %  p = 976.42 hPa
+[   50.042 s] #11  T = 15.67 C  RH = 80.72 %  p = 976.40 hPa
+[   55.043 s] #12  T = 15.67 C  RH = 80.72 %  p = 976.39 hPa
+[   60.000 s] Stack high-water marks (smallest free stack so far):
+  Sensors   512 words, min free  323 words, max used  189 words (36 %)
+  Console   512 words, min free  277 words, max used  235 words (45 %)
+[   60.044 s] #13  T = 15.65 C  RH = 80.68 %  p = 976.48 hPa
+[   65.045 s] #14  T = 15.67 C  RH = 80.67 %  p = 976.35 hPa
+[   70.046 s] #15  T = 15.70 C  RH = 80.63 %  p = 976.48 hPa

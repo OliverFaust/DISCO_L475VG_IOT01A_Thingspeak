@@ -11,7 +11,8 @@
 //   T  = T0  + (T_OUT - T0_OUT)    * (T1 - T0)  / (T1_OUT - T0_OUT)       T0 = T0_degC_x8 / 8
 //   RH = H0  + (H_OUT - H0_T0_OUT) * (H1 - H0)  / (H1_T0_OUT - H0_T0_OUT)  H0 = H0_rH_x2 / 2
 // ST's driver (Drivers/BSP/Components/hts221/hts221.c) uses the same interpolation but first
-// truncates T0, T1 to whole degrees (x8 >> 3) and H0, H1 to whole percent (x2 >> 1).
+// truncates T0, T1 to whole degrees (x8 >> 3) and H0, H1 to whole percent (x2 >> 1). The samples
+// this project reports use the datasheet conversion (hts221_calib.c); the check prints both.
 #pragma once
 
 #include <cstdint>
@@ -38,8 +39,8 @@ struct Hts221Conversion {
     uint16_t t0_degc_x8, t1_degc_x8;          // 10 bits: 0x32/0x33 + 2 MSBs each from 0x35
     int16_t  h0_t0_out, h1_t0_out;            // 0x36..0x37, 0x3A..0x3B
     int16_t  t0_out, t1_out;                  // 0x3C..0x3D, 0x3E..0x3F
-    float    temperature_c;                   // datasheet formula
-    float    humidity_pct;                    // datasheet formula, clamped to 0..100
+    float    temperature_c;                   // datasheet formula (hts221_calib.c), as in the samples
+    float    humidity_pct;                    // likewise, clamped to 0..100
     float    st_temperature_c;                // ST driver's formula (truncated calibration)
     float    st_humidity_pct;                 // likewise
 };

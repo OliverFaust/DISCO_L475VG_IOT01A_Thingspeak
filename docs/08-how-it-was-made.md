@@ -325,7 +325,9 @@ ReadMultiple` that the sensor drivers call. Two initialisations of one periphera
 it. Instead, `Core/Src/sensor_io.c` implements those functions on `hi2c2`, the handle CubeMX
 generates — CubeMX is the single place where I2C2 is configured, and the Sensors process is the
 single thread that uses it. `Drivers/BSP/README.md` lists the source and the commits of the copied
-files. STM32CubeMX does not delete them when it regenerates code (checked).
+files. The BSP initialises both sensors and converts pressure; temperature and humidity are converted
+by `Core/Src/hts221_calib.c` instead, because ST's HTS221 driver truncates the calibration points
+(chapter 5). STM32CubeMX does not delete them when it regenerates code (checked).
 
 ---
 
