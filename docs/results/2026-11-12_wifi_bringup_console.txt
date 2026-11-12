@@ -1,0 +1,29 @@
+# Console capture
+# masked:    tools/mask_log.py (MAC addresses/BSSIDs: last 3 bytes; SSIDs: all but the first 3 characters)
+# date:      2026-11-12 17:03:10 UTC
+# commit:    5816ccf-dirty
+# elf:       Debug/DISCO_L475VG_IOT01A_Thingspeak.elf (sha256 fdc0a4b7de874a80...)
+# compiler:  GCC: (GNU Tools for STM32 14.3.rel1.20251027-0700) 14.3.1 20250623
+# tool:      STM32CubeProgrammer version: 2.22.0
+# flash:     STM32_Programmer_CLI -c port=SWD -w Debug/DISCO_L475VG_IOT01A_Thingspeak.elf -v
+# reset:     STM32_Programmer_CLI -c port=SWD -hardRst
+# probe:     ST-LINK firmware V2J46M31
+# serial:    ST-LINK virtual COM port (/dev/ttyACM0), 115200 8N1, captured for 30 s from before the reset
+# after the capture, read over SWD (program running):
+#   __sbrk_heap_end                = 0x00000000   (0x00000000: malloc() was never called)
+#   xMinimumEverFreeBytesRemaining = 0x00000280   (0x00000000: the FreeRTOS heap was never used)
+# ----------------------------------------------------------------------------------------
+
+DISCO_L475VG_IOT01A_Thingspeak -- phase 3 step 1: Wi-Fi bring-up test
+CMSIS-Driver WiFi API 1.1, ISM43362 driver 1.16
+  FreeRTOS heap before WiFi_Initialize: free 0 of 1024 bytes, minimum ever free 0 bytes
+Initialize: OK (812 ms)
+PowerControl(FULL): OK
+  FreeRTOS heap after Initialize: free 640 of 1024 bytes, minimum ever free 640 bytes
+Module info: OK: ISM43362-M3G-L44-SPI,C3.5.2.7.STM,v3.5.2,v1.4.0.rc1,v8.2.1,120000000,Inventek eS-WiFi
+MAC address (station): OK: C4:7F:51:XX:XX:XX
+Scan: 2 access point(s) (1773 ms)
+   1  Vod***********                    DA:D8:E5:XX:XX:XX  ch  10   -63 dBm  WPA2
+   2  MTS                               00:1E:42:XX:XX:XX  ch  11   -86 dBm  WPA2
+  FreeRTOS heap at the end: free 640 of 1024 bytes, minimum ever free 640 bytes
+Bring-up test finished.

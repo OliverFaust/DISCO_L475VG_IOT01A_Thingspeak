@@ -30,7 +30,7 @@ if you do not see it, stop and compare with the committed `.ioc`.
 | I2C2 | PB10/PB11, Standard mode 100 kHz, internal pull-ups | The on-board sensor bus: HTS221 (temperature, humidity), LPS22HB (pressure), and others. |
 | SPI3 | Full-duplex master, PC10/PC11/PC12, 16 bit, 10 Mbit/s | Bus of the ISM43362 Wi-Fi module. Configured now, used from phase 2 on. |
 | GPIO | PE0 CSN (high), PE8 RST, PB12 BOOT0, PB13 WAKEUP, PE1 DRDY (EXTI1, rising) | Control lines of the ISM43362, as in ST's own Wi-Fi driver. Unused in phase 1. |
-| FreeRTOS | CMSIS_V2, heap 4096 B, newlib reentrant, stack overflow check 2, defaultTask static | See 8.5. |
+| FreeRTOS | CMSIS_V2, heap 1024 B, newlib reentrant, stack overflow check 2, defaultTask static | See 8.5. |
 | Project | STM32CubeIDE, generate under root, copy only necessary files | The layout CSP4CMSIS's integration guide expects. |
 
 The pin assignments come from the board's schematic (user manual UM2153) and agree with ST's board
@@ -192,8 +192,10 @@ PE0, PE1, PE8.
 - **Configuration > Config parameters**:
   - **Memory Allocation**: Dynamic / Static (the only choice with CMSIS_V2; sets
     `configSUPPORT_STATIC_ALLOCATION 1`, which CSP4CMSIS's static allocation needs).
-  - **TOTAL_HEAP_SIZE: 4096** bytes. The application allocates nothing from it (8.9 checks this);
-    the reserve is for experiments.
+  - **TOTAL_HEAP_SIZE: 1024** bytes. The application allocates nothing from it (8.9 checks this).
+    The Wi-Fi driver (phase 3) takes 384 bytes for two mutexes and five event flag objects
+    (measured: `docs/results/2026-11-12_wifi_bringup.md`); 1024 leaves 2.7 times that. (Phase 1
+    used 4096.)
   - **CHECK_FOR_STACK_OVERFLOW: Option2.** At each context switch FreeRTOS checks the stack pointer
     and a 16-byte pattern at the end of the stack, and calls `vApplicationStackOverflowHook()` if
     either was violated. This project prints the thread's name and halts (`Core/Src/freertos.c`,
@@ -249,7 +251,7 @@ Checks in the generated code:
 | File | You should see |
 |---|---|
 | `Core/Src/main.c` | `RCC_OscInitStruct.PLL.PLLN = 40;`, `FLASH_LATENCY_4`, `hi2c2.Init.Timing = 0x10909CEC;`, `hspi3.Init.DataSize = SPI_DATASIZE_16BIT;`, `huart1.Init.BaudRate = 115200;`, `uint32_t defaultTaskBuffer[ 128 ];` |
-| `Core/Inc/FreeRTOSConfig.h` | `configUSE_NEWLIB_REENTRANT 1`, `configSUPPORT_STATIC_ALLOCATION 1`, `configTOTAL_HEAP_SIZE ((size_t)4096)`, `configCHECK_FOR_STACK_OVERFLOW 2`, `configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY 5` |
+| `Core/Inc/FreeRTOSConfig.h` | `configUSE_NEWLIB_REENTRANT 1`, `configSUPPORT_STATIC_ALLOCATION 1`, `configTOTAL_HEAP_SIZE ((size_t)1024)`, `configCHECK_FOR_STACK_OVERFLOW 2`, `configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY 5` |
 | `Core/Src/stm32l4xx_hal_timebase_tim.c` | `htim6.Instance = TIM6;` |
 | `Core/Src/stm32l4xx_it.c` | `TIM6_DAC_IRQHandler()`, and **no** `SVC_Handler`, `PendSV_Handler`, `SysTick_Handler` (FreeRTOS's port provides them) |
 | `Core/Src/stm32l4xx_hal_msp.c` | `HAL_NVIC_SetPriority(PendSV_IRQn, 15, 0);` |
