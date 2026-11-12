@@ -20,6 +20,7 @@
 #include "sensors_process.hpp"
 #include "console_process.hpp"
 #include "wifi_bringup_test.hpp"
+#include "wifi_upload_test.hpp"
 
 using namespace csp;
 
@@ -43,6 +44,10 @@ void MainApp_Task(void* argument)
     if constexpr (APP_DIAGNOSTIC_MODE == APP_DIAG_WIFI_BRINGUP) {
         static WifiBringUpTest wifiTest;
         Run(InParallel(wifiTest), ExecutionMode::StaticNetwork, kNetworkPriority);
+        osThreadExit();
+    } else if constexpr (APP_DIAGNOSTIC_MODE == APP_DIAG_WIFI_ONE_UPLOAD) {
+        static WifiUploadTest uploadTest;
+        Run(InParallel(uploadTest), ExecutionMode::StaticNetwork, kNetworkPriority);
         osThreadExit();
     }
 
