@@ -20,3 +20,8 @@ The four `SENSOR_IO_*` functions the sensor drivers call are implemented on `hi2
 Temperature and humidity are not taken from `BSP_TSENSOR_ReadTemp()`/`BSP_HSENSOR_ReadHumidity()`:
 `hts221.c` truncates the HTS221's calibration points, so the project converts with the datasheet
 formula in `Core/Src/hts221_calib.c` (docs/05-code-walkthrough.md). The files here stay unmodified.
+
+## Wi-Fi
+
+The ISM43362 Wi-Fi driver is not here: ST's driver (`es_wifi`) is under the SLA0044 licence and
+is not used. The project uses Arm's CMSIS-Driver instead, see `Drivers/CMSIS-Driver/README.md`.
