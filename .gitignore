@@ -1,9 +1,38 @@
-BUILD
-.mbed
-compile_commands.json
+# Secrets: Wi-Fi SSID/password and ThingSpeak write key. Copy app_secrets.h.template.
+Core/Inc/app_secrets.h
+
+# Build output (one folder per build configuration)
+Debug/
+Release/
+Debug-Trace/
+build/
+
+# Compiled files
+*.elf
+*.hex
+*.bin
+*.map
+*.list
+*.o
+*.su
+*.d
+*.cyclo
+
+# STM32CubeIDE: launch files and per-machine state, recreated on import
+*.launch
+.settings/language.settings.xml
+.metadata/
+
+# STM32CubeMX backup of the .ioc
+*.ioc.bak
+
+# Trace captures (raw ring dumps; decoded results that belong in the docs go to docs/results/)
+ring.bin
+
+# Editors and OS
+.vscode/
+.cache/
 .clangd
-.cache
-mbed-os
-BSP_B-L475E-IOT01
-ntp-client
-wifi-ism43362
+compile_commands.json
+.DS_Store
+Thumbs.db
