@@ -1,0 +1,37 @@
+# Console capture
+# masked:    tools/mask_log.py (API key: all but 4 characters; MAC/BSSID: last 3 bytes); SSID masked by the firmware
+# date:      2026-11-12 18:18:18 UTC
+# commit:    caad2a3-dirty
+# elf:       Debug/DISCO_L475VG_IOT01A_Thingspeak.elf (sha256 a5505ff557be9488...)
+# compiler:  GCC: (GNU Tools for STM32 14.3.rel1.20251027-0700) 14.3.1 20250623
+# tool:      STM32CubeProgrammer version: 2.22.0
+# flash:     STM32_Programmer_CLI -c port=SWD -w Debug/DISCO_L475VG_IOT01A_Thingspeak.elf -v
+# reset:     STM32_Programmer_CLI -c port=SWD -hardRst
+# probe:     ST-LINK firmware V2J46M31
+# serial:    ST-LINK virtual COM port (/dev/ttyACM0), 115200 8N1, captured for 60 s from before the reset
+# after the capture, read over SWD (program running):
+#   __sbrk_heap_end                = 0x00000000   (0x00000000: malloc() was never called)
+#   xMinimumEverFreeBytesRemaining = 0x00000280   (0x00000000: the FreeRTOS heap was never used)
+# ----------------------------------------------------------------------------------------
+
+DISCO_L475VG_IOT01A_Thingspeak -- phase 3 step 2: one ThingSpeak update
+[    0.014 s] sample: T = 17.05 C  RH = 73.29 %  p = 978.96 hPa
+[    0.833 s] Wi-Fi Initialize/PowerControl: OK
+[    9.662 s] join "Vod***********" (WPA2): OK (8826 ms)
+[    9.668 s] IP address (DHCP): 192.168.1.28
+[    9.784 s] resolve api.thingspeak.com: OK -> 44.214.53.171 (113 ms)
+[    9.879 s] connect 44.214.53.171:80: OK
+[    9.883 s] request (134 bytes, key masked):
+    GET /update?api_key=A7AL************&field1=17.05&field2=73.29&field3=978.96 HTTP/1.1
+    Host: api.thingspeak.com
+    Connection: close
+    
+    
+[    9.906 s] sent 134 of 134 bytes: OK
+[   10.200 s] received 904 bytes in 292 ms
+[   10.204 s] status line: HTTP/1.1 400 Bad Request
+[   10.209 s] ThingSpeak rejected the update (entry id 0)
+[   10.217 s] SocketClose: OK
+[   10.224 s] Deactivate: OK
+[   10.226 s] FreeRTOS heap: free 640 of 1024 bytes, minimum ever free 640 bytes
+[   10.233 s] One-upload test finished.
