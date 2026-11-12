@@ -38,6 +38,7 @@ grep -E "File download complete|Download verified successfully" "$LOG.flash" | s
 
 echo "== listening on $(readlink -f "$PORT") for $SECONDS_TO_CAPTURE s"
 stty -F "$PORT" 115200 cs8 -cstopb -parenb raw -echo
+START_UTC=$(date -u '+%Y-%m-%d %H:%M:%S UTC')
 timeout "$SECONDS_TO_CAPTURE" cat "$PORT" > "$LOG" &
 CAT_PID=$!
 sleep 0.5
@@ -57,7 +58,7 @@ FREERTOS_MIN=$(read_word xMinimumEverFreeBytesRemaining)
 
 {
   echo "# Console capture"
-  echo "# date:      $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+  echo "# date:      $START_UTC (start of the capture, about 0.5 s before the reset)"
   echo "# commit:    $(git -C "$(dirname "$0")/.." describe --always --dirty 2>/dev/null || echo unknown)"
   echo "# elf:       $ELF (sha256 $(sha256sum "$ELF" | cut -c1-16)...)"
   echo "# compiler:  $(arm-none-eabi-readelf -p .comment "$ELF" | sed -n 's/.*\(GCC: .*\)/\1/p' | head -1)"

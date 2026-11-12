@@ -3,10 +3,11 @@
 #
 #   tools/check_secrets.sh          (run from the repository root, before every commit)
 #
-# Reads APP_WIFI_SSID, APP_WIFI_PASSWORD and APP_THINGSPEAK_WRITE_KEY from Core/Inc/app_secrets.h
-# and searches for each value in: the files staged for commit (the index), all tracked files, and
-# everything under docs/results/ (tracked or not). Prints only file names and which secret was
-# found, never the value. Also checks that app_secrets.h itself is ignored and not tracked.
+# Reads APP_WIFI_SSID, APP_WIFI_PASSWORD and APP_THINGSPEAK_WRITE_KEY from Core/Inc/app_secrets.h,
+# and THINGSPEAK_READ_KEY from tools/thingspeak_host.env if present, and searches for each value
+# in: the files staged for commit (the index), all tracked files, and everything under
+# docs/results/ (tracked or not). Prints only file names and which secret was
+# found, never the value. Also checks that both files are ignored and not tracked.
 # Exit status: 0 = clean, 1 = a secret was found or app_secrets.h is tracked, 2 = setup problem.
 #
 # The SSID is reported as a warning only (it is not secret in itself, but a home network name
@@ -41,5 +42,12 @@ check APP_WIFI_PASSWORD        "$(value APP_WIFI_PASSWORD)"        ERROR
 check APP_THINGSPEAK_WRITE_KEY "$(value APP_THINGSPEAK_WRITE_KEY)" ERROR
 check APP_WIFI_SSID            "$(value APP_WIFI_SSID)"            WARNING
 
-[ $status -eq 0 ] && echo "check_secrets: clean (password and write key not found; $SECRETS ignored and untracked)"
+HOSTENV=tools/thingspeak_host.env
+if [ -f "$HOSTENV" ]; then
+  if git ls-files --error-unmatch "$HOSTENV" >/dev/null 2>&1; then echo "check_secrets: ERROR: $HOSTENV is tracked by git"; status=1; fi
+  git check-ignore -q "$HOSTENV" || { echo "check_secrets: ERROR: $HOSTENV is not ignored"; status=1; }
+  check THINGSPEAK_READ_KEY "$(sed -n 's/^[[:space:]]*THINGSPEAK_READ_KEY[[:space:]]*=[[:space:]]*\(.*\)$/\1/p' "$HOSTENV" | tr -d '\r"'"'"' \t' | head -1)" ERROR
+fi
+
+[ $status -eq 0 ] && echo "check_secrets: clean (password, write key, read key not found; secrets files ignored and untracked)"
 exit $status
