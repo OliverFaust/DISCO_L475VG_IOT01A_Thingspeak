@@ -10,6 +10,7 @@
 // the channels and the processes as function-local statics (each CSProcessStatic<N> holds
 // its own stack and control block). The FreeRTOS heap is not used by the application.
 #include "app.h"
+#include "app_config.h"
 
 #include "cmsis_os2.h"
 #include "FreeRTOS.h"
@@ -18,6 +19,7 @@
 #include "hts221_check.hpp"
 #include "sensors_process.hpp"
 #include "console_process.hpp"
+#include "wifi_bringup_test.hpp"
 
 using namespace csp;
 
@@ -36,6 +38,13 @@ StaticTask_t mainAppControlBlock;
 void MainApp_Task(void* argument)
 {
     (void)argument;
+
+    // Diagnostic modes (app_config.h): one test process instead of the network.
+    if constexpr (APP_DIAGNOSTIC_MODE == APP_DIAG_WIFI_BRINGUP) {
+        static WifiBringUpTest wifiTest;
+        Run(InParallel(wifiTest), ExecutionMode::StaticNetwork, kNetworkPriority);
+        osThreadExit();
+    }
 
     static BufferedChannel<Sample, 1, BufferPolicy::KeepNewest> samples;
     static BufferedChannel<Hts221Check, 1, BufferPolicy::KeepNewest> check;
