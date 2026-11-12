@@ -1,0 +1,181 @@
+#ifndef CSP_WRAPPER_H
+#define CSP_WRAPPER_H
+
+#include "cmsis_os2.h"
+#include <tuple>
+#include <utility>
+#include "process.h"
+#include "csp_fatal.h"
+#include "csp4cmsis_trace.h"
+
+// --- 1. START CSP NAMESPACE (For Definitions) ---
+namespace csp {
+
+    /// How Run() starts a network (3.0: always given explicitly).
+    enum class ExecutionMode {
+        TerminatingNetwork, // Blocking: spawns all processes, waits for all to finish.
+        StaticNetwork        // Non-blocking: spawns all processes, returns immediately.
+    };
+} // end namespace csp definition block
+
+// --- 2. The Globally Friended Task Wrapper (DECLARATION ONLY) ---
+extern "C" {
+    void ThreadFuncWrapper(void* pvParameters);
+}
+
+
+// --- 3. Continue CSP Namespace (For Template Logic) ---
+namespace csp {
+
+/// Default composition priority of Run(): for every process that does not
+/// override taskPriority(). osPriorityLow: low, but above osPriorityIdle.
+inline constexpr osPriority_t CSP_DEFAULT_NETWORK_PRIORITY = osPriorityLow;
+
+// --- Parallel Helper ---
+template <typename... Processes>
+class ParallelHelper {
+private:
+    std::tuple<Processes&...> procs;
+    static constexpr size_t num_procs = sizeof...(Processes);
+
+    // API 1.3: spawns process I with ITS OWN declared stack/priority.
+    // Stack/TCB/TaskCtx are all owned by the process itself
+    // (CSProcessStatic<N>, see process.h) -- the static osThreadNew()
+    // call makes no heap allocation, and neither does preparing its
+    // TaskCtx.
+    //
+    // Note: TaskCtx deliberately does NOT live as a ParallelHelper member.
+    // ParallelHelper instances (and the temporaries InParallel(...)
+    // produces) do not have a lifetime guarantee matching the tasks they
+    // spawn -- Run() below takes one by value, for instance. Only the
+    // CSProcess objects themselves are contractually static, so that's
+    // where TaskCtx storage has to live.
+    template <std::size_t I>
+    void spawn_task(osSemaphoreId_t sem, osPriority_t composition_priority) {
+        CSProcess& proc = std::get<I>(procs);
+
+        internal::TaskCtx* ctx = proc.prepareTaskCtx(sem);
+        osPriority_t priority = internal::resolveTaskPriority(proc, composition_priority);
+
+        // osThreadAttr_t -- same pattern as public_task.h's Run(); see
+        // that file's comment and csp_rtos_static.h for why stack_mem/
+        // stack_size are backend-agnostic but cb_mem/cb_size (the thread
+        // control block) are opt-in/backend-specific.
+        osThreadAttr_t attr = {};
+        attr.name       = proc.name();
+        attr.stack_mem  = proc.stackBuffer();
+        attr.stack_size = proc.stackWords() * sizeof(internal::csp_stack_word_t);
+#if defined(CSP4CMSIS_STATIC_ALLOCATION)
+        attr.cb_mem     = proc.taskBuffer();
+        attr.cb_size    = sizeof(internal::csp_static_thread_storage_t);
+#endif
+        attr.priority   = priority;
+
+        osThreadId_t handle = osThreadNew(ThreadFuncWrapper, ctx, &attr);
+
+        proc.setTaskHandle(handle);
+
+        // A process that did not start would leave its partners, or a
+        // TerminatingNetwork's caller, blocked for ever: stop instead.
+        if (handle == NULL) {
+            CSP4CMSIS_TRACE_EVENT(CSP4CMSIS_EVT_SPAWN_FAILED, CSP4CMSIS_TRACE_SELF(), &proc);
+            internal::fatal("CSP4CMSIS: Run(): osThreadNew() failed");
+        }
+    }
+
+    // Spawns ALL processes, indices 0..N-1.
+    template <std::size_t I>
+    void spawn_all(osSemaphoreId_t sem, osPriority_t composition_priority) {
+        if constexpr (I < sizeof...(Processes)) {
+            spawn_task<I>(sem, composition_priority);
+            spawn_all<I + 1>(sem, composition_priority);
+        }
+    }
+
+    template <std::size_t I, typename Func>
+    void forEachProcessImpl(Func&& f) {
+        if constexpr (I < sizeof...(Processes)) {
+            f(static_cast<CSProcess&>(std::get<I>(procs)));
+            forEachProcessImpl<I + 1>(std::forward<Func>(f));
+        }
+    }
+
+public:
+    explicit ParallelHelper(Processes&... p) : procs(p...) {}
+
+    // 1. Blocking Run (ExecutionMode::TerminatingNetwork).
+    // API 1.2: spawns ALL N processes (including index 0) as their own
+    // tasks and blocks the CALLING task until all N have completed.
+    // Previously, index 0 ran inline on the caller's stack; the caller
+    // now does no CSP work of its own and can safely self-delete once
+    // this returns, if it has nothing further to do.
+    void execute_terminating(osPriority_t composition_priority) {
+        osSemaphoreAttr_t done_sem_attr = {};
+#if defined(CSP4CMSIS_STATIC_ALLOCATION)
+        // Static semaphore buffer instead of osSemaphoreNew()'s dynamic
+        // path -- see csp_rtos_static.h for why the correct backing type
+        // is backend-specific (confirmed per-backend: each one's own
+        // osSemaphoreNew() uses the same control-block type for both
+        // binary and counting semaphores, cast from attr->cb_mem). Local
+        // `static` storage is fine: this function blocks until every
+        // process has signaled done_sem, so the buffer only needs to
+        // outlive that wait, not the ParallelHelper itself.
+        static internal::csp_static_semaphore_storage_t done_sem_storage;
+        done_sem_attr.cb_mem  = &done_sem_storage;
+        done_sem_attr.cb_size = sizeof(done_sem_storage);
+#endif
+        osSemaphoreId_t done_sem = osSemaphoreNew(num_procs, 0, &done_sem_attr);
+
+        spawn_all<0>(done_sem, composition_priority);
+
+        for (size_t i = 0; i < num_procs; ++i) {
+            osSemaphoreAcquire(done_sem, osWaitForever);
+        }
+        osSemaphoreDelete(done_sem); // releases the handle, not done_sem_storage's memory
+    }
+
+    // 2. Non-Blocking Run (ExecutionMode::StaticNetwork).
+    // API 1.2: spawns ALL N processes (including index 0) and returns
+    // immediately. No process runs on the calling task's stack.
+    void execute_static(osPriority_t composition_priority) {
+        spawn_all<0>(NULL, composition_priority);
+    }
+
+    /**
+     * @brief Invokes f(CSProcess&) for every process in this composition,
+     * in declaration order. Useful for post-spawn bookkeeping such as a
+     * periodic stack-usage report -- see csp4cmsis_spn.cpp.
+     */
+    template <typename Func>
+    void forEachProcess(Func&& f) {
+        forEachProcessImpl<0>(std::forward<Func>(f));
+    }
+};
+
+// --- Public API Syntax ---
+
+template <typename... Processes>
+ParallelHelper<Processes...> InParallel(Processes&... procs) {
+    return ParallelHelper<Processes...>(procs...);
+}
+
+/**
+ * @brief Starts every process of `helper` as its own thread.
+ * StaticNetwork: returns at once. TerminatingNetwork: returns when every
+ * process has returned from run() (call it from a thread). `priority` is the
+ * composition priority, for every process that does not override
+ * taskPriority(). A thread that cannot be created is a fatal error.
+ */
+template <typename... Processes>
+void Run(ParallelHelper<Processes...> helper, ExecutionMode mode,
+         osPriority_t priority = CSP_DEFAULT_NETWORK_PRIORITY) {
+    if (mode == ExecutionMode::StaticNetwork) {
+        helper.execute_static(priority);
+    } else {
+        helper.execute_terminating(priority);
+    }
+}
+
+} // namespace csp
+
+#endif // CSP_WRAPPER_H
