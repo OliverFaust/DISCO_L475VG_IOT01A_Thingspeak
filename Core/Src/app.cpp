@@ -1,12 +1,13 @@
 // app.cpp -- the process network (phase 1: Sensors -> Console).
 //
-//   +---------+   samples: BufferedChannel<Sample, 1, KeepNewest>   +---------+
-//   | Sensors | -------------------------------------------------> | Console |
-//   +---------+                                                     +---------+
-//    owns I2C2                                                       only printer
+//   +---------+   samples: BufferedChannel<Sample, 1, KeepNewest>        +---------+
+//   | Sensors | -------------------------------------------------------> | Console |
+//   |         | -------------------------------------------------------> |         |
+//   +---------+   check: BufferedChannel<Hts221Check, 1, KeepNewest>    +---------+
+//    owns I2C2    (one message at start-up)                               only printer
 //
 // Everything is statically allocated: the MainApp thread's stack and control block below,
-// the channel and the processes as function-local statics (each CSProcessStatic<N> holds
+// the channels and the processes as function-local statics (each CSProcessStatic<N> holds
 // its own stack and control block). The FreeRTOS heap is not used by the application.
 #include "app.h"
 
@@ -14,6 +15,7 @@
 #include "FreeRTOS.h"
 #include "csp/csp4cmsis.h"
 #include "sample.hpp"
+#include "hts221_check.hpp"
 #include "sensors_process.hpp"
 #include "console_process.hpp"
 
@@ -36,8 +38,9 @@ void MainApp_Task(void* argument)
     (void)argument;
 
     static BufferedChannel<Sample, 1, BufferPolicy::KeepNewest> samples;
-    static SensorsProcess sensors(samples.writer(), Milliseconds(kSamplePeriodMs));
-    static ConsoleProcess console(samples.reader());
+    static BufferedChannel<Hts221Check, 1, BufferPolicy::KeepNewest> check;
+    static SensorsProcess sensors(samples.writer(), check.writer(), Milliseconds(kSamplePeriodMs));
+    static ConsoleProcess console(samples.reader(), check.reader());
 
     Run(InParallel(sensors, console), ExecutionMode::StaticNetwork, kNetworkPriority);
     osThreadExit();
