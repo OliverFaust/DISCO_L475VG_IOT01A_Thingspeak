@@ -135,8 +135,10 @@ configuration requires, but it only wakes briefly every 8 ms while a socket is o
 
 `UplinkProcess::run()` is a small state machine with three questions, asked in order on every pass:
 
-1. **Is the module initialised?** If not: `Initialize()` and `PowerControl(FULL)`; on failure report
-   `ModuleFailed` and wait 60 s.
+1. **Is the module initialised?** If not: `Initialize()` and `PowerControl(FULL)`. On failure: report
+   `ModuleFailed`, wait 5 s (so that the Console can print it), and **restart the whole board**
+   (`reset_info_restart_for_wifi()`: `NVIC_SystemReset()`). See "When the Wi-Fi module does not
+   start" below for why it does not simply try again.
 2. **Is it joined?** If not: `Activate()` with the SSID and password from `app_secrets.h` (WPA2). On
    failure report `JoinFailed` and wait with **back-off**: 5, 10, 20, 40, then every 60 s, for as long
    as it takes. The driver is never uninitialised: in CMSIS-Driver 2.11.0 a second `Initialize()`
@@ -146,7 +148,37 @@ configuration requires, but it only wakes briefly every 8 ms while a socket is o
 3. **Is it time to upload?** Wait until `nextUploadAt`, then send the newest sample.
 
 The process never returns. No network error leads out of the loop; each one leads to a report and a
-wait.
+wait. The one exception is a failed `Initialize()`, which restarts the board.
+
+### When the Wi-Fi module does not start
+
+Arm's ISM43362 driver (CMSIS-Driver 2.11.0, used unmodified) has two defects that matter only when
+`Initialize()` fails or is called a second time (`docs/upstream/cmsis-driver-ism43362-init-leak.md`):
+
+- a failed `Initialize()` does not delete the two mutexes and five event flag objects it has
+  created: 384 bytes of the FreeRTOS heap are lost each time (heap: 1024 bytes);
+- a second `Initialize()` (after `Uninitialize()`) does not reset the module again.
+
+So retrying in the same run would eat the heap and would not reset a stuck module. A restart of the
+board does both: all RAM, including the heap, starts afresh, and the driver's first `Initialize()`
+pulses the module's reset line. The cost is a few seconds without samples.
+
+So that repeated restarts cannot go unnoticed, `Core/Src/reset_info.c` keeps a counter in a RAM
+section that the start-up code leaves alone (`.noinit`, added to `STM32L475VGTX_FLASH.ld`). It is
+incremented just before the reset, read by `reset_info_capture()` as the first statement of `main()`
+(USER CODE 1), and printed by the Console at every start, with the reset cause from the RCC's reset
+flags:
+
+```
+Reset cause: software reset; restarts after a failed Wi-Fi start since power-on: 3
+[    0.922 s] Uplink: Wi-Fi module initialisation FAILED (FreeRTOS heap free 640, minimum ever 640 bytes): restarting the board in 5 s
+```
+
+After a power-on (or brown-out) the counter starts at 0: the content of `.noinit` is random then, and
+a magic word tells a valid counter from noise. A board that is restarted every six seconds and counts
+up has a module that never answers: see `docs/07-troubleshooting.md`. The behaviour was tested by
+holding the module in reset (`APP_TEST_WIFI_INIT_FAIL 1` in `app_config.h`):
+`docs/results/2026-11-12_wifi_init_fail_restart_console.txt`.
 
 ### Waiting without missing samples
 

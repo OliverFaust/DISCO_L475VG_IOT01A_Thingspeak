@@ -101,6 +101,13 @@ Possible fixes, not applied (the driver is kept unmodified): a two-line change i
 `driver_initialized = 1U` before the cleanup call; clear `module_initialized` in `WiFi_Uninitialize()`),
 or a module reset through `WiFi_ISM43362_Pin_RSTN()` from the project's own code.
 
+*Update, same day:* decided to keep the driver unmodified and not to retry a failed `Initialize()` in
+the same run: the Uplink now reports it, waits 5 s and restarts the board (`NVIC_SystemReset()`), and a
+counter in a `.noinit` RAM section makes repeated restarts visible at every boot. Test with the module
+held in reset: `2026-11-12_wifi_init_fail_restart_console.txt` (15 restarts in 90 s, FreeRTOS heap the
+same at every failure: 640 of 1024 bytes free). Draft upstream issue:
+`docs/upstream/cmsis-driver-ism43362-init-leak.md`.
+
 ## 4. Not yet done
 
 - **Access point off for about 2 minutes, then on again:** needs the access point switched by hand;
