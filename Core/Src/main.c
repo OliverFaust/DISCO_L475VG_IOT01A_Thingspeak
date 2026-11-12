@@ -22,7 +22,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
+#include "app.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -114,7 +115,9 @@ int main(void)
   MX_SPI3_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  /* Unbuffered stdout: newlib would otherwise malloc() a 1 KB buffer on the first printf().
+     printf() output goes to USART1 (Core/Src/console_io.c). */
+  setvbuf(stdout, NULL, _IONBF, 0);
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -141,7 +144,8 @@ int main(void)
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  /* The CSP application: a static MainApp thread that starts the process network (Core/Src/app.cpp). */
+  csp_app_main_init();
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -410,11 +414,9 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+  /* Not used: STM32CubeMX always generates this thread. The application runs in the
+     MainApp thread and the processes it starts (Core/Src/app.cpp). */
+  osThreadExit();
   /* USER CODE END 5 */
 }
 

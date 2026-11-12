@@ -56,11 +56,15 @@
 void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName);
 
 /* USER CODE BEGIN 4 */
+void app_stack_overflow(const char *task_name);   /* Core/Src/console_io.c */
+
+/* configCHECK_FOR_STACK_OVERFLOW = 2: FreeRTOS checks a thread's stack at every context
+   switch and calls this hook if the stack pointer went past the end or the last 16 bytes
+   were overwritten. Prints the thread's name and halts. */
 void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
 {
-   /* Run time stack overflow checking is performed if
-   configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
-   called if a stack overflow is detected. */
+  (void)xTask;
+  app_stack_overflow((const char *)pcTaskName);
 }
 /* USER CODE END 4 */
 
