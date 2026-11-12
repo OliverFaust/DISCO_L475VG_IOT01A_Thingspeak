@@ -1,14 +1,21 @@
-// app.cpp -- the process network (phase 1: Sensors -> Console).
+// app.cpp -- the process network: Sensors, Console, Uplink.
 //
-//   +---------+   samples: BufferedChannel<Sample, 1, KeepNewest>        +---------+
-//   | Sensors | -------------------------------------------------------> | Console |
-//   |         | -------------------------------------------------------> |         |
-//   +---------+   check: BufferedChannel<Hts221Check, 1, KeepNewest>    +---------+
-//    owns I2C2    (one message at start-up)                               only printer
+//                 samples (Sample, 1, KeepNewest)
+//   +---------+ ----------------------------------------------> +---------+
+//   | Sensors | ----------------------------------------------> | Console |  only printer
+//   |  I2C2   |   check (Hts221Check, 1, KeepNewest; once)       +---------+
+//   +---------+                                                       ^
+//        |   uplinkSamples (Sample, 1, KeepNewest)                    | status (UplinkStatus, 8, KeepNewest)
+//        v                                                            |
+//   +---------+ ------------------------------------------------------+
+//   | Uplink  |  Wi-Fi module (SPI3), ThingSpeak; osPriorityLow
+//   +---------+
 //
+// Every channel is buffered with KeepNewest: no writer ever waits for a slower reader.
 // Everything is statically allocated: the MainApp thread's stack and control block below,
 // the channels and the processes as function-local statics (each CSProcessStatic<N> holds
-// its own stack and control block). The FreeRTOS heap is not used by the application.
+// its own stack and control block). The application takes nothing from the FreeRTOS heap; the
+// Wi-Fi driver takes 384 bytes for its mutexes and event flags (docs/results).
 #include "app.h"
 #include "app_config.h"
 
@@ -19,6 +26,8 @@
 #include "hts221_check.hpp"
 #include "sensors_process.hpp"
 #include "console_process.hpp"
+#include "uplink_process.hpp"
+#include "uplink_status.hpp"
 #include "wifi_bringup_test.hpp"
 #include "wifi_upload_test.hpp"
 
@@ -51,14 +60,20 @@ void MainApp_Task(void* argument)
         osThreadExit();
     }
 
-    static BufferedChannel<Sample, 1, BufferPolicy::KeepNewest> samples;
-    static BufferedChannel<Hts221Check, 1, BufferPolicy::KeepNewest> check;
-    static SensorsProcess sensors(samples.writer(), check.writer(), Milliseconds(kSamplePeriodMs));
-    static ConsoleProcess console(samples.reader(), check.reader());
+    static BufferedChannel<Sample, 1, BufferPolicy::KeepNewest> samples;        // Sensors -> Console
+    static BufferedChannel<Sample, 1, BufferPolicy::KeepNewest> uplinkSamples;  // Sensors -> Uplink
+    static BufferedChannel<Hts221Check, 1, BufferPolicy::KeepNewest> check;     // Sensors -> Console
+    static BufferedChannel<UplinkStatus, 8, BufferPolicy::KeepNewest> status;   // Uplink -> Console
+    static SensorsProcess sensors(samples.writer(), uplinkSamples.writer(), check.writer(),
+                                  Milliseconds(kSamplePeriodMs));
+    static ConsoleProcess console(samples.reader(), check.reader(), status.reader());
+    static UplinkProcess uplink(uplinkSamples.reader(), status.writer(), APP_UPLOAD_PERIOD_S * 1000U);
     console.watchStack(sensors);
     console.watchStack(console);
+    console.watchStack(uplink);
 
-    Run(InParallel(sensors, console), ExecutionMode::StaticNetwork, kNetworkPriority);
+    // One network priority for all; Uplink overrides it with osPriorityLow (taskPriority()).
+    Run(InParallel(sensors, console, uplink), ExecutionMode::StaticNetwork, kNetworkPriority);
     osThreadExit();
 }
 

@@ -2,7 +2,7 @@
  * app_config.h -- build-time choices of the application.
  *
  * APP_DIAGNOSTIC_MODE selects what the MainApp thread starts:
- *   APP_DIAG_NONE          the application: the Sensors/Console process network (default)
+ *   APP_DIAG_NONE          the application: Sensors, Console and Uplink (default)
  *   APP_DIAG_WIFI_BRINGUP  Wi-Fi bring-up test only: module firmware, MAC address, access point
  *                          scan, FreeRTOS heap used by the driver (Core/Src/wifi_bringup_test.cpp)
  *   APP_DIAG_WIFI_ONE_UPLOAD  one sample, one ThingSpeak update, entry id; needs
@@ -19,6 +19,20 @@
 
 #ifndef APP_DIAGNOSTIC_MODE
 #define APP_DIAGNOSTIC_MODE     APP_DIAG_NONE
+#endif
+
+/* ThingSpeak upload period in seconds (Uplink process). ThingSpeak rejects updates of a channel
+   less than 15 s apart (free accounts); smaller values do not compile. The period is measured from
+   the end of one upload attempt to the start of the next, so two requests are never closer than
+   this, even when one of them was slow. */
+#ifndef APP_UPLOAD_PERIOD_S
+#define APP_UPLOAD_PERIOD_S     60
+#endif
+
+/* Test switch for the recovery tests (docs/results): 1 = the Uplink joins with a deliberately wrong
+   Wi-Fi password instead of APP_WIFI_PASSWORD. Must be 0 in normal use. */
+#ifndef APP_TEST_WRONG_PASSWORD
+#define APP_TEST_WRONG_PASSWORD 0
 #endif
 
 #endif /* APP_CONFIG_H */

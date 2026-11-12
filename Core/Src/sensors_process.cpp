@@ -22,7 +22,8 @@ void SensorsProcess::run()
 
         Sample s = ready_ ? read(++seq) : Sample{++seq, osKernelGetTickCount(), 0.0f, 0.0f, 0.0f, false};
         if (!s.valid) ready_ = false;
-        out_ << s;            // KeepNewest, capacity 1: never blocks
+        out_ << s;            // to the Console; KeepNewest, capacity 1: never blocks
+        uplink_ << s;         // to the Uplink; likewise
 
         // Wait for the next period. An ALT with only a timeout guard behaves like
         // SleepFor(period_); written as an ALT so that further guards (for example a

@@ -8,6 +8,7 @@
 #include "csp/csp_version.h"
 #include "fixed_point.hpp"
 #include "sensor_io.h"
+#include "app_config.h"
 #include "stm32l4xx_hal.h"        // SystemCoreClock
 
 using namespace csp;
@@ -22,28 +23,29 @@ void printTime(uint32_t ms)
 void ConsoleProcess::run()
 {
     std::printf("\r\n"
-                "DISCO_L475VG_IOT01A_Thingspeak -- phase 1: Sensors + Console\r\n"
+                "DISCO_L475VG_IOT01A_Thingspeak -- Sensors, Console, Uplink (ThingSpeak every %u s)\r\n"
                 "CSP4CMSIS %d.%d.%d, FreeRTOS %s (CMSIS-RTOS2), SYSCLK %lu MHz\r\n",
+                static_cast<unsigned>(APP_UPLOAD_PERIOD_S),
                 CSP4CMSIS_VERSION_MAJOR, CSP4CMSIS_VERSION_MINOR, CSP4CMSIS_VERSION_PATCH,
                 tskKERNEL_VERSION_NUMBER, static_cast<unsigned long>(SystemCoreClock / 1000000UL));
 
-    bool stackReported = false;
+    uint32_t reportAt = kStackReportFirstMs;     // absolute deadline, in ticks since boot
     Sample s{};
     Hts221Check c{};
+    UplinkStatus u{};
     for (;;) {
-        // The report time is an absolute deadline (kStackReportMs after boot); the ALT needs a
-        // relative timeout, so it is recomputed on every pass. After the report: no timeout
-        // (Forever is the longest timeout, about 49 days; the guard below ignores it).
-        const uint32_t now = osKernelGetTickCount();          // 1 tick = 1 ms
-        const Time left = stackReported ? Forever
-                        : Milliseconds(now >= kStackReportMs ? 0 : kStackReportMs - now);
-        RelTimeoutGuard reportTime(left);
-        Alternative alt(samples_ | s, check_ | c, reportTime);
+        // The report time is an absolute deadline; the ALT needs a relative timeout, so it is
+        // recomputed on every pass (signed difference: correct across the tick counter's wrap).
+        const int32_t left = static_cast<int32_t>(reportAt - osKernelGetTickCount());   // 1 tick = 1 ms
+        RelTimeoutGuard reportTime(Milliseconds(left > 0 ? static_cast<uint32_t>(left) : 0U));
+        Alternative alt(samples_ | s, check_ | c, uplink_ | u, reportTime);
         switch (alt.priSelect()) {
             case 0: printSample(s); break;
             case 1: printCheck(c); break;
+            case 2: printUplink(u); break;
             default:
-                if (!stackReported) { printStackReport(); stackReported = true; }
+                printStackReport();
+                reportAt += kStackReportPeriodMs;
                 break;
         }
     }
@@ -110,6 +112,9 @@ void ConsoleProcess::printStackReport()
 {
     printTime(osKernelGetTickCount());
     std::printf(" Stack high-water marks (smallest free stack so far):\r\n");
+    std::printf("  FreeRTOS heap: free %u of %u bytes, minimum ever free %u bytes\r\n",
+                static_cast<unsigned>(xPortGetFreeHeapSize()), static_cast<unsigned>(configTOTAL_HEAP_SIZE),
+                static_cast<unsigned>(xPortGetMinimumEverFreeHeapSize()));
     for (std::size_t i = 0; i < nWatched_; ++i) {
         const CSProcess& p = *watched_[i];
         const uint32_t size = static_cast<uint32_t>(p.stackWords());
@@ -123,4 +128,62 @@ void ConsoleProcess::printStackReport()
                     static_cast<unsigned long>(size - free),
                     static_cast<unsigned long>((size - free) * 100UL / size));
     }
+}
+
+namespace {
+const char* stageName(UplinkStage st)
+{
+    switch (st) {
+        case UplinkStage::Dns:     return "DNS";
+        case UplinkStage::Socket:  return "socket";
+        case UplinkStage::Connect: return "connect";
+        case UplinkStage::Send:    return "send";
+        case UplinkStage::Receive: return "receive";
+        case UplinkStage::Http:    return "HTTP";
+        default:                   return "-";
+    }
+}
+} // namespace
+
+void ConsoleProcess::printUplink(const UplinkStatus& u)
+{
+    printTime(u.time_ms);
+    std::printf(" Uplink: ");
+    switch (u.event) {
+        case UplinkEvent::ModuleReady:
+            std::printf("Wi-Fi module ready");
+            break;
+        case UplinkEvent::ModuleFailed:
+            std::printf("Wi-Fi module initialisation FAILED, retry in %lu s", static_cast<unsigned long>(u.retryInMs / 1000));
+            break;
+        case UplinkEvent::Joined:
+            std::printf("joined (%lu ms), IP %u.%u.%u.%u", static_cast<unsigned long>(u.durationMs),
+                        u.ip[0], u.ip[1], u.ip[2], u.ip[3]);
+            break;
+        case UplinkEvent::JoinFailed:
+            std::printf("join FAILED (code %ld, after %lu ms), retry in %lu s", static_cast<long>(u.code),
+                        static_cast<unsigned long>(u.durationMs), static_cast<unsigned long>(u.retryInMs / 1000));
+            break;
+        case UplinkEvent::Uploaded:
+            std::printf("sample #%lu -> entry %ld (%lu ms)", static_cast<unsigned long>(u.sampleSeq),
+                        static_cast<long>(u.entryId), static_cast<unsigned long>(u.durationMs));
+            break;
+        case UplinkEvent::Rejected:
+            std::printf("sample #%lu REJECTED by ThingSpeak (HTTP %ld, entry %ld)", static_cast<unsigned long>(u.sampleSeq),
+                        static_cast<long>(u.code), static_cast<long>(u.entryId));
+            break;
+        case UplinkEvent::UploadFailed:
+            std::printf("sample #%lu upload FAILED at %s (code %ld), retry in %lu s", static_cast<unsigned long>(u.sampleSeq),
+                        stageName(u.stage), static_cast<long>(u.code), static_cast<unsigned long>(u.retryInMs / 1000));
+            break;
+        case UplinkEvent::Rejoining:
+            std::printf("too many failed uploads: leaving the network, joining again");
+            break;
+        case UplinkEvent::SampleInvalid:
+            std::printf("sample #%lu invalid, not sent", static_cast<unsigned long>(u.sampleSeq));
+            break;
+    }
+    std::printf("  [ok %lu, rejected %lu, failed %lu, joins %lu]\r\n", static_cast<unsigned long>(u.uploadsOk),
+                static_cast<unsigned long>(u.uploadsRejected), static_cast<unsigned long>(u.uploadsFailed),
+                static_cast<unsigned long>(u.joins));
 }
