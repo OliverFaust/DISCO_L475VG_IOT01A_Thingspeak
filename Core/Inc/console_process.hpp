@@ -15,6 +15,7 @@
 #include "sample.hpp"
 #include "hts221_check.hpp"
 #include "uplink_status.hpp"
+#include "reset_info.h"
 
 class ConsoleProcess : public csp::CSProcessStatic<512> {   // 512 words = 2 KB stack (printf)
 public:
@@ -22,8 +23,9 @@ public:
     static constexpr uint32_t kStackReportPeriodMs = 600000;   // then every 10 minutes
     static constexpr std::size_t kMaxWatched = 4;
 
-    ConsoleProcess(csp::Chanin<Sample> samples, csp::Chanin<Hts221Check> check, csp::Chanin<UplinkStatus> uplink)
-        : samples_(samples), check_(check), uplink_(uplink) {}
+    ConsoleProcess(csp::Chanin<Sample> samples, csp::Chanin<Hts221Check> check, csp::Chanin<UplinkStatus> uplink,
+                   BootInfo boot)
+        : samples_(samples), check_(check), uplink_(uplink), boot_(boot) {}
     const char* name() const override { return "Console"; }
     void run() override;
 
@@ -40,6 +42,7 @@ private:
     csp::Chanin<Sample> samples_;
     csp::Chanin<Hts221Check> check_;
     csp::Chanin<UplinkStatus> uplink_;
+    BootInfo boot_;                 // reset cause and restart counter, captured at start-up (a copy)
     const csp::CSProcess* watched_[kMaxWatched] = {};
     std::size_t nWatched_ = 0;
     uint32_t lastSeq_ = 0;

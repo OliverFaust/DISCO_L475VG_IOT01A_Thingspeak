@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include "app.h"
+#include "reset_info.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -90,7 +91,8 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  /* Reset cause and Wi-Fi restart counter, before anything else touches the RCC (Core/Src/reset_info.c). */
+  reset_info_capture();
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/

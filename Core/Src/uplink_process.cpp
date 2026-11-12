@@ -6,6 +6,7 @@
 #include "Driver_WiFi.h"
 #include "app_config.h"
 #include "app_secrets_include.h"
+#include "reset_info.h"
 
 extern "C" ARM_DRIVER_WIFI Driver_WiFi0;     // Drivers/CMSIS-Driver/WiFi/ISM43362/WiFi_ISM43362.c
 
@@ -24,6 +25,7 @@ constexpr uint32_t kFailedUploadsBeforeRejoin = 3;
 // WiFi_Uninitialize(), which returns at once because driver_initialized is still 0). Measured:
 // docs/results/2026-11-12_uplink_recovery.md.
 constexpr uint32_t kRecvTimeoutMs = 10000;         // per SocketRecv call
+constexpr uint32_t kRestartDelayMs = 5000;         // after a failed Initialize(): time to print, then reset
 
 #if APP_TEST_WRONG_PASSWORD
 constexpr const char* kPassword = "wrong-password-for-the-recovery-test";
@@ -168,10 +170,13 @@ void UplinkProcess::run()
                 moduleReady = true;
                 reportEvent(UplinkEvent::ModuleReady);
             } else {
-                // Retried; each failed Initialize() costs 384 bytes of FreeRTOS heap (driver bug above).
-                UplinkStatus st{}; st.event = UplinkEvent::ModuleFailed; st.retryInMs = kJoinBackoffMaxMs;
+                // No retry in this run: a failed Initialize() has leaked 384 bytes of FreeRTOS heap
+                // and a second one would not reset the module (driver bug above). Report, give the
+                // Console time to print it, then restart the whole board; reset_info counts it.
+                UplinkStatus st{}; st.event = UplinkEvent::ModuleFailed; st.retryInMs = kRestartDelayMs;
                 report(st);
-                waitKeepingLatest(kJoinBackoffMaxMs);
+                waitKeepingLatest(kRestartDelayMs);
+                reset_info_restart_for_wifi();
             }
             continue;
         }

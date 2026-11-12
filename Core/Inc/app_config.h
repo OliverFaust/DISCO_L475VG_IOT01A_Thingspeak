@@ -35,4 +35,11 @@
 #define APP_TEST_WRONG_PASSWORD 0
 #endif
 
+/* Test switch for the start-up failure test (docs/results): 1 = the Wi-Fi module is held in reset
+   (Core/Src/wifi_ism43362_pins.c), so the driver's Initialize() fails and the Uplink restarts the
+   board every few seconds. Must be 0 in normal use. */
+#ifndef APP_TEST_WIFI_INIT_FAIL
+#define APP_TEST_WIFI_INIT_FAIL 0
+#endif
+
 #endif /* APP_CONFIG_H */

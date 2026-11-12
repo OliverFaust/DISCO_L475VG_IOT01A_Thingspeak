@@ -28,6 +28,8 @@ void ConsoleProcess::run()
                 static_cast<unsigned>(APP_UPLOAD_PERIOD_S),
                 CSP4CMSIS_VERSION_MAJOR, CSP4CMSIS_VERSION_MINOR, CSP4CMSIS_VERSION_PATCH,
                 tskKERNEL_VERSION_NUMBER, static_cast<unsigned long>(SystemCoreClock / 1000000UL));
+    std::printf("Reset cause: %s; restarts after a failed Wi-Fi start since power-on: %lu\r\n",
+                boot_.cause, static_cast<unsigned long>(boot_.wifiRestarts));
 
     uint32_t reportAt = kStackReportFirstMs;     // absolute deadline, in ticks since boot
     Sample s{};
@@ -154,7 +156,10 @@ void ConsoleProcess::printUplink(const UplinkStatus& u)
             std::printf("Wi-Fi module ready");
             break;
         case UplinkEvent::ModuleFailed:
-            std::printf("Wi-Fi module initialisation FAILED, retry in %lu s", static_cast<unsigned long>(u.retryInMs / 1000));
+            std::printf("Wi-Fi module initialisation FAILED (FreeRTOS heap free %u, minimum ever %u bytes): "
+                        "restarting the board in %lu s", static_cast<unsigned>(xPortGetFreeHeapSize()),
+                        static_cast<unsigned>(xPortGetMinimumEverFreeHeapSize()),
+                        static_cast<unsigned long>(u.retryInMs / 1000));
             break;
         case UplinkEvent::Joined:
             std::printf("joined (%lu ms), IP %u.%u.%u.%u", static_cast<unsigned long>(u.durationMs),

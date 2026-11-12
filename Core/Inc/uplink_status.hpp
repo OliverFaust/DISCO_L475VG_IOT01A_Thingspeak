@@ -6,7 +6,7 @@
 
 enum class UplinkEvent : uint8_t {
     ModuleReady,     // Wi-Fi driver initialised
-    ModuleFailed,    // driver/module initialisation failed; retry after retryInMs
+    ModuleFailed,    // driver/module initialisation failed; the board restarts after retryInMs
     Joined,          // joined the access point; ip valid; durationMs = join time
     JoinFailed,      // join failed (code); retry after retryInMs
     Uploaded,        // ThingSpeak accepted the update: entryId > 0

@@ -28,6 +28,7 @@
 #include "console_process.hpp"
 #include "uplink_process.hpp"
 #include "uplink_status.hpp"
+#include "reset_info.h"
 #include "wifi_bringup_test.hpp"
 #include "wifi_upload_test.hpp"
 
@@ -66,7 +67,7 @@ void MainApp_Task(void* argument)
     static BufferedChannel<UplinkStatus, 8, BufferPolicy::KeepNewest> status;   // Uplink -> Console
     static SensorsProcess sensors(samples.writer(), uplinkSamples.writer(), check.writer(),
                                   Milliseconds(kSamplePeriodMs));
-    static ConsoleProcess console(samples.reader(), check.reader(), status.reader());
+    static ConsoleProcess console(samples.reader(), check.reader(), status.reader(), reset_info_get());
     static UplinkProcess uplink(uplinkSamples.reader(), status.writer(), APP_UPLOAD_PERIOD_S * 1000U);
     console.watchStack(sensors);
     console.watchStack(console);

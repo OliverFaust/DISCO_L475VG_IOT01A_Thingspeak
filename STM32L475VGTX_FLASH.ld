@@ -167,6 +167,17 @@ SECTIONS
     __bss_end__ = _ebss;
   } >RAM
 
+  /* Not initialised at start-up (NOLOAD; neither copied from flash nor zeroed): variables here keep
+     their value across a software reset (NVIC_SystemReset). Added for DISCO_L475VG_IOT01A_Thingspeak:
+     the reset counter in Core/Src/reset_info.c. Contents are undefined after power-on. */
+  .noinit (NOLOAD) :
+  {
+    . = ALIGN(4);
+    *(.noinit)
+    *(.noinit*)
+    . = ALIGN(4);
+  } >RAM
+
   /* User_heap_stack section, used to check that there is enough "RAM" Ram  type memory left */
   ._user_heap_stack :
   {

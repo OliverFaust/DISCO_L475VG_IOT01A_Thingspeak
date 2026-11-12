@@ -23,6 +23,7 @@
  */
 #include "WiFi_ISM43362_HW.h"
 #include "main.h"
+#include "app_config.h"
 
 /* The pins are configured by MX_GPIO_Init() before the scheduler starts. */
 void WiFi_ISM43362_Pin_Initialize(void)
@@ -35,7 +36,12 @@ void WiFi_ISM43362_Pin_Uninitialize(void)
 
 void WiFi_ISM43362_Pin_RSTN(uint8_t rstn)
 {
+#if APP_TEST_WIFI_INIT_FAIL
+  (void)rstn;   /* test: keep the module in reset, so that the driver's Initialize() fails */
+  HAL_GPIO_WritePin(ISM43362_RST_GPIO_Port, ISM43362_RST_Pin, GPIO_PIN_RESET);
+#else
   HAL_GPIO_WritePin(ISM43362_RST_GPIO_Port, ISM43362_RST_Pin, rstn ? GPIO_PIN_RESET : GPIO_PIN_SET);
+#endif
 }
 
 void WiFi_ISM43362_Pin_SSN(uint8_t ssn)
