@@ -52,9 +52,15 @@ then goes back to 0.
 
 ---
 
-## 7.2 "ThingSpeak rejected the update (entry id 0)" / "REJECTED by ThingSpeak (HTTP 400, entry 0)"
+## 7.2 "REJECTED by ThingSpeak": HTTP 400 or HTTP 200 with entry 0
 
-**You see** joining, DNS and connecting succeed, then `HTTP/1.1 400 Bad Request` and entry id 0.
+The console line `sample #N REJECTED by ThingSpeak (HTTP <status>, entry 0)` means: the request got
+through, ThingSpeak answered, and it did not store the update. The HTTP status tells you why.
+
+### HTTP 400, entry 0: the write key is wrong
+
+**You see** joining, DNS and connecting succeed, then `REJECTED by ThingSpeak (HTTP 400, entry 0)`
+(status line `HTTP/1.1 400 Bad Request`, body `0`), on every upload.
 
 **What it means.** ThingSpeak did not accept the write key: it is wrong, belongs to another channel, or
 was regenerated (a new key invalidates the old one). ThingSpeak answers a made-up key in exactly the
@@ -63,9 +69,33 @@ same way. (Measured: `docs/results/2026-11-12_one_upload.md`, attempt 1.)
 **What to do.** Copy the *Write API Key* from the channel's *API Keys* tab into
 `APP_THINGSPEAK_WRITE_KEY` in `Core/Inc/app_secrets.h`, rebuild, flash.
 
-Entry id 0 can also mean that the update came less than 15 s after the previous one of the same
-channel (ThingSpeak's rate limit; the HTTP status in that case was not measured for this project).
-With the default period of 60 s this happens only if two boards write to one channel.
+### HTTP 200, entry 0: the key is right, but ThingSpeak did not store this update
+
+**You see** `REJECTED by ThingSpeak (HTTP 200, entry 0)` -- status `200 OK`, body `0`. The key was
+accepted (a wrong key gives 400); the update itself was refused.
+
+**What it means**, most likely first:
+
+1. **Too soon after the previous update of the channel** (rate limit: 15 s on a free account,
+   chapter 2, 2.3). The program itself never sends sooner: the period counts from the end of an
+   upload, and the first upload after a start comes no earlier than 15 s after it, so that a reset
+   right after an upload is safe. Measured: an old version, which uploaded about 7 s after start, was
+   reset a few seconds after an upload and got `HTTP 200, entry 0` (`docs/results/2026-11-14_trace_trigger/break_counter/console_rejected_run.txt`);
+   the current one, reset 3 and 4 s after an upload, was accepted
+   (`docs/results/2026-11-14_first_upload_after_boot.md`).
+2. **Another device writes to the same channel** -- a second board, a classmate with your key, a
+   MATLAB script, an MQTT client. Each one keeps the rate limit by itself, together they do not.
+   Check the channel's feed (`tools/thingspeak_feed.sh 10`): entries between the board's
+   `-> entry` numbers, or entry ids that jump, come from someone else. Give each device its own
+   channel, or generate a new write key (only the board gets it).
+3. **No field of the update is enabled in the channel** (not measured). An update whose enabled fields
+   are all missing has nothing to store. Note that *some* disabled fields do **not** cause a rejection:
+   with only field 1 enabled, ThingSpeak accepted the update (200, a new entry id) and kept fields 2
+   and 3 hidden (7.3, measured).
+
+**What to do.** An occasional `HTTP 200, entry 0` costs one sample: the next upload, a period later,
+goes through. If it happens regularly, look for a second writer (2.) and check *Channel Settings*
+(3.).
 
 ---
 
