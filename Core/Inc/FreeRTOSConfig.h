@@ -172,6 +172,17 @@ standard names. */
 
 /* USER CODE BEGIN Defines */
 /* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
+#if defined(CSP4CMSIS_TRACE)
+/* Debug-Trace only (docs/06-tracing.md): thread events for CSP4CMSIS's RAM trace ring, component
+   0x51 (csp/csp_trace_ring.h), and the tick hook for its heartbeat (Core/Src/csp_trace_board.c).
+   Debug and Release do not define CSP4CMSIS_TRACE and build exactly as without these lines. */
+#include "csp/csp_trace_ring.h"
+#undef  configUSE_TICK_HOOK
+#define configUSE_TICK_HOOK 1
+#define traceTASK_CREATE( pxNewTCB )  csp_trace_task_create( ( pxNewTCB ), ( pxNewTCB )->pcTaskName, ( pxNewTCB )->uxPriority )
+#define traceTASK_SWITCHED_IN()       csp_trace_task_switched_in( pxCurrentTCB )
+#define traceTASK_SWITCHED_OUT()      csp_trace_task_switched_out( pxCurrentTCB )
+#endif
 /* USER CODE END Defines */
 
 #endif /* FREERTOS_CONFIG_H */

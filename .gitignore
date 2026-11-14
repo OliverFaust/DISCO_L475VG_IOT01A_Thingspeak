@@ -30,6 +30,7 @@ build/
 
 # Trace captures (raw ring dumps; decoded results that belong in the docs go to docs/results/)
 ring.bin
+trace_out/
 
 # Editors and OS (swap/backup files can hold secrets, e.g. Core/Inc/.app_secrets.h.swp)
 *.swp
