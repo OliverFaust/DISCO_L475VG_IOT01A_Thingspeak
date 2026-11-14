@@ -170,15 +170,34 @@ incremented just before the reset, read by `reset_info_capture()` as the first s
 flags:
 
 ```
-Reset cause: software reset; restarts after a failed Wi-Fi start since power-on: 3
+Reset cause: software reset; consecutive restarts after a failed Wi-Fi start: 1 of 3
 [    0.922 s] Uplink: Wi-Fi module initialisation FAILED (FreeRTOS heap free 640, minimum ever 640 bytes): restarting the board in 5 s
 ```
 
-After a power-on (or brown-out) the counter starts at 0: the content of `.noinit` is random then, and
-a magic word tells a valid counter from noise. A board that is restarted every six seconds and counts
-up has a module that never answers: see `docs/07-troubleshooting.md`. The behaviour was tested by
-holding the module in reset (`APP_TEST_WIFI_INIT_FAIL 1` in `app_config.h`):
-`docs/results/2026-11-12_wifi_init_fail_restart_console.txt`.
+The counter counts **consecutive** failed starts. It is kept only across a restart made by the
+Uplink: right before `NVIC_SystemReset()`, `reset_info_restart_for_wifi()` also writes a marker
+(`pending`) into `.noinit`, and `reset_info_capture()` keeps the counter only if it finds that marker
+together with the software-reset flag. Any other start -- power-on (the content of `.noinit` is
+random then; a magic word tells a valid block from noise), the RESET button, a reset by the debugger
+-- sets it to 0, and so does a successful `Initialize()` (`reset_info_wifi_started()`).
+
+**The cap.** A module that never answers would make the board restart for ever, every six seconds.
+After `APP_WIFI_MAX_RESTARTS` (3, `app_config.h`) consecutive restarts, the next start finds the
+counter at 3 (`BootInfo::wifiDisabled`), and `MainApp_Task()` (`app.cpp`) starts only the Sensors and
+the Console; the Uplink is not started, so nothing restarts the board any more. The Sensors process
+keeps writing to the Uplink's channel -- with `KeepNewest` a write never blocks, even without a reader.
+The Console says so once a minute:
+
+```
+DISCO_L475VG_IOT01A_Thingspeak -- Sensors, Console (Uplink NOT started: Wi-Fi unavailable after 3 failed starts)
+Reset cause: software reset; consecutive restarts after a failed Wi-Fi start: 3 of 3
+[    0.114 s] Wi-Fi unavailable after 3 attempts - see docs/07 section 7.1 - press RESET to retry
+[   60.000 s] Wi-Fi unavailable after 3 attempts - see docs/07 section 7.1 - press RESET to retry
+```
+
+Pressing RESET (or power-cycling) sets the counter to 0 and the board tries again, up to three more
+times. Tested by holding the module in reset (`APP_TEST_WIFI_INIT_FAIL 1` in `app_config.h`):
+`docs/results/2026-11-14_wifi_restart_cap.md`. See also `docs/07-troubleshooting.md`, 7.1.
 
 ### Waiting without missing samples
 

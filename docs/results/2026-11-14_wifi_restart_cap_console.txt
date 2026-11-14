@@ -1,0 +1,114 @@
+# Console capture
+# masked:    tools/mask_log.py; build with APP_TEST_WIFI_INIT_FAIL 1 (module held in reset), restart cap 3
+# date:      2026-11-14 10:44:09 UTC (start of the capture, about 0.5 s before the reset)
+# commit:    3794dda-dirty
+# elf:       Debug/DISCO_L475VG_IOT01A_Thingspeak.elf (sha256 7c9f22cde10562e8...)
+# compiler:  GCC: (GNU Tools for STM32 14.3.rel1.20251027-0700) 14.3.1 20250623
+# tool:      STM32CubeProgrammer version: 2.22.0
+# flash:     STM32_Programmer_CLI -c port=SWD -w Debug/DISCO_L475VG_IOT01A_Thingspeak.elf -v
+# reset:     STM32_Programmer_CLI -c port=SWD -hardRst
+# probe:     ST-LINK firmware V2J46M31
+# serial:    ST-LINK virtual COM port (/dev/ttyACM0), 115200 8N1, captured for 135 s from before the reset
+# after the capture, read over SWD (program running):
+#   __sbrk_heap_end                = 0x00000000   (0x00000000: malloc() was never called)
+#   xMinimumEverFreeBytesRemaining = 0x00000000   (0x00000000: the FreeRTOS heap was never used)
+# ----------------------------------------------------------------------------------------
+
+DISCO_L475VG_IOT01A_Thingspeak -- Sensors, Console, Uplink (ThingSpeak every 60 s)
+CSP4CMSIS 3.1.0, FreeRTOS V10.3.1 (CMSIS-RTOS2), SYSCLK 80 MHz
+Reset cause: software reset; consecutive restarts after a failed Wi-Fi start: 0 of 3
+[    0.030 s] HTS221 check (I2C transfers all OK)
+  WHO_AM_I: HTS221 @0xBE: 0xBC (expect 0xBC), LPS22HB @0xBA: 0xB1 (expect 0xB1)
+  HTS221 CTRL_REG1: 0x85 (expect 0x85: active, BDU, 1 Hz)
+  calibration 0x30..0x3F: 3E 8B A3 10 00 C4 06 00 7A 03 C5 CE FE FF 00 03
+  same 16 registers read one at a time: identical
+  H0_rH_x2 = 62 -> H0 = 31.0 %RH, H1_rH_x2 = 139 -> H1 = 69.5 %RH
+  T0_degC_x8 = 163 -> T0 = 20.375 C, T1_degC_x8 = 272 -> T1 = 34.000 C
+  H0_T0_OUT = 6, H1_T0_OUT = -12603, T0_OUT = -2, T1_OUT = 768
+  raw sample: H_OUT = -14987, T_OUT = -307
+  T : datasheet formula (samples) 14.978 C, ST driver formula 14.455 C, BSP_TSENSOR_ReadTemp() 14.455 C
+  RH: datasheet formula (samples) 76.779 %, ST driver formula 76.185 %, BSP_HSENSOR_ReadHumidity() 76.185 %
+[    0.037 s] #1  T = 14.98 C  RH = 76.78 %  p = 982.56 hPa
+[    0.922 s] Uplink: Wi-Fi module initialisation FAILED (FreeRTOS heap free 640, minimum ever 640 bytes): restarting the board in 5 s  [ok 0, rejected 0, failed 0, joins 0]
+[    5.041 s] #2  T = 14.96 C  RH = 76.92 %  p = 982.52 hPa
+
+DISCO_L475VG_IOT01A_Thingspeak -- Sensors, Console, Uplink (ThingSpeak every 60 s)
+CSP4CMSIS 3.1.0, FreeRTOS V10.3.1 (CMSIS-RTOS2), SYSCLK 80 MHz
+Reset cause: software reset; consecutive restarts after a failed Wi-Fi start: 1 of 3
+[    0.030 s] HTS221 check (I2C transfers all OK)
+  WHO_AM_I: HTS221 @0xBE: 0xBC (expect 0xBC), LPS22HB @0xBA: 0xB1 (expect 0xB1)
+  HTS221 CTRL_REG1: 0x85 (expect 0x85: active, BDU, 1 Hz)
+  calibration 0x30..0x3F: 3E 8B A3 10 00 C4 06 00 7A 03 C5 CE FE FF 00 03
+  same 16 registers read one at a time: identical
+  H0_rH_x2 = 62 -> H0 = 31.0 %RH, H1_rH_x2 = 139 -> H1 = 69.5 %RH
+  T0_degC_x8 = 163 -> T0 = 20.375 C, T1_degC_x8 = 272 -> T1 = 34.000 C
+  H0_T0_OUT = 6, H1_T0_OUT = -12603, T0_OUT = -2, T1_OUT = 768
+  raw sample: H_OUT = -15036, T_OUT = -305
+  T : datasheet formula (samples) 15.013 C, ST driver formula 14.491 C, BSP_TSENSOR_ReadTemp() 14.491 C
+  RH: datasheet formula (samples) 76.929 %, ST driver formula 76.332 %, BSP_HSENSOR_ReadHumidity() 76.332 %
+[    0.037 s] #1  T = 15.01 C  RH = 76.93 %  p = 982.57 hPa
+[    0.922 s] Uplink: Wi-Fi module initialisation FAILED (FreeRTOS heap free 640, minimum ever 640 bytes): restarting the board in 5 s  [ok 0, rejected 0, failed 0, joins 0]
+[    5.041 s] #2  T = 14.96 C  RH = 77.09 %  p = 982.55 hPa
+
+DISCO_L475VG_IOT01A_Thingspeak -- Sensors, Console, Uplink (ThingSpeak every 60 s)
+CSP4CMSIS 3.1.0, FreeRTOS V10.3.1 (CMSIS-RTOS2), SYSCLK 80 MHz
+Reset cause: software reset; consecutive restarts after a failed Wi-Fi start: 2 of 3
+[    0.030 s] HTS221 check (I2C transfers all OK)
+  WHO_AM_I: HTS221 @0xBE: 0xBC (expect 0xBC), LPS22HB @0xBA: 0xB1 (expect 0xB1)
+  HTS221 CTRL_REG1: 0x85 (expect 0x85: active, BDU, 1 Hz)
+  calibration 0x30..0x3F: 3E 8B A3 10 00 C4 06 00 7A 03 C5 CE FE FF 00 03
+  same 16 registers read one at a time: identical
+  H0_rH_x2 = 62 -> H0 = 31.0 %RH, H1_rH_x2 = 139 -> H1 = 69.5 %RH
+  T0_degC_x8 = 163 -> T0 = 20.375 C, T1_degC_x8 = 272 -> T1 = 34.000 C
+  H0_T0_OUT = 6, H1_T0_OUT = -12603, T0_OUT = -2, T1_OUT = 768
+  raw sample: H_OUT = -15075, T_OUT = -309
+  T : datasheet formula (samples) 14.943 C, ST driver formula 14.418 C, BSP_TSENSOR_ReadTemp() 14.418 C
+  RH: datasheet formula (samples) 77.048 %, ST driver formula 76.450 %, BSP_HSENSOR_ReadHumidity() 76.450 %
+[    0.037 s] #1  T = 14.94 C  RH = 77.05 %  p = 982.53 hPa
+[    0.922 s] Uplink: Wi-Fi module initialisation FAILED (FreeRTOS heap free 640, minimum ever 640 bytes): restarting the board in 5 s  [ok 0, rejected 0, failed 0, joins 0]
+[    5.041 s] #2  T = 14.93 C  RH = 77.16 %  p = 982.59 hPa
+
+DISCO_L475VG_IOT01A_Thingspeak -- Sensors, Console (Uplink NOT started: Wi-Fi unavailable after 3 failed starts)
+CSP4CMSIS 3.1.0, FreeRTOS V10.3.1 (CMSIS-RTOS2), SYSCLK 80 MHz
+Reset cause: software reset; consecutive restarts after a failed Wi-Fi start: 3 of 3
+[    0.038 s] #1  T = 14.93 C  RH = 77.18 %  p = 982.56 hPa
+[    0.030 s] HTS221 check (I2C transfers all OK)
+  WHO_AM_I: HTS221 @0xBE: 0xBC (expect 0xBC), LPS22HB @0xBA: 0xB1 (expect 0xB1)
+  HTS221 CTRL_REG1: 0x85 (expect 0x85: active, BDU, 1 Hz)
+  calibration 0x30..0x3F: 3E 8B A3 10 00 C4 06 00 7A 03 C5 CE FE FF 00 03
+  same 16 registers read one at a time: identical
+  H0_rH_x2 = 62 -> H0 = 31.0 %RH, H1_rH_x2 = 139 -> H1 = 69.5 %RH
+  T0_degC_x8 = 163 -> T0 = 20.375 C, T1_degC_x8 = 272 -> T1 = 34.000 C
+  H0_T0_OUT = 6, H1_T0_OUT = -12603, T0_OUT = -2, T1_OUT = 768
+  raw sample: H_OUT = -15119, T_OUT = -310
+  T : datasheet formula (samples) 14.925 C, ST driver formula 14.400 C, BSP_TSENSOR_ReadTemp() 14.400 C
+  RH: datasheet formula (samples) 77.182 %, ST driver formula 76.583 %, BSP_HSENSOR_ReadHumidity() 76.583 %
+[    0.114 s] Wi-Fi unavailable after 3 attempts - see docs/07 section 7.1 - press RESET to retry
+[    5.040 s] #2  T = 14.91 C  RH = 77.28 %  p = 982.59 hPa
+[   10.041 s] #3  T = 14.85 C  RH = 77.44 %  p = 982.58 hPa
+[   15.042 s] #4  T = 14.84 C  RH = 77.49 %  p = 982.48 hPa
+[   20.043 s] #5  T = 14.82 C  RH = 77.59 %  p = 982.63 hPa
+[   25.044 s] #6  T = 14.77 C  RH = 77.70 %  p = 982.50 hPa
+[   30.045 s] #7  T = 14.78 C  RH = 77.82 %  p = 982.44 hPa
+[   35.046 s] #8  T = 14.73 C  RH = 77.98 %  p = 982.47 hPa
+[   40.047 s] #9  T = 14.75 C  RH = 78.05 %  p = 982.52 hPa
+[   45.048 s] #10  T = 14.69 C  RH = 78.15 %  p = 982.53 hPa
+[   50.049 s] #11  T = 14.66 C  RH = 78.14 %  p = 982.64 hPa
+[   55.050 s] #12  T = 14.66 C  RH = 78.26 %  p = 982.47 hPa
+[   60.000 s] Wi-Fi unavailable after 3 attempts - see docs/07 section 7.1 - press RESET to retry
+[   60.008 s] Stack high-water marks (smallest free stack so far):
+  FreeRTOS heap: never used (1024 bytes)
+  Sensors   512 words, min free  323 words, max used  189 words (36 %)
+  Console   512 words, min free  264 words, max used  248 words (48 %)
+[   60.051 s] #13  T = 14.64 C  RH = 78.35 %  p = 982.47 hPa
+[   65.052 s] #14  T = 14.59 C  RH = 78.38 %  p = 982.49 hPa
+[   70.053 s] #15  T = 14.66 C  RH = 78.63 %  p = 982.59 hPa
+[   75.054 s] #16  T = 14.59 C  RH = 78.59 %  p = 982.51 hPa
+[   80.055 s] #17  T = 14.61 C  RH = 78.68 %  p = 982.47 hPa
+[   85.056 s] #18  T = 14.57 C  RH = 78.82 %  p = 982.55 hPa
+[   90.057 s] #19  T = 14.61 C  RH = 78.96 %  p = 982.46 hPa
+[   95.058 s] #20  T = 14.46 C  RH = 78.96 %  p = 982.49 hPa
+[  100.059 s] #21  T = 14.48 C  RH = 79.11 %  p = 982.54 hPa
+[  105.060 s] #22  T = 14.48 C  RH = 79.15 %  p = 982.43 hPa
+[  110.061 s] #23  T = 14.48 C  RH = 79.31 %  p = 982.44 hPa
+[  115.062 s] #24  T = 14.48 C  RH = 79.35 %  p = 982.45 hPa

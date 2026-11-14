@@ -5,28 +5,40 @@ virtual COM port, 115200 8N1). This chapter grows with the project.
 
 ---
 
-## 7.1 The board restarts every few seconds: "Wi-Fi module initialisation FAILED"
+## 7.1 "Wi-Fi module initialisation FAILED" and restarts; then "Wi-Fi unavailable after 3 attempts"
 
-**You see**, repeating about every 6 s:
+**You see** up to three restarts, about 6 s apart, each one counted:
 
 ```
 DISCO_L475VG_IOT01A_Thingspeak -- Sensors, Console, Uplink (ThingSpeak every 60 s)
-Reset cause: software reset; restarts after a failed Wi-Fi start since power-on: 7
+Reset cause: software reset; consecutive restarts after a failed Wi-Fi start: 2 of 3
 [    0.922 s] Uplink: Wi-Fi module initialisation FAILED (FreeRTOS heap free 640, minimum ever 640 bytes): restarting the board in 5 s
 ```
 
-**What it means.** The Wi-Fi driver could not talk to the ISM43362 module at start-up. The Uplink
-then restarts the whole board on purpose instead of retrying (why: `docs/05-code-walkthrough.md`,
-"When the Wi-Fi module does not start"). The counter shows how many restarts happened since the board
-was last powered on; it starts at 0 after a power-on. One restart that is followed by `Wi-Fi module
-ready` and `joined` was a hiccup. A counter that keeps rising means the module never answers.
+and then, if the module still does not answer, a board that samples and prints but does not upload:
+
+```
+DISCO_L475VG_IOT01A_Thingspeak -- Sensors, Console (Uplink NOT started: Wi-Fi unavailable after 3 failed starts)
+Reset cause: software reset; consecutive restarts after a failed Wi-Fi start: 3 of 3
+[    0.114 s] Wi-Fi unavailable after 3 attempts - see docs/07 section 7.1 - press RESET to retry
+```
+
+repeated once a minute, between the normal sample lines.
+
+**What it means.** The Wi-Fi driver could not talk to the ISM43362 module at start-up. The Uplink then
+restarts the whole board on purpose instead of retrying in the same run (why:
+`docs/05-code-walkthrough.md`, "When the Wi-Fi module does not start"). After three such restarts in a
+row it gives up until you intervene, so that a broken module does not keep the board restarting for
+ever. One restart that is followed by `Wi-Fi module ready` and `joined` was a hiccup; the counter
+then goes back to 0.
 
 **What to do:**
 
-1. Power-cycle the board: unplug the USB cable for a few seconds. (A press of the reset button resets
-   the microcontroller and, through the driver, the module, but not their power supply.)
+1. Press RESET (black button) or power-cycle the board (unplug the USB cable for a few seconds).
+   Either sets the counter to 0, and the board tries up to three more times. A power-cycle also cuts
+   the module's supply, which a reset does not.
 2. Check that the firmware was built with `APP_TEST_WIFI_INIT_FAIL 0` in `Core/Inc/app_config.h`.
-   With 1 the module is held in reset deliberately (a test switch), and you see exactly this loop.
+   With 1 the module is held in reset deliberately (a test switch), and you see exactly this sequence.
 3. Run the Wi-Fi bring-up test (`APP_DIAGNOSTIC_MODE APP_DIAG_WIFI_BRINGUP` in `app_config.h`,
    rebuild, flash). If its `Initialize` also fails, the module does not respond on SPI3: check that
    the board is a B-L475E-IOT01A (the module is on the board, not on a shield) and that the pin
@@ -36,7 +48,7 @@ ready` and `joined` was a hiccup. A counter that keeps rising means the module n
    `ISM43362-M3G-L44-SPI,C3.5.2.7.STM,...`, note it: only the STM firmware variant is supported by
    Arm's driver (any version); non-STM firmware must be 6.2.1.7.
 
-**What does not help:** waiting. The board restarts until the module answers.
+**What does not help:** waiting. After three failed starts the board does not try again by itself.
 
 ---
 
@@ -111,12 +123,16 @@ WPA2-Enterprise networks such as eduroam are not supported by the module.
 
 ```
 [  367.141 s] Uplink: sample #74 upload FAILED at DNS (code -16), retry in 15 s
-[  367.153 s] Uplink: too many failed uploads: leaving the network, joining again
+[  367.153 s] Uplink: connection lost (driver reports not connected): leaving the network, joining again
 [  383.188 s] Uplink: join FAILED (code -3, after 16025 ms), retry in 5 s
    ... (join FAILED, retry every 60 s)
 [ 1170.548 s] Uplink: joined (4680 ms), IP 10.88.160.48
 [ 1170.950 s] Uplink: sample #234 -> entry 235681 (394 ms)
 ```
+
+(Recorded with firmware of 2026-11-14 before the second line said why the Uplink rejoins; that
+recording reads "too many failed uploads" there. A rejoin after three failed uploads in a row, with
+the station still connected, reads "3 failed uploads in a row: ...".)
 
 **What it means.** Nothing is wrong with the board: it lost the access point and reconnected by itself
 when it came back -- at most one retry interval (60 s) later. Samples taken meanwhile are not sent
