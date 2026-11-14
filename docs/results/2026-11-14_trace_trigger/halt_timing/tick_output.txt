@@ -1,0 +1,8 @@
+APB1FZR1 = 0x00000010 (bit 4 DBG_TIM6_STOP)
+== TIM6 frozen (Debug-Trace as built)
+halted 3 s: uwTick +0, xTickCount +0, DWT_CYCCNT +0, TIM6_CNT 489 -> 489
+after one instruction: uwTick +0
+== TIM6 not frozen (bit cleared by GDB for this test)
+halted 3 s: uwTick +0, xTickCount +0, DWT_CYCCNT +0, TIM6_CNT 353 -> 995
+after one instruction: uwTick +0
+APB1FZR1 restored = 0x00000010
