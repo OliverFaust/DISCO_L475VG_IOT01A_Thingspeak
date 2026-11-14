@@ -1,0 +1,78 @@
+{
+  "model": "docs/formal/alt_timeout_deadline.csp",
+  "source": "the model header (Trace conformance) and its SigmaObs/H definitions",
+  "sigma_obs": [
+    "a_block",
+    "a_wake",
+    "a_sel",
+    "tick",
+    "a_take"
+  ],
+  "hidden": "H = diff(Events, SigmaObs): a_begin, a_now, a_clr, a_enc, a_disc, stale, p_off, bound, late, idle",
+  "renaming": {
+    "declare": "channel asel : GS",
+    "csp": "[[ a_sel.g.e.b <- asel.g | g <- GS, e <- TT, b <- Bool ]]",
+    "why": "a_sel.g.e.b: e (elapsed ticks at the selection) and b (valid) are not recorded"
+  },
+  "projection": "one Alternative object: its AltGuard events (index 0 starts a new object, possibly at a reused address), the AltDeadline/WaitAlt/Resume/ResumeTimeout of its thread naming it, its AltSelected, and the transfer of the selected channel guard",
+  "configurations": [
+    {
+      "name": "SYS / SYSN",
+      "system": "SYS(OK, <gl>, <p>, STALE, 0) (tick modulo 8, delays 0..3, one channel guard); otherwise SYSN(<md>, OK, <gl>, <p>, STALE, 0)",
+      "requires": [
+        "timeout guards 0..15 ticks (DMAX)",
+        "at most 3 channel guards (CMAX), input or output, rendezvous or buffered: channel guard k is GC+k, with its own partner that offers once",
+        "one select(): an Alternative with several is checked per select() (the cut, trace/README.md)"
+      ],
+      "parameters": {
+        "gl": "the guard list in index order: channel guard k -> GC+k, a timeout of d ticks -> d",
+        "md": "8 if every delay is at most 3, 16 if at most 11, else 32: md > the longest delay + 2, so no elapsed value a select() reads (at most its shortest delay + 2) wraps",
+        "p": "trace check: 1 if there is a channel guard (offers once, at any time or never), else 0; stable-failure check: 0 if the prefix has no a_take"
+      }
+    }
+  ],
+  "events": [
+    {
+      "trace": "AltDeadline (now, deadline) + WaitAlt",
+      "model": "a_block.r, r = deadline - now"
+    },
+    {
+      "trace": "WaitAlt without AltDeadline (no timeout guard enabled)",
+      "model": "a_block.-1 (wait without timeout)"
+    },
+    {
+      "trace": "ResumeTimeout (tick, deadline)",
+      "model": "a_wake.true"
+    },
+    {
+      "trace": "Resume (after WaitAlt)",
+      "model": "a_wake.false"
+    },
+    {
+      "trace": "AltSelected (alt, guard i)",
+      "model": "a_sel.gl[i] (renamed asel.gl[i])"
+    },
+    {
+      "trace": "the selected channel guard k's transfer by the ALT's thread in the select's window: RendezvousDone naming it, BufferedGet (input guard), BufferedPut (output guard)",
+      "model": "a_take.k"
+    }
+  ],
+  "ticks": [
+    "tick is observed only in selects with a timeout guard (the only waits that record tick counts); otherwise it is hidden for the trace check",
+    "before the first wait: dmin - r ticks (dmin: the shortest timeout guard, all guards being enabled when the select waits; r: the first wait's time left)",
+    "during a wait: (resume tick - now) ticks, at most r of them before a_wake, the rest after it",
+    "between a resume and the next wait: (next now - resume tick) ticks",
+    "after the last resume: none recorded, none placed"
+  ],
+  "stable_failures": {
+    "offers": "the open WaitAlt of this select at the stable point",
+    "awaited_environment": "tick, if the stable point's offers include an enabled timeout guard of this thread",
+    "X": "SigmaObs of the projection minus the awaited environment events; in a select without timeout guards tick stays visible, may occur freely during the prefix and is blocked after the marker without being in X (a hidden free-running clock diverges)",
+    "prefix": "the projection's events up to and including the a_block of the open wait; ticks between the wait's start and the stable point are not recorded and not placed"
+  },
+  "gaps": [
+    "the select's start tick is not recorded: e in a_sel.g.e.b and late cannot be checked",
+    "a select that does not wait records only AltGuard (first select) and AltSelected"
+  ],
+  "per_select": "window of select k: after the Alternative's previous AltSelected (its first: from AltGuard) up to its AltSelected; checked from the model's initial state; a partner with more than one offer in the window is outside the partner abstraction (counted)"
+}

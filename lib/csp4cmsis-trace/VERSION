@@ -1,0 +1,8 @@
+CSP4CMSIS, unreleased branch dev/tracing (version number in csp4cmsis/inc/csp/csp_version.h)
+https://github.com/OliverFaust/CSP4CMSIS, branch dev/tracing, commit ca2610a712353e0ab2d5194be92be8591b4c5480, unmodified.
+Extracted with: git archive ca2610a712353e0ab2d5194be92be8591b4c5480 csp4cmsis trace tools/trace LICENSE | tar -x
+           and: git archive ca2610a712353e0ab2d5194be92be8591b4c5480 docs/formal | tar -x
+  (docs/formal: the CSP models that tools/trace/csp_trace.py checks traces against; it finds them at
+  ../../docs/formal relative to itself.)
+Used only by the build configuration Debug-Trace (docs/06-tracing.md); Debug and Release use
+lib/csp4cmsis (CSP4CMSIS 3.1.0). The trace format is that of this unreleased version and may change.

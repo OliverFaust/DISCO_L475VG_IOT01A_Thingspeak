@@ -1,0 +1,397 @@
+-- =============================================================================
+-- CSP4CMSIS rendezvous/signal ALT: the classic one-winner protocol (JCSP /
+-- occam style, after Welch & Martin) and its variant OWRV.
+-- OWRV IS THE 3.x PROTOCOL (alt_channel_sync.cpp, alternative.cpp; since
+-- 2.0.1). OW, OWTRUST and OWSPLIT are analysis variants and mutations, not
+-- implemented. Signal channels: in 3.x a signal is a rendezvous without
+-- data (scenario SC3's SW behaves as PW).
+-- CSP-M (FDR4 dialect). Checked with ProB 1.16.1; results at the end.
+-- Same system, scenarios, observations and SPEC as rendezvous_commit_record.csp
+-- (read that header first).
+--
+-- Protocol (OW):
+--  * Per-ALT state word  st in {IDLE, ENABLING, WAITING, READY, CLAIMED(i)}.
+--    ALT writers have one too (they can be ALTs).
+--  * A partner NEVER writes into the ALT's destination. A plain partner
+--    registers as pending (its data stays in its own buffer), and "schedules"
+--    the ALT: ENABLING/WAITING -> READY (+ signal if it was WAITING). A second
+--    partner finds READY and only stays pending.
+--  * ALT-vs-ALT: the second of the two to enable CLAIMS the pair atomically
+--    (one CSP critical section over both state words): both become
+--    CLAIMED(i). The claimed ALT must select i. The READER-side ALT performs
+--    the transfer in activate(); the writer-side ALT stays blocked until then.
+--  * The ALT waits only while its state is WAITING: a flag that finds another
+--    state is stale and is ignored (wait again). After waking: disable every
+--    enabled guard; a guard reports ready = partner pending / claimable; a
+--    CLAIMED(i) guard wins; otherwise the first ready guard (priority).
+--    activate() performs the transfer and releases the partner; if the
+--    partner can no longer be claimed, a new round starts.
+--  * Signal channels are rendezvous channels without data (partner = PW).
+--
+-- Variants (v): OW, OWRV, and the mutations
+--   OWRV     the 3.x protocol: OW without the READY state and without the
+--            WAITING checks. A plain offer only signals a registered ALT (its
+--            state stays ENABLING or WAITING; 3.x: IDLE, ENABLING, WAITING,
+--            CLAIMED). Every wakeup, of A and of an ALT writer, is
+--            re-verified: disable all; a CLAIMED or ready guard wins; if
+--            none, a new round, whose enable may claim the partner. This is
+--            what buffered and timer guards already do, so they need not
+--            touch the ALT's state word.
+--   OWTRUST  OWRV, but if nothing is ready after a wakeup, A returns the
+--            fired guard (trust the wakeup)
+--   OWSPLIT  OWRV, but A's claim of an ALT writer is split into two critical
+--            sections (claim the partner, then set its own state)
+--
+-- Trace conformance (not book-facing). Events a CSP4CMSIS trace supplies:
+--   AltSelected (guard g) of A          -> a_sel.g.b.o; b, o computed from the
+--                                          RendezvousDone events since A's previous
+--                                          AltSelected (b: one on c_g with A as
+--                                          reader; o: one on the other channel)
+--   AltSelected of ALT writer i, or the
+--   Resume ending plain writer i's
+--   WaitChannel(write)                  -> w_done.i.b (b: a RendezvousDone names
+--                                          writer i on c_i)
+--   WaitAlt + Resume of A               -> a_towait.true + a_wait (rename a_wait.g:
+--                                          the flag bit is not recorded)
+--   WaitAlt + Resume of ALT writer i    -> w_towait.i.true + w_wait.i
+--   WaitChannel(write) of plain writer i -> p_out.i (hidden in the per-select
+--                                          check: the offer's critical section
+--                                          is only bracketed by the writer's
+--                                          first Resume and second WaitChannel)
+-- SYSM(v, k0, k1, s, m, n): m messages per partner, n selects of A; the
+-- per-select conformance check of an Alternative with two plain writers
+-- (T12) uses SYSM(OWRV, PW, PW, true, 1, 1).
+--   RendezvousDone on c_i               -> the pair's decision: a_en.i.2, w_en.i.1/2,
+--                                          or the a_act.i.2/.3 that takes or claims the partner
+-- Hidden (H): rounds, a_en results 0/1, a_dis, a_chk/w_chk, signals, p_sig,
+-- p_rel, w_xw (the writer's RENDEZVOUS_FLAG wait), a_self, stale flags,
+-- idle, bound_exceeded.
+-- Gaps: a_act.i.1 (claimed before) and a_act.i.2/.3 (taken or claimed now)
+-- end in the same RendezvousDone; a trace does not say which, so that part
+-- of the mapping needs a replay of the state word; OW's a_chk and w_chk
+-- (the WAITING checks) have no 3.x code (OWRV re-verifies instead; its w_chk
+-- is the ALT writer's claim check after disabling, select() phase 4).
+-- =============================================================================
+
+OW = 0
+OWTRUST = 1
+OWSPLIT = 2
+OWRV = 3
+
+AW = 0
+PW = 1
+SW = 2
+
+IDL = 0
+EN = 1
+WT = 2
+RD = 3
+CL = 4
+
+MAXR = 6
+I = {0, 1}
+
+g2((a, b), i) = if i == 0 then a else b
+s2((a, b), i, x) = if i == 0 then (x, b) else (a, x)
+claimable(s) = s == EN or s == WT
+eff(kd) = if kd == SW then PW else kd
+
+channel a_start, a_rnd                -- A: new select (destination reset) / new round (ENABLING, flags cleared)
+channel a_en : I.{0..2}               -- enable: 0 registered, 1 ready (plain pending), 2 claimed the ALT writer
+channel a_self : I                    -- OWSPLIT only: A sets its own state after claiming the writer
+channel a_sigW : I                    -- A wakes ALT writer i (after the section)
+channel a_towait : Bool               -- ENABLING -> WAITING (true) or already READY/CLAIMED (false)
+channel a_wait : I
+channel a_chk : Bool                  -- after waking: still WAITING (stale flag)?
+channel a_dis : I.Bool.Bool           -- disable: ready, claimed for this guard
+channel a_act : I.{0..3}              -- activate: 0 none (new round), 1 claimed pair, 2 took the plain
+                                      -- writer, 3 claimed the ALT writer now (signal it)
+channel a_sel : I.Bool.Bool
+channel p_out : I.Bool                -- plain writer: pending + schedule; true = must signal A
+channel p_sig : I
+channel p_rel : I
+channel w_rnd : I
+channel w_en : I.{0..2}               -- ALT writer enable: 0 registered, 1 claimed A, 2 claimed A (must signal)
+channel w_sigA : I
+channel w_towait : I.Bool
+channel w_wait : I
+channel w_chk : I.Bool                -- ALT writer after waking: OW still WAITING? OWRV (after w_dis) not claimed?
+channel w_dis : I
+channel w_xw : I                      -- ALT writer: transfer done (released by A)
+channel w_done : I.Bool
+channel stale_a, stale_w : I
+channel idle, bound_exceeded
+
+-- A's enable result for guard i
+aen(ast, wst, wreg, pend, i) = if g2(pend, i) then 1
+                               else if g2(wreg, i) and ast == EN and claimable(g2(wst, i)) then 2
+                               else 0
+-- ALT writer i's enable result
+wen(ast, wst, rreg, i) = if g2(rreg, i) and (ast == EN or ast == WT or ast == RD) and g2(wst, i) == EN
+                         then (if ast == WT then 2 else 1) else 0
+actk(ast, ach, wst, wreg, pend, i) = if ast == CL and ach == i then 1 else if g2(pend, i) then 2
+                                     else if g2(wreg, i) and claimable(g2(wst, i)) then 3 else 0
+
+-- state: ast/ach = A's state word (+ claimed channel), wst = ALT writers'
+-- state words, rreg = A registered on i, wreg = ALT writer i registered,
+-- pend = plain writer i pending, rel = plain writer released, xf = ALT
+-- writer i's transfer done, d/dl/fA/fW as in rendezvous_commit_record.csp
+ST(v, ast, ach, wst, rreg, wreg, pend, rel, xf, d, dl, fA, fW) =
+     a_start -> ST(v, ast, ach, wst, rreg, wreg, pend, rel, xf, (false, false), dl, fA, fW)
+  [] a_rnd   -> ST(v, EN, ach, wst, rreg, wreg, pend, rel, xf, d, dl, (false, false), fW)
+  [] ([] i : I @ a_en.i!aen(ast, wst, wreg, pend, i) ->
+        (if aen(ast, wst, wreg, pend, i) == 0
+         then ST(v, ast, ach, wst, s2(rreg, i, true), wreg, pend, rel, xf, d, dl, fA, fW)
+         else if aen(ast, wst, wreg, pend, i) == 1
+         then ST(v, ast, ach, wst, rreg, wreg, pend, rel, xf, d, dl, fA, fW)
+         else if v == OWSPLIT                                           -- claim the writer only
+         then ST(v, ast, ach, s2(wst, i, CL), rreg, wreg, pend, rel, xf, d, dl, fA, fW)
+         else ST(v, CL, i, s2(wst, i, CL), rreg, wreg, pend, rel, xf, d, dl, fA, fW)))
+  [] ([] i : I @ a_self.i -> ST(v, CL, i, wst, rreg, wreg, pend, rel, xf, d, dl, fA, fW))
+  [] ([] i : I @ a_sigW.i -> ST(v, ast, ach, wst, rreg, wreg, pend, rel, xf, d, dl, fA, s2(fW, i, true)))
+  [] a_towait!(ast == EN) -> ST(v, if ast == EN then WT else ast, ach, wst, rreg, wreg, pend, rel, xf, d, dl, fA, fW)
+  [] g2(fA, 0) & a_wait.0 -> ST(v, ast, ach, wst, rreg, wreg, pend, rel, xf, d, dl, (false, false), fW)
+  [] (not g2(fA, 0)) and g2(fA, 1) & a_wait.1 -> ST(v, ast, ach, wst, rreg, wreg, pend, rel, xf, d, dl, (false, false), fW)
+  [] a_chk!(ast == WT) -> ST(v, ast, ach, wst, rreg, wreg, pend, rel, xf, d, dl, fA, fW)
+  [] ([] i : I @ a_dis.i!(g2(pend, i) or (g2(wreg, i) and claimable(g2(wst, i))))!(ast == CL and ach == i) ->
+        ST(v, ast, ach, wst, s2(rreg, i, false), wreg, pend, rel, xf, d, dl, fA, fW))
+  [] ([] i : I @ a_act.i!actk(ast, ach, wst, wreg, pend, i) ->
+        (if (ast == CL and ach == i) or (not g2(pend, i) and g2(wreg, i) and claimable(g2(wst, i)))
+         then ST(v, ast, ach, s2(wst, i, CL), rreg, s2(wreg, i, false), pend, rel, s2(xf, i, true),
+                 s2(d, i, true), s2(dl, i, true), fA, fW)                     -- from the ALT writer
+         else if g2(pend, i)
+         then ST(v, ast, ach, wst, rreg, wreg, s2(pend, i, false), s2(rel, i, true), xf,
+                 s2(d, i, true), s2(dl, i, true), fA, fW)                     -- from the plain writer
+         else ST(v, ast, ach, wst, rreg, wreg, pend, rel, xf, d, dl, fA, fW)))
+  [] ([] g : I @ a_sel.g!g2(d, g)!g2(d, 1 - g) -> ST(v, IDL, ach, wst, rreg, wreg, pend, rel, xf, d, dl, fA, fW))
+  [] ([] i : I @ p_out.i!(if v == OW then (g2(rreg, i) and ast == WT) else g2(rreg, i)) ->
+        ST(v, if v == OW and g2(rreg, i) and claimable(ast) then RD else ast, ach, wst, rreg, wreg,
+           s2(pend, i, true), rel, xf, d, dl, fA, fW))
+  [] ([] i : I @ p_sig.i -> ST(v, ast, ach, wst, rreg, wreg, pend, rel, xf, d, dl, s2(fA, i, true), fW))
+  [] ([] i : I @ g2(rel, i) & p_rel.i -> ST(v, ast, ach, wst, rreg, wreg, pend, s2(rel, i, false), xf, d, dl, fA, fW))
+  [] ([] i : I @ w_rnd.i -> ST(v, ast, ach, s2(wst, i, EN), rreg, wreg, pend, rel, xf, d, dl, fA, s2(fW, i, false)))
+  [] ([] i : I @ w_en.i!wen(ast, wst, rreg, i) ->
+        (if wen(ast, wst, rreg, i) == 0
+         then ST(v, ast, ach, wst, rreg, s2(wreg, i, true), pend, rel, xf, d, dl, fA, fW)
+         else ST(v, CL, i, s2(wst, i, CL), rreg, wreg, pend, rel, xf, d, dl, fA, fW)))
+  [] ([] i : I @ w_sigA.i -> ST(v, ast, ach, wst, rreg, wreg, pend, rel, xf, d, dl, s2(fA, i, true), fW))
+  [] ([] i : I @ w_towait.i!(g2(wst, i) == EN) ->
+        ST(v, ast, ach, if g2(wst, i) == EN then s2(wst, i, WT) else wst, rreg, wreg, pend, rel, xf, d, dl, fA, fW))
+  [] ([] i : I @ g2(fW, i) & w_wait.i -> ST(v, ast, ach, wst, rreg, wreg, pend, rel, xf, d, dl, fA, s2(fW, i, false)))
+  [] ([] i : I @ w_chk.i!(g2(wst, i) == WT) -> ST(v, ast, ach, wst, rreg, wreg, pend, rel, xf, d, dl, fA, fW))
+  [] ([] i : I @ w_dis.i -> ST(v, ast, ach, wst, rreg, s2(wreg, i, false), pend, rel, xf, d, dl, fA, fW))
+  [] ([] i : I @ g2(xf, i) & w_xw.i -> ST(v, ast, ach, wst, rreg, wreg, pend, rel, s2(xf, i, false), d, dl, fA, fW))
+  [] ([] i : I @ w_done.i!g2(dl, i) -> ST(v, ast, ach, wst, rreg, wreg, pend, rel, xf, d, s2(dl, i, false), fA, fW))
+  [] ([] i : I @ stale_a.i -> ST(v, ast, ach, wst, rreg, wreg, pend, rel, xf, d, dl, s2(fA, i, true), fW))
+  [] ([] i : I @ stale_w.i -> ST(v, ast, ach, wst, rreg, wreg, pend, rel, xf, d, dl, fA, s2(fW, i, true)))
+
+FIN = idle -> FIN
+
+-- A: n selects left, c = rounds used in this run (bounded: SYSM starts c at
+-- MAXR - RBUD(n, m))
+AR(v, k, n, c) = if n == 0 then FIN else a_start -> AROUND(v, k, n, c)
+AROUND(v, k, n, c) =
+  if c >= MAXR then bound_exceeded -> STOP else
+  a_rnd -> a_en.0?e0 ->
+    (if e0 != 0 then ACLAIMED(v, k, n, c + 1, 0, e0, false)
+     else a_en.1?e1 ->
+       (if e1 != 0 then ACLAIMED(v, k, n, c + 1, 1, e1, true)
+        else a_towait?w -> (if w then AWAIT(v, k, n, c + 1) else ADIS(v, k, n, c + 1, true, 0))))
+ACLAIMED(v, k, n, c, i, e, en1) =
+  if e == 2 then (if v == OWSPLIT then a_self.i -> a_sigW.i -> ADIS(v, k, n, c, en1, i)
+                  else a_sigW.i -> ADIS(v, k, n, c, en1, i))
+  else ADIS(v, k, n, c, en1, i)
+AWAIT(v, k, n, c) =
+  a_wait?g -> (if v != OW then ADIS(v, k, n, c, true, g)               -- OWRV and its mutations re-verify
+               else a_chk?still -> (if still then AWAIT(v, k, n, c) else ADIS(v, k, n, c, true, g)))
+ADIS(v, k, n, c, en1, g) =
+  a_dis.0?r0?m0 ->
+    (if en1 then a_dis.1?r1?m1 -> ADEC(v, k, n, c, g, r0, m0, r1, m1)
+     else ADEC(v, k, n, c, g, r0, m0, false, false))
+ADEC(v, k, n, c, g, r0, m0, r1, m1) =
+  if m0 then AACT(v, k, n, c, 0) else if m1 then AACT(v, k, n, c, 1)
+  else if r0 then AACT(v, k, n, c, 0) else if r1 then AACT(v, k, n, c, 1)
+  else if v == OWTRUST then AACT(v, k, n, c, g)
+  else AROUND(v, k, n, c)
+AACT(v, k, n, c, i) =
+  a_act.i?kd ->                    -- the signal only for a claim at activate (3.x inActivate L172-177)
+    (if kd != 0 then (if kd == 3 then a_sigW.i -> ARET(v, k, n, c, i) else ARET(v, k, n, c, i))
+     else if v == OWTRUST then ARET(v, k, n, c, i)
+     else AROUND(v, k, n, c))
+ARET(v, k, n, c, i) = a_sel.i?_?_ -> AR(v, k, n - 1, c)
+
+-- ALT writer on channel i (one guard): blocked until A has transferred
+WR(v, i) = w_rnd.i -> w_en.i?e ->
+             (if e == 2 then w_sigA.i -> WXF(i)
+              else if e == 1 then WXF(i)
+              else w_towait.i?b -> (if b then WWAIT(v, i) else WDIS(i)))
+-- after a wakeup. OW: still WAITING (a stale flag) -> wait again. 3.x
+-- (OWRV and its mutations; select() phases 3 and 4): disable first, then
+-- check the claim: claimed -> wait for the transfer; not claimed -> a new
+-- round, whose enable may claim A
+WWAIT(v, i) = if v == OW then w_wait.i -> w_chk.i?still -> (if still then WWAIT(v, i) else WDIS(i))
+              else w_wait.i -> w_dis.i -> w_chk.i?still -> (if still then WR(v, i) else WXF(i))
+WDIS(i) = w_dis.i -> WXF(i)
+WXF(i) = w_xw.i -> w_done.i?_ -> SKIP
+PWR(i) = p_out.i?sig -> (if sig then p_sig.i -> PREL(i) else PREL(i))
+PREL(i) = p_rel.i -> w_done.i?_ -> SKIP
+PART(v, i, kd) = if kd == AW then WR(v, i) else PWR(i)
+-- m messages (m >= 1) from partner i
+PARTM(v, i, kd, m) = if m <= 1 then PART(v, i, kd) else PART(v, i, kd) ; PARTM(v, i, kd, m - 1)
+
+STALE(s) = if s then (([] i : I @ stale_a.i -> SKIP) [] ([] i : I @ stale_w.i -> SKIP) [] SKIP) else SKIP
+
+SS = {| a_start, a_rnd, a_en, a_self, a_sigW, a_towait, a_wait, a_chk, a_dis, a_act, a_sel,
+        p_out, p_sig, p_rel, w_rnd, w_en, w_sigA, w_towait, w_wait, w_chk, w_dis, w_xw, w_done,
+        stale_a, stale_w |}
+
+SYS(v, k0, k1, s) = SYSM(v, k0, k1, s, 1, 2)
+-- SYSM: m messages per partner, n select()s of A (SYS: one message each,
+-- two selects). With n < 2m some messages stay pending: the per-select
+-- conformance check uses n = 1, m = 1 (each partner may have one message
+-- pending when the select starts).
+-- Round budget per run: every round after a select's first follows a wakeup
+-- with nothing ready, caused by the one stale flag or by a signal that
+-- arrives after A took the signalling offer (3.x: the plain writer decides
+-- to signal in its critical section and signals after it, L85/L93; at most
+-- one per offer, 2m offers). So n + 2m + 1 rounds; at least MAXR, which
+-- leaves every system with n + 2m + 1 <= 6 (SYS, and m = n = 1) as before.
+-- The round-bound assertions show the budget is never reached, i.e. it cuts
+-- off no behaviour; the bound n + 2m + 1 is sound, not tight (for n = 4,
+-- m = 2 a run takes at most 7 rounds, see ROUNDS).
+RBUD(n, m) = if n + 2 * m + 1 > MAXR then n + 2 * m + 1 else MAXR
+SYSM(v, k0, k1, s, m, n) =
+  let k = (eff(k0), eff(k1)) within
+  (AR(v, k, n, MAXR - RBUD(n, m)) ||| PARTM(v, 0, eff(k0), m) ||| PARTM(v, 1, eff(k1), m) ||| STALE(s)) [| SS |]
+  ST(v, IDL, 0, (IDL, IDL), (false, false), (false, false), (false, false), (false, false), (false, false),
+     (false, false), (false, false), (false, false), (false, false))
+
+-- Trace conformance: the events a trace supplies and the hidden ones
+SigmaObs = {| a_sel, w_done, a_towait, a_wait, w_towait, w_wait, p_out |}
+H = diff(Events, SigmaObs)
+
+-- Observation and specification: identical to rendezvous_commit_record.csp
+OBS = {| a_sel, w_done, idle |}
+ASPEC = (a_sel.0.true.false -> a_sel.1.true.false -> FIN) |~| (a_sel.1.true.false -> a_sel.0.true.false -> FIN)
+WSPEC(i) = ((w_done.i.true -> a_sel.i.true.false -> STOP) [] (a_sel.i.true.false -> w_done.i.true -> STOP))
+           |~| (a_sel.i.true.false -> w_done.i.true -> STOP)
+SPEC = ASPEC [| {a_sel.0.true.false, a_sel.1.true.false} |] (WSPEC(0) ||| WSPEC(1))
+FREE = diff(Events, union(SS, {idle, bound_exceeded}))
+
+-- SC1 (T15): c0 = ALT writer, c1 = plain writer, one stale flag. expected: PASS x3
+assert SPEC [FD= SYS(OW, AW, PW, true) \ diff(Events, OBS)
+assert SYS(OW, AW, PW, true) :[deadlock free [F]]
+assert STOP [T= SYS(OW, AW, PW, true) \ diff(Events, {bound_exceeded})
+-- SC2: two ALT writers on different channels race to claim A. expected: PASS x3
+assert SPEC [FD= SYS(OW, AW, AW, true) \ diff(Events, OBS)
+assert SYS(OW, AW, AW, true) :[deadlock free [F]]
+assert STOP [T= SYS(OW, AW, AW, true) \ diff(Events, {bound_exceeded})
+-- SC3 (T15s): c0 = plain writer, c1 = signal sender. expected: PASS x2
+assert SPEC [FD= SYS(OW, PW, SW, true) \ diff(Events, OBS)
+assert SYS(OW, PW, SW, true) :[deadlock free [F]]
+-- OWRV (3.x: no READY state, every wakeup re-verified). expected: PASS x8
+assert SPEC [FD= SYS(OWRV, AW, PW, true) \ diff(Events, OBS)
+assert SYS(OWRV, AW, PW, true) :[deadlock free [F]]
+assert STOP [T= SYS(OWRV, AW, PW, true) \ diff(Events, {bound_exceeded})
+assert SPEC [FD= SYS(OWRV, AW, AW, true) \ diff(Events, OBS)
+assert SYS(OWRV, AW, AW, true) :[deadlock free [F]]
+assert STOP [T= SYS(OWRV, AW, AW, true) \ diff(Events, {bound_exceeded})
+assert SPEC [FD= SYS(OWRV, PW, SW, true) \ diff(Events, OBS)
+assert SYS(OWRV, PW, SW, true) :[deadlock free [F]]
+-- mutations. expected: FAIL each
+assert SPEC [FD= SYS(OWTRUST, AW, PW, true) \ diff(Events, OBS)
+assert SPEC [FD= SYS(OWSPLIT, AW, AW, false) \ diff(Events, OBS)
+assert SYS(OWSPLIT, AW, AW, false) :[deadlock free [F]]
+-- alphabet audit. expected: PASS each
+assert STOP [T= SYS(OW, AW, PW, true) \ diff(Events, FREE)
+assert STOP [T= SYS(OW, AW, AW, true) \ diff(Events, FREE)
+
+-- SYSM (messages per partner m, selects n). expected: PASS
+-- one select, a message pending on each channel (the per-select check of
+-- T12): A takes exactly one, with its data and without the other's
+assert STOP [T= SYSM(OWRV, PW, PW, true, 1, 1) \ diff(Events, {a_sel.g.b.o | g <- I, b <- Bool, o <- Bool, not (b and not o)})
+assert SYSM(OWRV, PW, PW, true, 1, 1) :[deadlock free [F]]
+assert STOP [T= SYSM(OWRV, AW, PW, true, 1, 1) \ diff(Events, {a_sel.g.b.o | g <- I, b <- Bool, o <- Bool, not (b and not o)})
+-- two messages per partner, four selects: every select with its data,
+-- the round bound is not exceeded, no deadlock
+assert STOP [T= SYSM(OWRV, PW, PW, true, 2, 4) \ diff(Events, {a_sel.g.b.o | g <- I, b <- Bool, o <- Bool, not (b and not o)})
+assert STOP [T= SYSM(OWRV, PW, PW, true, 2, 4) \ diff(Events, {| bound_exceeded |})
+assert SYSM(OWRV, PW, PW, true, 2, 4) :[deadlock free [F]]
+-- the OWTRUST mutation is still found with two messages. expected: FAIL
+assert STOP [T= SYSM(OWTRUST, AW, PW, true, 2, 4) \ diff(Events, {a_sel.g.b.o | g <- I, b <- Bool, o <- Bool, not (b and not o)})
+
+-- Ranges. ProB does not type-check channel values: an expression that
+-- computes a value outside a channel's declared type still produces the
+-- event. Each value-carrying channel of SigmaObs is checked once: the system
+-- produces only values of the declared type ({| c |} holds exactly those; an
+-- out-of-type event is not in Events, so it stays visible and RANGE refuses
+-- it). expected: PASS
+RANGE(A) = [] e : A @ e -> RANGE(A)
+assert RANGE({| a_sel |}) [T= SYS(OWRV, AW, PW, true) \ diff(Events, {| a_sel |})
+assert RANGE({| w_done |}) [T= SYS(OWRV, AW, PW, true) \ diff(Events, {| w_done |})
+assert RANGE({| a_towait |}) [T= SYS(OWRV, AW, PW, true) \ diff(Events, {| a_towait |})
+assert RANGE({| a_wait |}) [T= SYS(OWRV, AW, PW, true) \ diff(Events, {| a_wait |})
+assert RANGE({| w_towait |}) [T= SYS(OWRV, AW, PW, true) \ diff(Events, {| w_towait |})
+assert RANGE({| w_wait |}) [T= SYS(OWRV, AW, PW, true) \ diff(Events, {| w_wait |})
+assert RANGE({| p_out |}) [T= SYS(OWRV, AW, PW, true) \ diff(Events, {| p_out |})
+
+-- Tight round bound of SYSM(OWRV, PW, PW, true, 2, 4) (finding C): the budget
+-- RBUD(4, 2) = 9 is never reached (#26); the most rounds a run takes is 7.
+-- ROUNDS(r) allows at most r rounds (a_rnd) per run.
+-- expected: PASS (at most 7), FAIL (at most 6; intended: a run takes 7)
+ROUNDS(r) = r > 0 & a_rnd -> ROUNDS(r - 1)
+assert ROUNDS(7) [T= SYSM(OWRV, PW, PW, true, 2, 4) \ diff(Events, {a_rnd})
+assert ROUNDS(6) [T= SYSM(OWRV, PW, PW, true, 2, 4) \ diff(Events, {a_rnd})
+
+-- =============================================================================
+-- RESULTS (ProB 1.16.1-final 716929f, 2026-10-26, after the activate signals the ALT
+-- writer only on a claim at activate; all as expected; each assertion checked alone,
+-- 8 at a time on 22 cores; states = ProB coverage STATES, s = CPU seconds)
+--  #  assertion                                            expected  ProB  states      s    note
+--  1  SPEC [FD= SYS(OW, AW, PW, true) \ diff(Events, OBS)  PASS      PASS    4254   51.8
+--  2  SYS(OW, AW, PW, true) :[deadlock free [F]]           PASS      PASS    4164   49.7
+--  3  STOP [T= SYS(OW, AW, PW, true) \ diff(Events, {bound PASS      PASS    4165   44.0
+--  4  SPEC [FD= SYS(OW, AW, AW, true) \ diff(Events, OBS)  PASS      PASS   10130  138.6
+--  5  SYS(OW, AW, AW, true) :[deadlock free [F]]           PASS      PASS   10040  140.7
+--  6  STOP [T= SYS(OW, AW, AW, true) \ diff(Events, {bound PASS      PASS   10041  150.6
+--  7  SPEC [FD= SYS(OW, PW, SW, true) \ diff(Events, OBS)  PASS      PASS    1855   20.1
+--  8  SYS(OW, PW, SW, true) :[deadlock free [F]]           PASS      PASS    1765   16.5
+--  9  SPEC [FD= SYS(OWRV, AW, PW, true) \ diff(Events, OBS PASS      PASS    5470   73.1
+-- 10  SYS(OWRV, AW, PW, true) :[deadlock free [F]]         PASS      PASS    5380   60.5
+-- 11  STOP [T= SYS(OWRV, AW, PW, true) \ diff(Events, {bou PASS      PASS    5381   88.8
+-- 12  SPEC [FD= SYS(OWRV, AW, AW, true) \ diff(Events, OBS PASS      PASS   12571  201.4
+-- 13  SYS(OWRV, AW, AW, true) :[deadlock free [F]]         PASS      PASS   12481  190.7
+-- 14  STOP [T= SYS(OWRV, AW, AW, true) \ diff(Events, {bou PASS      PASS   12482  193.7
+-- 15  SPEC [FD= SYS(OWRV, PW, SW, true) \ diff(Events, OBS PASS      PASS    2808   46.8
+-- 16  SYS(OWRV, PW, SW, true) :[deadlock free [F]]         PASS      PASS    2718   38.9
+-- 17  SPEC [FD= SYS(OWTRUST, AW, PW, true) \ diff(Events,  FAIL      FAIL    3500   41.8  a_sel.1.true.false, a_sel.0.false.false (PHANTOM select)
+-- 18  SPEC [FD= SYS(OWSPLIT, AW, AW, false) \ diff(Events, FAIL      FAIL    1084   13.0  a_sel.1.true.false, then refuses w_done.0.true
+-- 19  SYS(OWSPLIT, AW, AW, false) :[deadlock free [F]]     FAIL      FAIL     580    7.5  W0 claims A while A is still ENABLING; a_self.1 overrides it: deadlock
+-- 20  STOP [T= SYS(OW, AW, PW, true) \ diff(Events, FREE)  PASS      PASS    4165   64.6
+-- 21  STOP [T= SYS(OW, AW, AW, true) \ diff(Events, FREE)  PASS      PASS   10041  145.9
+-- SYSM (messages per partner m, selects n):
+-- 22  STOP [T= SYSM(OWRV, PW, PW, true, 1, 1) \ diff(Event PASS      PASS     895   12.3
+-- 23  SYSM(OWRV, PW, PW, true, 1, 1) :[deadlock free [F]]  PASS      PASS     894   11.5
+-- 24  STOP [T= SYSM(OWRV, AW, PW, true, 1, 1) \ diff(Event PASS      PASS    1555   21.6
+-- 25  STOP [T= SYSM(OWRV, PW, PW, true, 2, 4) \ diff(Event PASS      PASS   23383  279.5
+-- 26  STOP [T= SYSM(OWRV, PW, PW, true, 2, 4) \ diff(Event PASS      PASS   23383  320.9  budget RBUD(4, 2) = 9; never reached
+-- 27  SYSM(OWRV, PW, PW, true, 2, 4) :[deadlock free [F]]  PASS      PASS   23382  301.8
+-- 28  STOP [T= SYSM(OWTRUST, AW, PW, true, 2, 4) \ diff(Ev FAIL      FAIL   35173  413.2  PHANTOM select a_sel.1.false.false
+-- Ranges:
+-- 29  RANGE({| a_sel |}) [T= SYS(OWRV, AW, PW, true) \ dif PASS      PASS    5382   59.8
+-- 30  RANGE({| w_done |}) [T= SYS(OWRV, AW, PW, true) \ di PASS      PASS    5382   67.6
+-- 31  RANGE({| a_towait |}) [T= SYS(OWRV, AW, PW, true) \  PASS      PASS    5382   62.8
+-- 32  RANGE({| a_wait |}) [T= SYS(OWRV, AW, PW, true) \ di PASS      PASS    5382   58.8
+-- 33  RANGE({| w_towait |}) [T= SYS(OWRV, AW, PW, true) \  PASS      PASS    5382   58.1
+-- 34  RANGE({| w_wait |}) [T= SYS(OWRV, AW, PW, true) \ di PASS      PASS    5382   61.5
+-- 35  RANGE({| p_out |}) [T= SYS(OWRV, AW, PW, true) \ dif PASS      PASS    5382   64.4
+-- Tight round bound:
+-- 36  ROUNDS(7) [T= SYSM(OWRV, PW, PW, true, 2, 4) \ dif PASS      PASS   23390  260.7  the most rounds a run takes
+-- 37  ROUNDS(6) [T= SYSM(OWRV, PW, PW, true, 2, 4) \ dif FAIL      FAIL   21671  234.3  7 a_rnd: stale flag in select 1, two late p_sig in select 4
+--
+-- NOT covered here: ISR partners (putFromISR; alt_owrv_extended.csp Part B
+-- covers an ISR on a buffered guard), ALT writers with more than one guard
+-- (alt_owrv_extended.csp Part A: crossing ALTs with an output and an input
+-- guard each; Part C: an ALT writer with two output guards), more than two
+-- channels, KeepNewest/KeepOldest rendezvous (no such channel in 3.x).
+-- =============================================================================
