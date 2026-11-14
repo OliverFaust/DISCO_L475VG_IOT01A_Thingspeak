@@ -53,7 +53,8 @@ git status --short
 
 You should now see **no** line with `app_secrets.h`. (If you forget the copy step, the build stops
 with `#error "Core/Inc/app_secrets.h is missing. In the project folder run:  cp
-Core/Inc/app_secrets.h.template Core/Inc/app_secrets.h ..."`.)
+Core/Inc/app_secrets.h.template Core/Inc/app_secrets.h ..."` -- the same message from four source
+files, followed by `Build Failed. 11 errors, 0 warnings.` Copy the template and build again.)
 
 Optional, for checking uploads from the PC (chapter 2.4):
 
@@ -183,7 +184,7 @@ Check, line by line:
 | `HTS221 check (I2C transfers all OK)`, `WHO_AM_I ... (expect ...)` equal | the sensors answer on I2C2 | chapter 5 (HTS221) |
 | `#1  T = ... RH = ... p = ...` every 5 s | Sensors and Console work | -- |
 | `Uplink: Wi-Fi module ready` within about 1 s | the Wi-Fi module started | chapter 7, 7.1 |
-| `Uplink: joined (... ms), IP ...` within about 10 s | your network accepted the board | chapter 7, 7.4 (and chapter 1.2) |
+| `Uplink: joined (... ms), IP ...` within about 10 s (joins took 3.0 to 8.8 s in the tests) | your network accepted the board | chapter 7, 7.4 (and chapter 1.2) |
 | `Uplink: sample #N -> entry M` | ThingSpeak stored the update as entry M | chapter 7, 7.2 (`REJECTED`) |
 | further `-> entry` lines every 60 s | the upload period | -- |
 | stack report at 60 s, then every 10 minutes | free stack of each process; `min free` must stay well above 0 | chapter 7 |

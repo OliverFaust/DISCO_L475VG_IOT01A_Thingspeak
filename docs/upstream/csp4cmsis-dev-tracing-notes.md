@@ -65,8 +65,10 @@ Resume at 7578.850 us with ticks after a wait without a deadline
 
 one per process: the `WaitAlt`/`AltDeadline` that began each wait lie before the window. In the same
 way a get whose put lies before the window gives `ring slots: FAIL 1` (`<channel>: get at 42.962 us
-from an empty replay`), and an `OverwroteOldest` whose evicted put lies before the window (dump c,
-caught with a breakpoint) gives `ring slots: FAIL 1` as well.
+from an empty replay`), an `OverwroteOldest` whose evicted put lies before the window (dump c,
+caught with a breakpoint) gives `ring slots: FAIL 1` as well, and a window that begins between an
+ALT's first `AltGuard` records and its `WaitAlt` gives `ALT offers: FAIL; ... 2 unresolved`
+(`<alt>: WaitAlt names 4 guards, 2 described`; fresh-clone rehearsal, 2026-11-14).
 
 **Where.** `tools/trace/conformance.py`, `resume_deadline()` (`dl_error(... without a deadline
 wait)`), and the `BUFFERED_GET` branch of the ring-slot replay (`ring_error(... from an empty
@@ -79,7 +81,8 @@ of a channel). The results note checks each one by hand.
 **Suggestion.** `ring2log.py` already knows that the window is partial: it writes the note
 `ring: N records overwritten, 0 dropped before this point` at its start. When that note is present
 (or `write_count > capacity` with policy overwrite), treat the first resume of each thread without a
-recorded wait, and the first get / overwrite of each channel without a recorded put, as *window start*:
+recorded wait, the first get / overwrite of each channel without a recorded put, and a first `WaitAlt`
+with fewer described guards than it names, as *window start*:
 count them separately (e.g. `ALT deadlines: PASS; ... 3 waits begun before the window`) instead of as
 failures. A FAIL would then always mean a finding.
 

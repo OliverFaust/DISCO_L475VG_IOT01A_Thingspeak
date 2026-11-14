@@ -150,8 +150,12 @@ runs, from CSP4CMSIS's `tools/trace`:
    before the window. When its wait ends, the checker sees a `Resume` or `ResumeTimeout` "without a
    deadline wait" and reports it: three processes (Sensors, Console, Uplink), three "ALT deadlines"
    reports. In the same way, a get from a channel whose put was before the window is reported under
-   "ring slots" ("get from an empty replay"). `checks.json` lists each report with its time
-   (`deadline_errors`, `ring_errors`): if every one lies at the start of the window -- before the
+   "ring slots" ("get from an empty replay"); and if the window begins while a process is setting up
+   an ALT, the `AltGuard` records of its first guards are missing, which is reported as
+   `ALT offers: FAIL; ... 2 unresolved` with `WaitAlt names 4 guards, 2 described` in `checks.json`
+   (`alt_errors`) -- seen in the rehearsal of chapter 3, where the window began 0.07 ms before the
+   Console's `WaitAlt`. `checks.json` lists each report with its time
+   (`deadline_errors`, `ring_errors`, `alt_errors`): if every one lies at the start of the window -- before the
    process's first own `WaitAlt` in `events.csv` --, it is such an artefact. What matters is the rest
    of the line: `at most 0 ticks after the deadline` and `0 before the deadline` among the timeouts
    (no timeout ever woke a process early or late), and `0 overwrites` / `0 dropped`.
