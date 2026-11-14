@@ -67,20 +67,34 @@ first 1024 records after reset -- the Wi-Fi join fills those within a second.)
 The ring must be read while the core is **halted**, so that it does not change during the copy.
 
 **With the script** (Ubuntu; it starts the ST-LINK GDB server in *attach* mode -- no reset --, lets GDB
-connect, which halts the core, dumps the ring, and lets the board run on):
+connect, which halts the core, dumps the ring, reads the threads' names, and lets the board run on):
 
 ```bash
 tools/trace_dump.sh Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf trace_out/ring.bin
 ```
 
-You should now see the ring header and
+You should now see the ring header, the thread names and
 
 ```
-$1 = {magic = 0x52505343, format = 0x1, record_size = 0x10, capacity = 0x400, policy = 0x0, write_count = 0x54d9, clock_hz = 0x4c4b400, dropped = 0x0, dwt_ctrl = 0x40000001}
-== wrote trace_out/ring.bin (16416 bytes); the board is running again
+$1 = {magic = 0x52505343, format = 0x1, record_size = 0x10, capacity = 0x400, policy = 0x0, write_count = 0x319c8, clock_hz = 0x4c4b400, dropped = 0x0, dwt_ctrl = 0x40000001}
+TASKNAME 0x20001138 Sensors
+TASKNAME 0x20001a70 Console
+TASKNAME 0x20002ba8 Uplink
+TASKNAME 0x20003ac4 WiFi_ISM43362_A
+TASKNAME 0x2000a3c4 IDLE
+== wrote trace_out/ring.bin (16416 bytes) and trace_out/ring.names (5 names); the board is running again
 ```
 
 `magic` 0x52505343 is "CSPR"; `capacity` 0x400 = 1024 records; `clock_hz` 0x4c4b400 = 80 MHz.
+
+**Why the names are read separately.** The decoder names a thread after its process's `name()`
+(`SensorsProcess::name()` returns `"Sensors"`, and so on). CSP4CMSIS records that name once, when the
+process starts (`ProcessName`); in an overwrite ring that holds an upload, those records were
+overwritten long ago, and the decoder would fall back to the symbol of the thread's control block
+(`MainApp_Task(void*)::sensors`). The name is also in FreeRTOS's control block (`pcTaskName`:
+CSP4CMSIS's `Run` passes `name()` to `osThreadNew`), so the script reads it there while the core is
+halted (`tools/trace_names.py`) and writes `ring.names`, which 6.4 uses. FreeRTOS keeps at most 15
+characters (`configMAX_TASK_NAME_LEN` 16), hence `WiFi_ISM43362_A` for the Wi-Fi driver's thread.
 
 **By hand in STM32CubeIDE** (any OS): start a debug session for Debug-Trace (**Run > Debug As > STM32
 C/C++ Application**), let it run, wait for the upload line, press **Suspend** (pause button), and in
@@ -91,7 +105,9 @@ dump binary memory ring.bin &csp_trace_ring ((char *)&csp_trace_ring) + sizeof(c
 ```
 
 `ring.bin` is written to the debugger's working directory (the project's `Debug-Trace` folder). It
-must be 16416 bytes.
+must be 16416 bytes. Without `ring.names` the threads keep their symbol names in Perfetto; to get the
+process names, type `print ((TCB_t *)0x20001138)->pcTaskName` for each thread address and write the
+lines `TASKNAME <address> <name>` into `ring.names` next to `ring.bin`.
 
 ---
 
@@ -124,6 +140,10 @@ runs, from CSP4CMSIS's `tools/trace`:
    ring slots: PASS; 11 puts, 11 gets (11 read their put's slot), 0 overwrites ...
    ALT offers: PASS; 18 waits, 45 enabled guards, 0 unresolved, 45 guards described
    ```
+   If `ring.names` lies next to `ring.bin`, `tools/trace_names.py apply` then replaces the symbol names
+   of the threads in `trace.json` with the process names and prints
+   `trace_names: MainApp_Task(void*)::sensors -> Sensors` etc. `events.csv` and `summary.txt` keep the
+   symbol names.
 3. With ProB installed (`export PROBCLI=/path/to/probcli`): `csp_trace.py` checks parts of the trace
    against CSP models of the library (`lib/csp4cmsis-trace/docs/formal/`), with deliberately broken
    copies ("mutations") that must fail. See 6.7.
@@ -142,23 +162,80 @@ You should now see, top to bottom:
   `MainApp_Task(void*)::samples`, `::uplinkSamples`, `::status` -- showing how many elements are in the
   buffer (0 or 1 for the capacity-1 channels). (`::check` is written once, at start-up.)
 - **interrupts**: interrupt handlers that recorded events (none in this program: the group is empty).
-- one group per thread, named after the object that holds its control block:
-  `MainApp_Task(void*)::sensors`, `::console`, `::uplink`, `Idle_TCB.3` (FreeRTOS's idle thread) and
-  `async_thread_cb_mem` (the Wi-Fi driver's own thread). Each group has three tracks:
+- one group per thread, named after its process (6.3): `Sensors`, `Console`, `Uplink`, `IDLE`
+  (FreeRTOS's idle thread) and `WiFi_ISM43362_A` (the Wi-Fi driver's own thread). Without
+  `ring.names` the groups carry the symbols of the control blocks instead
+  (`MainApp_Task(void*)::sensors`, ..., `Idle_TCB.3`, `async_thread_cb_mem`). Each group has three
+  tracks:
   - **running**: when the thread has the CPU;
   - **waiting**: from a `Wait...` event (e.g. `WaitAlt`) to the `Resume` that ends it;
   - **events**: the CSP4CMSIS events as instants (`AltGuard`, `AltSelected`, `BufferedPut`, ...).
 
-*Figure (to be added): Perfetto showing an upload with the samples before and after it. Open
-`docs/results/2026-11-14_trace_upload/trace.json` (recorded on the board) to see the same view
-without a board.*
+### An upload, step by step
 
-**How to read an upload.** Zoom to an `Uplink ... -> entry` time. Every 5 s you see the same pattern:
-`sensors` runs briefly (I2C), then puts into `samples` and `uplinkSamples` -- slices "put ..." on its
-events track, with flow arrows to the gets that took the values --, `console` wakes from its ALT and
-prints, `uplink` wakes from its ALT, takes the sample ("get ... <- sensors"), and waits again. At the
-upload, `uplink` and the idle thread alternate every millisecond for about 0.35 s -- the driver's
-polling -- while `sensors` and `console` carry on undisturbed.
+![Perfetto: an upload with a sample arriving during it](img/perfetto_upload.png)
+
+*Figure 6.1: the Perfetto view of `docs/results/2026-11-14_trace_upload_names/trace.json`, recorded on
+the board (open it yourself to follow along without a board). Zoomed to about 24.74..25.21 s; the
+time range 24.781..25.146 s (365.6 ms, shown above the tracks) is selected by dragging across the
+tracks with the mouse, so the panel at the bottom, **Current Selection > Flow Events**, counts the
+flows in it: 3. The selection covers the whole upload (24.791..25.139 s) with about 10 ms on each
+side.*
+
+The thread groups carry the process names (6.3); the channels under **buffered channels** keep their
+symbol names (`MainApp_Task(void*)::samples`, `::status`, `::uplinkSamples`), because a channel has
+no name of its own in CSP4CMSIS.
+
+This upload was chosen because a sample arrived while it ran. All times are from the start of the
+window (the oldest record in the ring); `events.csv` lists each event with its exact time.
+
+1. **24.791 s -- the Uplink's timeout is selected.** The Uplink waits in an ALT on two guards: an
+   input from `uplinkSamples` and a timeout at the next upload time. The timeout fires exactly at its
+   deadline (`ResumeTimeout ... tick=8154711, deadline=8154711`, then `AltSelected ... guard=1`), and the
+   waiting slice on the `Uplink` track ends. The Uplink now uploads the newest sample it holds.
+2. **24.79..25.13 s -- the upload.** On `Uplink > running` you see a comb of thin slices: the Wi-Fi
+   driver waits for the module by checking its data-ready pin every millisecond (`osDelay(1)`), so the
+   Uplink runs for a few microseconds, sleeps for 1 ms (`IDLE` runs), and runs again: 117 switches to
+   the Uplink, 156 to the idle thread and 49 to the driver's own thread `WiFi_ISM43362_A` in 0.34 s.
+   Everything else carries on undisturbed: the Uplink runs at `osPriorityLow`, below Sensors and
+   Console (`osPriorityBelowNormal`, `Core/Src/app.cpp`), and gives the CPU away at every poll.
+3. **25.0093 s -- a sample arrives during the upload.** `Sensors` wakes on its 5 s timeout
+   (`waiting` ends), reads the two sensors over I2C (a short `running` slice) and puts the sample into
+   both channels: `samples` (to the Console) and `uplinkSamples` (to the Uplink). The counters under
+   **buffered channels** step to 1. `Sensors` goes back to waiting.
+4. **The Console takes its copy at once.** 37 us after the second put, `Console` resumes from its
+   ALT and gets the sample from `samples` (counter back to 0; 111 us after that put), prints the line `#... T = ...` (its `running` slice),
+   and waits again at 25.015 s.
+5. **The Uplink's copy waits in `uplinkSamples`.** The Uplink is busy uploading and is not in its
+   ALT, so its copy stays in the channel: the `uplinkSamples` counter stays at 1 for 129.7 ms, from
+   25.0093 s to 25.1390 s. Nothing is lost and nothing blocks: Sensors never waits for the Uplink. This
+   is what the buffered channel with capacity 1 and KeepNewest is for.
+6. **25.1300 s -- the upload's result goes to the Console.** The Uplink puts a status message into
+   `status` (`Uplink: sample #... -> entry ...`); the Console resumes, gets it and prints it.
+7. **25.1390 s -- the Uplink takes the sample.** Back in its ALT, the Uplink finds `uplinkSamples`
+   ready, selects guard 0 at once (no waiting), gets the sample (counter to 0), keeps it for the next
+   upload, and waits again -- on the same two guards, with a timeout now about 60 s later.
+
+**The three flows in the selection** (the arrows, and "3" in **Flow Events**) connect each put with
+the get that took its value:
+`samples` (Sensors -> Console, 111 us), `uplinkSamples` (Sensors -> Uplink, 129.7 ms -- the long arrow
+across the upload), and `status` (Uplink -> Console). Click an arrow's end to see the channel, writer and
+reader.
+
+**"(no resume)"** at the right edge of a waiting slice (e.g. *waiting on ALT Sensors (no resume)*):
+the wait was still open when the ring was dumped -- the core was halted while the process waited. It
+is not an error.
+
+**The CPU is mostly idle.** Over the 26 s window `IDLE` has the CPU 96 % of the time; Sensors, Console
+and Uplink together less than 0.3 %, even with an upload in the window.
+
+**Track numbers.** The numbers after the track names (`Uplink 12`, `running 121`, ...) are Perfetto's
+own process and track IDs from `trace.json` (decode.py numbers the threads in order of appearance).
+They have no meaning on the board.
+
+**The same pattern every 5 s.** Outside the upload you see the steps 3, 4 and 7 alone: Sensors puts,
+the Console takes its copy after about 0.1 ms and prints, and the Uplink, with its lower priority,
+takes its copy after the Console has finished, 5.7 ms after the put; then everything waits again.
 
 **KeepNewest, seen in the trace.** A sample that arrives *during* an upload is not lost: it stays in
 `uplinkSamples` (counter 1) and the Uplink's get follows right after the upload. A KeepNewest channel
