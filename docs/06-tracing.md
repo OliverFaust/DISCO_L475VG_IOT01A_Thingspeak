@@ -130,16 +130,31 @@ runs, from CSP4CMSIS's `tools/trace`:
    `torn 0` (no record half-written when the core was halted), `orphan continuation records 0` (no
    multi-record event cut in half by the ring's wrap), `dropped 0`, and heartbeats 1 s apart: the
    ring is consistent. "Overwritten" is expected with the overwrite policy.
-2. `decode.py -a <elf> -I trace/FreeRTOS_ring.scvd events.log -o events.csv --summary summary.txt
-   --checks checks.json --stable stable.csv --perfetto trace.json` -- names the events, resolves
-   addresses to symbols (`MainApp_Task(void*)::uplinkSamples` for the channel object), checks the
-   library's state, and writes the Perfetto file. `decode.py` uses `eventlist` from CMSIS-Toolbox if
-   it is installed; otherwise (as here) `--no-eventlist`, which supports FreeRTOS traces. The summary
-   ends with checks like:
+2. `decode.py -a <elf> -I trace/FreeRTOS_ring.scvd --no-eventlist events.log -o events.csv
+   --summary summary.txt --checks checks.json --stable stable.csv --perfetto trace.json` -- names the
+   events, resolves addresses to symbols (`MainApp_Task(void*)::uplinkSamples` for the channel object),
+   checks the library's state, and writes the Perfetto file. **`--no-eventlist` is the normal path:**
+   `decode.py` then reads the log itself, which covers everything this project records (CSP4CMSIS and
+   FreeRTOS events), and you need nothing beyond Python 3. `eventlist` from Arm's CMSIS-Toolbox is
+   optional: if it is on the `PATH` (or `EVENTLIST` names it), the script uses it for decoding
+   instead. All traces in this project were decoded without it (`eventlist` was not tested). You should see `== eventlist not found: decode.py --no-eventlist`.
+   The summary ends with the checks (here of dump d in `docs/results/2026-11-14_tracing.md`):
    ```
-   ring slots: PASS; 11 puts, 11 gets (11 read their put's slot), 0 overwrites ...
-   ALT offers: PASS; 18 waits, 45 enabled guards, 0 unresolved, 45 guards described
+   ring slots: FAIL 1; 11 puts, 12 gets (11 read their put's slot), 0 overwrites (0 evicted the oldest put's slot), 0 dropped (0 without slot)
+   ALT offers: PASS; 17 waits, 41 enabled guards, 0 unresolved, 43 guards described
+   ALT deadlines: FAIL 3; 17 timeout waits (17 AltDeadline), 5 ResumeTimeout (at most 0 ticks after the deadline), 9 Resume (9 before the deadline, 0 at it, 0 after)
    ```
+   **The FAILs here are not errors of the program: they come from where the window starts.** The
+   ring holds only the newest 1024 records, so the trace begins in the middle of things. Each process
+   is already waiting at that moment, but the `WaitAlt` and `AltDeadline` that started its wait lie
+   before the window. When its wait ends, the checker sees a `Resume` or `ResumeTimeout` "without a
+   deadline wait" and reports it: three processes (Sensors, Console, Uplink), three "ALT deadlines"
+   reports. In the same way, a get from a channel whose put was before the window is reported under
+   "ring slots" ("get from an empty replay"). `checks.json` lists each report with its time
+   (`deadline_errors`, `ring_errors`): if every one lies at the start of the window -- before the
+   process's first own `WaitAlt` in `events.csv` --, it is such an artefact. What matters is the rest
+   of the line: `at most 0 ticks after the deadline` and `0 before the deadline` among the timeouts
+   (no timeout ever woke a process early or late), and `0 overwrites` / `0 dropped`.
    If `ring.names` lies next to `ring.bin`, `tools/trace_names.py apply` then replaces the symbol names
    of the threads in `trace.json` with the process names and prints
    `trace_names: MainApp_Task(void*)::sensors -> Sensors` etc. `events.csv` and `summary.txt` keep the
@@ -156,12 +171,9 @@ runs, from CSP4CMSIS's `tools/trace`:
 2. **Open trace file** (left), choose `trace_out/trace.json`.
 3. Press **W** (zoom in) and **S** (zoom out), **A**/**D** to move, or drag on the time axis.
 
-You should now see, top to bottom:
+You should now see a group of tracks for each thread and one for the buffered channels (Perfetto
+may order the groups differently from Figure 6.1; drag a group's name to move it):
 
-- **buffered channels**: one counter per channel that was used in the window --
-  `MainApp_Task(void*)::samples`, `::uplinkSamples`, `::status` -- showing how many elements are in the
-  buffer (0 or 1 for the capacity-1 channels). (`::check` is written once, at start-up.)
-- **interrupts**: interrupt handlers that recorded events (none in this program: the group is empty).
 - one group per thread, named after its process (6.3): `Sensors`, `Console`, `Uplink`, `IDLE`
   (FreeRTOS's idle thread) and `WiFi_ISM43362_A` (the Wi-Fi driver's own thread). Without
   `ring.names` the groups carry the symbols of the control blocks instead
@@ -170,6 +182,11 @@ You should now see, top to bottom:
   - **running**: when the thread has the CPU;
   - **waiting**: from a `Wait...` event (e.g. `WaitAlt`) to the `Resume` that ends it;
   - **events**: the CSP4CMSIS events as instants (`AltGuard`, `AltSelected`, `BufferedPut`, ...).
+- **buffered channels**: one counter per channel that was used in the window --
+  `MainApp_Task(void*)::samples`, `::status`, `::uplinkSamples` -- showing how many elements are in the
+  buffer (0 or 1 for the capacity-1 channels). (`::check` is written once, at start-up.)
+- **interrupts**: interrupt handlers that recorded events. None in this program, so the group is
+  empty and Perfetto may not show it.
 
 ### An upload, step by step
 
@@ -185,6 +202,17 @@ side.*
 The thread groups carry the process names (6.3); the channels under **buffered channels** keep their
 symbol names (`MainApp_Task(void*)::samples`, `::status`, `::uplinkSamples`), because a channel has
 no name of its own in CSP4CMSIS.
+
+**What the figure shows.** At the top, the overview of the whole 26 s window (the marks every 5 s
+are the samples; the denser marks at the right end are the upload) and the time axis of the zoomed range: labels
+such as `00:00:24 950000000` mean 24.950 000 000 s, and the bar under them marks the selection with
+its length (365 ms 591 us). Below, from top to bottom, the groups `IDLE`, `Uplink`, `WiFi_ISM43362_A`,
+`Console` and `Sensors`, each with its **running** track (blue slices: the thread has the CPU), and for
+the three processes also **waiting** (long coloured slices: waiting in an ALT) and **events**
+(arrowheads: CSP4CMSIS events). At the bottom the **buffered channels**: the purple area in
+`uplinkSamples` is the time a sample sat in that channel. The thin lines between the tracks are the
+flows from each put to the get that took its value. The shaded area is the selection, and the panel
+at the very bottom counts its flows.
 
 This upload was chosen because a sample arrived while it ran. All times are from the start of the
 window (the oldest record in the ring); `events.csv` lists each event with its exact time.
@@ -283,10 +311,9 @@ With this program, the KeepNewest channels of capacity 1 are checked; the ALTs a
 models' parameter range (their timeouts are thousands of ticks; the models cover 0..15) and are
 listed as unmatched, which is not a failure. Stable points and their checks need the `ProcessStart`
 events, which are written once at start-up and are therefore no longer in an overwrite ring that holds
-an upload. For the same reason the first event of each process in a window (a `Resume` whose
-`WaitAlt` lies before the window) is reported by `decode.py` as an "ALT deadlines" error, and an
-`OverwroteOldest` whose evicted put lies before the window as a "ring slots" error: check that such
-errors concern the start of the window before you look further. Results:
+an upload. A get at the start of the window whose put lies before it (the window-start artefact of
+6.4) is passed to ProB as `rd.UNKNOWN`, which ProB cannot parse: that channel's check is then
+reported as UNKNOWN, while its mutation is still checked. Results:
 `docs/results/2026-11-14_tracing.md`.
 
 ---

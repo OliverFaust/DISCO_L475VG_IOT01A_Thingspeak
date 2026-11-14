@@ -6,6 +6,11 @@ level C: design decisions that need an argument, not only a measurement. Further
 button-triggered send via an ALT, an LED status process, the accelerometer as a fourth field, bulk
 updates) are added together with the phases they build on.
 
+| Exercise | Topic | Needs |
+|---|---|---|
+| 9.1 | Relative and absolute timeouts | board, serial console |
+| 9.2 | When does KeepNewest overwrite? | board, Debug-Trace (chapter 6) |
+
 ---
 
 ## 9.1 Relative and absolute timeouts: where does the 5.005 s come from?
@@ -126,3 +131,77 @@ for (;;) {
 - Q5: the decisive check is the log: constant 5.000 s intervals over at least 60 s.
 - Q6: the wrap happens after 2<sup>32</sup> ms ≈ 49.7 days. Test your reasoning with concrete numbers,
   e.g. `deadline = 0x00000010`, `now = 0xFFFFFFF0`.
+
+---
+
+## 9.2 When does KeepNewest overwrite? Predict, trace, provoke
+
+### Background
+
+Sensors writes each sample to the Uplink through `uplinkSamples`, a buffered channel of capacity 1
+with the policy KeepNewest (`Core/Src/app.cpp`; docs/04). A put never blocks: if the channel is full,
+the new sample replaces the unread one, and the library records `OverwroteOldest` instead of
+`BufferedPut`. The Uplink reads the channel only when it is in its ALT (input guard on
+`uplinkSamples`, timeout guard at the next upload time); while it joins the network or uploads, it is
+not.
+
+Measured on the lab board (chapter 6, `docs/results/2026-11-14_tracing.md`): an upload keeps the
+Uplink out of its ALT for about 0.35 s (24.791 to 25.139 s in Figure 6.1); the Wi-Fi start and join
+after a reset for about 5.7 s; a failed join for about 16 s. Sensors samples every 5 s
+(`kSamplePeriodMs` in `Core/Src/app.cpp`).
+
+### Level A: predict
+
+1. State the condition for an `OverwroteOldest` on `uplinkSamples` in terms of the sample period
+   *P* and the time *B* for which the Uplink is out of its ALT.
+2. With *P* = 5 s: at which moments of a normal run do you expect overwrites? How many after a reset?
+   None during uploads -- why not, although a sample does sometimes arrive during an upload
+   (Figure 6.1)?
+3. Is an overwrite here a loss? Argue from what the Uplink sends (one sample per upload period) and
+   from ThingSpeak's rate limit (chapter 2).
+
+### Level B: check with the trace
+
+4. Build and flash **Debug-Trace** (6.2). Catch the first overwrite after a reset with the
+   breakpoint of 6.6 (`break buffered_channel.h:200`, `continue`). You should now see the breakpoint
+   hit with `this=... <...::uplinkSamples>` at a kernel time that matches your prediction from
+   question 2 (`print xTickCount`). Dump the ring (`next`, then `dump binary memory ...`), decode it
+   (6.4) and find the `OverwroteOldest` event in `events.csv` and in Perfetto. Which thread was
+   running just before it, and what was the Uplink doing?
+5. Delete the breakpoint and let the program run for a few minutes; then dump (6.3) within 20 s of an
+   upload line. `summary.txt` should show `0 overwrites` under "ring slots".
+
+### Level B: provoke overwrites during uploads
+
+6. Shorten the sample period step by step -- `kSamplePeriodMs` = 1000, 500, 300, 200, 100 -- and
+   for each value predict the number of overwrites per upload before you measure. (The Uplink keeps
+   its 60 s upload period: the overwrites cost no upload.)
+7. Measure: for each period, dump right after an upload line and count `OverwroteOldest` events on
+   `uplinkSamples` in `events.csv`; check in Perfetto that each lies inside the Uplink's upload
+   (between its `AltSelected ... guard=1` and its next `WaitAlt`). Note: a shorter period writes more
+   records (about 59 per sample), so the ring covers less time: at 100 ms about 1.7 s. Dump within a
+   second of the upload line -- by script (6.3), not by hand -- or use the breakpoint from question 4.
+8. Plot overwrites per upload against *B*/*P*. Which straight line do you expect, and why are the
+   measured values integers scattered around it?
+
+### Level C: design
+
+9. Exercise suggestion "bulk update" (ThingSpeak accepts many samples in one request): the Uplink
+   would then need *every* sample, not the newest. Which channel policy and capacity would you choose
+   for `uplinkSamples`, and what happens to Sensors if the Uplink is busy for 16 s (a failed join)?
+   Compare KeepNewest, KeepOldest and a blocking channel, and say which property of the program each
+   one gives up.
+
+### Checking your answers
+
+- Q1: an overwrite needs two puts before the next get: *B* > *P* (roughly; whether a busy interval of
+  length *B* contains one or two puts depends on where it starts relative to the samples).
+- Q2: only while the Uplink starts and joins (about 5.7 s > 5 s): one overwrite after a reset, at
+  about 5 s kernel time (the lab board stopped at tick 5042). Uploads (0.35 s) are much shorter than
+  5 s, so the sample put during an upload is still unread when the Uplink returns to its ALT and is
+  taken then (129.7 ms later in Figure 6.1).
+- Q6/Q7: about *B*/*P* - 1 overwrites per upload on average when *B* > *P*: none at 1000, 500 and
+  300 ms (300 ms is close: an occasional one in a long upload); 0 or 1 at 200 ms; 2 or 3 at 100 ms.
+- Q9: KeepNewest loses data by design; KeepOldest loses the newest; a blocking channel loses nothing
+  but stops Sensors (and with it the Console) while the Uplink is busy. A bigger buffer moves the
+  limit but does not remove it: size it for the longest busy time you accept (16 s / *P*).
