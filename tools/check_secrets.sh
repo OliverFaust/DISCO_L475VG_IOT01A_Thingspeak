@@ -3,7 +3,8 @@
 #
 #   tools/check_secrets.sh          (run from the repository root, before every commit)
 #
-# Reads APP_WIFI_SSID, APP_WIFI_PASSWORD and APP_THINGSPEAK_WRITE_KEY from Core/Inc/app_secrets.h,
+# Reads every APP_WIFI_SSID, APP_WIFI_PASSWORD and APP_THINGSPEAK_WRITE_KEY in Core/Inc/app_secrets.h
+# (also commented-out ones),
 # and THINGSPEAK_READ_KEY from tools/thingspeak_host.env if present, and searches for each value
 # in: the files staged for commit (the index), all tracked files, and everything under
 # docs/results/ (tracked or not). Prints only file names and which secret was
@@ -17,8 +18,9 @@ set -uo pipefail
 SECRETS=Core/Inc/app_secrets.h
 [ -f "$SECRETS" ] || { echo "check_secrets: $SECRETS not found (nothing to check against)"; exit 2; }
 
-value() {   # value of a #define "..." in app_secrets.h
-  sed -n "s/^[[:space:]]*#define[[:space:]]\+$1[[:space:]]\+\"\(.*\)\".*/\1/p" "$SECRETS" | head -1
+values() {  # every value of a #define "..." in app_secrets.h, one per line -- also commented-out
+            # ones (e.g. a second network kept in a comment): all of them must stay out of git
+  sed -n "s/^[[:space:]]*#define[[:space:]]\+$1[[:space:]]\+\"\(.*\)\".*/\1/p" "$SECRETS"
 }
 
 status=0
@@ -38,9 +40,9 @@ check() {   # name, value, severity
   fi
 }
 
-check APP_WIFI_PASSWORD        "$(value APP_WIFI_PASSWORD)"        ERROR
-check APP_THINGSPEAK_WRITE_KEY "$(value APP_THINGSPEAK_WRITE_KEY)" ERROR
-check APP_WIFI_SSID            "$(value APP_WIFI_SSID)"            WARNING
+while IFS= read -r v; do check APP_WIFI_PASSWORD        "$v" ERROR;   done < <(values APP_WIFI_PASSWORD)
+while IFS= read -r v; do check APP_THINGSPEAK_WRITE_KEY "$v" ERROR;   done < <(values APP_THINGSPEAK_WRITE_KEY)
+while IFS= read -r v; do check APP_WIFI_SSID            "$v" WARNING; done < <(values APP_WIFI_SSID)
 
 HOSTENV=tools/thingspeak_host.env
 if [ -f "$HOSTENV" ]; then
