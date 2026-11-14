@@ -108,7 +108,12 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+#if defined(CSP4CMSIS_TRACE)
+  /* Debug-Trace: stop TIM6, the HAL time base (HAL_GetTick()), while the core is halted in the
+     debugger, so that it pauses exactly with the core; otherwise TIM6 counts on during a dump and
+     the first HAL tick afterwards can come up to 1 ms early (docs/06-tracing.md, 6.6). */
+  __HAL_DBGMCU_FREEZE_TIM6();
+#endif
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
