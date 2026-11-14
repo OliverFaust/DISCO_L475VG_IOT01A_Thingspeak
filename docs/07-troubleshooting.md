@@ -69,3 +69,56 @@ and 3.)
 **What to do.** *Channel Settings*: tick *Field 2* and *Field 3* (names e.g. Humidity, Pressure),
 then **Save Channel** at the bottom of the page -- ticking alone changes nothing. After saving, the
 earlier entries show their values too.
+
+---
+
+## 7.4 "join FAILED" again and again, and the network is not in the scan
+
+**You see**, from the start, join failures alternating between two codes, with growing intervals:
+
+```
+[   16.956 s] Uplink: join FAILED (code -3, after 16024 ms), retry in 5 s
+[   29.978 s] Uplink: join FAILED (code -1, after 8013 ms), retry in 10 s
+[   56.019 s] Uplink: join FAILED (code -3, after 16031 ms), retry in 20 s
+```
+
+**What it means.** The module could not join the network in `app_secrets.h`. The console looks the
+same for a wrong password and for a network the module cannot see at all, so first find out which:
+run the bring-up test (`APP_DIAGNOSTIC_MODE APP_DIAG_WIFI_BRINGUP` in `Core/Inc/app_config.h`) and
+look for your network in its scan list.
+
+**Not in the list** -- the module cannot receive it. On the lab board this happened with
+(`docs/results/2026-11-14_ap_off.md`):
+
+- a **5 GHz** network: the ISM43362 works on 2.4 GHz only. Many phone hotspots default to 5 GHz, and
+  some cannot be switched to 2.4 GHz at all;
+- a 2.4 GHz network on **channel 12 or 13**: the module only used channels 1 to 11 (the US channels).
+  These channels are legal in Europe, and phones and routers there may choose them.
+
+What to do: set the access point to 2.4 GHz and a fixed channel between 1 and 11 (e.g. 1, 6 or 11),
+WPA2-Personal, not hidden, and check the scan again. A laptop shows the band and channel of the
+networks it sees (Ubuntu: `nmcli -f SSID,CHAN,FREQ,SECURITY dev wifi list`).
+
+**In the list** -- check the SSID (exact, case-sensitive, spaces count) and the password in
+`app_secrets.h`, and that the network uses WPA2-Personal (or WPA/WPA2). WPA3-only networks and
+WPA2-Enterprise networks such as eduroam are not supported by the module.
+
+---
+
+## 7.5 Uploads stop, then "joined" again: the access point was gone for a while
+
+**You see** (an access point switched off for 13 minutes; `docs/results/2026-11-14_ap_off.md`):
+
+```
+[  367.141 s] Uplink: sample #74 upload FAILED at DNS (code -16), retry in 15 s
+[  367.153 s] Uplink: too many failed uploads: leaving the network, joining again
+[  383.188 s] Uplink: join FAILED (code -3, after 16025 ms), retry in 5 s
+   ... (join FAILED, retry every 60 s)
+[ 1170.548 s] Uplink: joined (4680 ms), IP 10.88.160.48
+[ 1170.950 s] Uplink: sample #234 -> entry 235681 (394 ms)
+```
+
+**What it means.** Nothing is wrong with the board: it lost the access point and reconnected by itself
+when it came back -- at most one retry interval (60 s) later. Samples taken meanwhile are not sent
+later (the Uplink always sends the newest one), so the channel has a gap, but no duplicate or wrong
+entries. Sampling and the console carry on throughout. Only if the failures never stop, see 7.4.

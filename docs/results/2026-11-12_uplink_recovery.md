@@ -110,6 +110,9 @@ same at every failure: 640 of 1024 bytes free). Draft upstream issue:
 
 ## 4. Not yet done
 
+*Update 2026-11-14:* done, see `2026-11-14_ap_off.md` (two outages, 2 and 13 minutes; recovered both
+times; 6 uploads = 6 feed entries). The plan as written on 2026-11-12:
+
 - **Access point off for about 2 minutes, then on again:** needs the access point switched by hand;
   not possible at the time of this test. To do: run the normal build with
   `tools/flash_and_capture.sh ... 720 ...`, switch the AP off after about 2 minutes for about 2

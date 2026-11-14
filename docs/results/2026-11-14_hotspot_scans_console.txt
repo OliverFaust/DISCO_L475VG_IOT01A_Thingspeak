@@ -1,0 +1,27 @@
+# Wi-Fi module and phone hotspots: board-side records (masked with tools/mask_log.py)
+#
+# A. 2026-11-12 20:43 UTC, normal build, hotspot 1 (5 GHz only, channel 100): join attempts
+DISCO_L475VG_IOT01A_Thingspeak -- Sensors, Console, Uplink (ThingSpeak every 60 s)
+Reset cause: software reset; restarts after a failed Wi-Fi start since power-on: 0
+[    0.925 s] Uplink: Wi-Fi module ready  [ok 0, rejected 0, failed 0, joins 0]
+[   16.956 s] Uplink: join FAILED (code -3, after 16024 ms), retry in 5 s  [ok 0, rejected 0, failed 0, joins 0]
+[   29.978 s] Uplink: join FAILED (code -1, after 8013 ms), retry in 10 s  [ok 0, rejected 0, failed 0, joins 0]
+[   56.019 s] Uplink: join FAILED (code -3, after 16031 ms), retry in 20 s  [ok 0, rejected 0, failed 0, joins 0]
+  Uplink   1024 words, min free  833 words, max used  191 words (18 %)
+[   76.617 s] Uplink: join FAILED (code -1, after 588 ms), retry in 40 s  [ok 0, rejected 0, failed 0, joins 0]
+#
+# B. 2026-11-12, bring-up scan, hotspot 1 on (5 GHz): not in the list
+Scan: 2 access point(s) (1773 ms)
+   1  Vod***********                    DA:D8:E5:XX:XX:XX  ch  10   -70 dBm  WPA2
+   2  MTS                               00:1E:42:XX:XX:XX  ch  11   -87 dBm  WPA2
+#
+# C. 2026-11-14 10:07 UTC, bring-up scan, hotspot 2 on 2.4 GHz channel 13: not in the list
+Scan: 2 access point(s) (1771 ms)
+   1  MTS                               00:1E:42:XX:XX:XX  ch  11   -91 dBm  WPA2
+   2  Vod***********                    DA:D8:E5:XX:XX:XX  ch  10   -60 dBm  WPA2
+#
+# D. 2026-11-14 10:08 UTC, bring-up scan, hotspot 2 moved to channel 1: listed
+Scan: 3 access point(s) (1770 ms)
+   1  Xia***********                    76:FF:C8:XX:XX:XX  ch   1   -50 dBm  WPA2
+   2  Vod***********                    DA:D8:E5:XX:XX:XX  ch  10   -62 dBm  WPA2
+   3  MTS                               00:1E:42:XX:XX:XX  ch  11   -86 dBm  WPA2
