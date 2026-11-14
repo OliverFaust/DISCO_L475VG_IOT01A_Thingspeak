@@ -1,0 +1,150 @@
+{
+ "events_file": "events.csv",
+ "models": "/media/of6/c615665c-b372-4e0b-8c40-ca60b0369c46/DISCO_L475VG_IOT01A_Thingspeak/lib/csp4cmsis-trace/docs/formal",
+ "projections": [
+  {
+   "id": "buf0",
+   "kind": "buffered channel",
+   "name": "MainApp_Task(void*)::samples",
+   "capacity": 1,
+   "policy": "KeepNewest",
+   "writes": {
+    "offer": 1
+   },
+   "gets": {},
+   "events": 1,
+   "match": {
+    "buffered_channel_v2 Part 1c SYS_C": "unmatched: 0 ALT readers (the model has one)",
+    "buffered_channel_v2 Part 3": "unmatched: policy KeepNewest; writes by offer (Part 3: blocking puts)",
+    "buffered_channel_v2 Part 5": "unmatched: policy KeepNewest; offers",
+    "buffered_channel_v2 Part 2N SYS_KNE(1, -1, -1)": "matched",
+    "buffered_channel_v2 Part 2bN": "unmatched: policy KeepNewest (Part 2bN: KeepOldest)"
+   },
+   "checked": "Part 2N SYS_KNE(1, -1, -1)"
+  },
+  {
+   "id": "buf1",
+   "kind": "buffered channel",
+   "name": "MainApp_Task(void*)::uplinkSamples",
+   "capacity": 1,
+   "policy": "KeepNewest",
+   "writes": {
+    "offer": 1
+   },
+   "gets": {},
+   "events": 1,
+   "match": {
+    "buffered_channel_v2 Part 1c SYS_C": "unmatched: overwrites/drops; 0 ALT readers (the model has one)",
+    "buffered_channel_v2 Part 3": "unmatched: policy KeepNewest; writes by offer (Part 3: blocking puts)",
+    "buffered_channel_v2 Part 5": "unmatched: policy KeepNewest; offers",
+    "buffered_channel_v2 Part 2N SYS_KNE(1, -1, -1)": "matched",
+    "buffered_channel_v2 Part 2bN": "unmatched: policy KeepNewest (Part 2bN: KeepOldest)"
+   },
+   "checked": "Part 2N SYS_KNE(1, -1, -1)"
+  }
+ ],
+ "isr_writers": {
+  "source": "default 0",
+  "channels": {}
+ },
+ "checks": [
+  {
+   "model": "buffered_channel_v2",
+   "config": "Part 2N SYS_KNE(1, -1, -1)",
+   "decls": [
+    "OBS_P = {| t_new, isr_new, rd |}",
+    "M_P = SYS_KNE(1, -1, -1) \\ diff(Events, OBS_P)"
+   ],
+   "assert": "M_P [T= REC_P",
+   "kind": "trace",
+   "rec": [
+    "t_new"
+   ],
+   "rows": [
+    2
+   ],
+   "length": 1,
+   "projection": "buf0",
+   "aux": [],
+   "file": "checks/00000_buf0_trace.csp",
+   "key": "1089d090af403cebdfe8",
+   "prob": {
+    "result": "PASS",
+    "cpu_ms": 115,
+    "states": 7,
+    "batch": 1
+   },
+   "verdict": "PASS"
+  },
+  {
+   "model": "buffered_channel_v2",
+   "config": "Part 2N SYS_KNE(1, -1, -1)",
+   "decls": [
+    "OBS_P = {| t_new, isr_new, rd |}",
+    "M_P = SYS_KNE(1, -1, -1) \\ diff(Events, OBS_P)"
+   ],
+   "assert": "M_P [T= REC_P",
+   "kind": "trace",
+   "rec": [
+    "t_new"
+   ],
+   "rows": [
+    3
+   ],
+   "length": 1,
+   "projection": "buf1",
+   "aux": [],
+   "key": "1089d090af403cebdfe8",
+   "prob": {
+    "result": "PASS",
+    "cpu_ms": 115,
+    "states": 7,
+    "batch": 1
+   },
+   "verdict": "PASS"
+  }
+ ],
+ "coverage": {
+  "waits/resumes": {
+   "events": 1,
+   "covered": 0,
+   "share": 0.0
+  },
+  "total": {
+   "events": 4,
+   "covered": 2,
+   "share": 0.5
+  },
+  "AltSelected": {
+   "events": 1,
+   "covered": 0,
+   "share": 0.0
+  },
+  "buffered": {
+   "events": 2,
+   "covered": 2,
+   "share": 1.0
+  }
+ },
+ "uncovered": [
+  {
+   "kind": "waits/resumes",
+   "object": "MainApp_Task(void*)::sensors+0x6e0",
+   "events": 1
+  },
+  {
+   "kind": "AltSelected",
+   "object": "MainApp_Task(void*)::sensors+0x6e0",
+   "events": 1
+  }
+ ],
+ "verdicts": {
+  "trace PASS": 2
+ },
+ "prob": {
+  "runs": 1,
+  "mem_gb": 6.5,
+  "retried": 0,
+  "unknown_after_retry": 0
+ }
+}

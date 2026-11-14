@@ -1,0 +1,888 @@
+time_s,component,event,thread,value
+0.00000000,EventRecorder,,,
+0.00000000,EventRecorder,,,"text=ring: 20697 records overwritten, 0 dropped before this point (write count 21721, capacity 1024)"
+0.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=52"
+1.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=53"
+2.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=54"
+3.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=55"
+3.07100625,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+3.07101135,RTOS,TaskSwitchedIn,0x20001138,pxCurrentTCB=0x20001138
+3.07102380,CSP,ResumeTimeout,0x20001138,"context=0x20001138, object=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, tick=55071, deadline=55071"
+3.07103591,CSP,AltSelected,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, guard=0"
+3.07295000,CSP,BufferedPut,0x20001138,"context=0x20001138, channel=(anonymous namespace)::MainApp_Task(void*)::samples, count=1, capacity=1, policy=KeepNewest, slot=0"
+3.07298335,CSP,BufferedPut,0x20001138,"context=0x20001138, channel=(anonymous namespace)::MainApp_Task(void*)::uplinkSamples, count=1, capacity=1, policy=KeepNewest, slot=0"
+3.07300283,RTOS,TaskSwitchedOut,0x20001138,pxCurrentTCB=0x20001138
+3.07300796,RTOS,TaskSwitchedIn,0x20001a70,pxCurrentTCB=0x20001A70
+3.07302067,CSP,Resume,0x20001a70,"context=0x20001a70, object=(anonymous namespace)::MainApp_Task(void*)::console+0x688, tick=55073, deadline=60000"
+3.07306149,CSP,BufferedGet,0x20001a70,"context=0x20001a70, channel=(anonymous namespace)::MainApp_Task(void*)::samples, count=0, capacity=1, policy=KeepNewest, slot=0"
+3.07306830,CSP,AltSelected,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=0"
+3.07400315,RTOS,TaskSwitchedOut,0x20001a70,pxCurrentTCB=0x20001A70
+3.07400825,RTOS,TaskSwitchedIn,0x20001138,pxCurrentTCB=0x20001138
+3.07403658,CSP,AltGuard,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, guard=0, kind=timeout, ticks=5000"
+3.07406547,CSP,AltDeadline,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, now=55074, deadline=60074"
+3.07407299,CSP,WaitAlt,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, enabled=0x00000001, guards=1"
+3.07409220,RTOS,TaskSwitchedOut,0x20001138,pxCurrentTCB=0x20001138
+3.07409734,RTOS,TaskSwitchedIn,0x20001a70,pxCurrentTCB=0x20001A70
+3.07839369,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=0, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::samples"
+3.07840095,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=1, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::check"
+3.07840750,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=2, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::status"
+3.07841399,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=3, kind=timeout, ticks=4922"
+3.07847106,CSP,AltDeadline,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, now=55078, deadline=60000"
+3.07847951,CSP,WaitAlt,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, enabled=0x0000000F, guards=4"
+3.07849861,RTOS,TaskSwitchedOut,0x20001a70,pxCurrentTCB=0x20001A70
+3.07850625,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+3.07851887,CSP,Resume,0x20002ba8,"context=0x20002ba8, object=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, tick=55078, deadline=67066"
+3.07854921,CSP,BufferedGet,0x20002ba8,"context=0x20002ba8, channel=(anonymous namespace)::MainApp_Task(void*)::uplinkSamples, count=0, capacity=1, policy=KeepNewest, slot=0"
+3.07855603,CSP,AltSelected,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=0"
+3.07858849,CSP,AltGuard,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=0, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::uplinkSamples"
+3.07859567,CSP,AltGuard,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=1, kind=timeout, ticks=11988"
+3.07863380,CSP,AltDeadline,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, now=55078, deadline=67066"
+3.07864162,CSP,WaitAlt,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, enabled=0x00000003, guards=2"
+3.07866109,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+3.07866876,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+4.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=56"
+5.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=57"
+6.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=58"
+7.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=59"
+8.00000353,RTOS,Heartbeat,,"clock_hz=80000000, beat=60"
+8.00000956,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+8.00001419,RTOS,TaskSwitchedIn,0x20001a70,pxCurrentTCB=0x20001A70
+8.00002663,CSP,ResumeTimeout,0x20001a70,"context=0x20001a70, object=(anonymous namespace)::MainApp_Task(void*)::console+0x688, tick=60000, deadline=60000"
+8.00005587,CSP,AltSelected,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=3"
+8.03116725,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=0, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::samples"
+8.03117451,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=1, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::check"
+8.03118106,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=2, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::status"
+8.03118755,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=3, kind=timeout, ticks=599969"
+8.03124462,CSP,AltDeadline,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, now=60031, deadline=660000"
+8.03125308,CSP,WaitAlt,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, enabled=0x0000000F, guards=4"
+8.03127254,RTOS,TaskSwitchedOut,0x20001a70,pxCurrentTCB=0x20001A70
+8.03128271,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+8.07400625,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+8.07401135,RTOS,TaskSwitchedIn,0x20001138,pxCurrentTCB=0x20001138
+8.07402380,CSP,ResumeTimeout,0x20001138,"context=0x20001138, object=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, tick=60074, deadline=60074"
+8.07403591,CSP,AltSelected,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, guard=0"
+8.07595025,CSP,BufferedPut,0x20001138,"context=0x20001138, channel=(anonymous namespace)::MainApp_Task(void*)::samples, count=1, capacity=1, policy=KeepNewest, slot=0"
+8.07598360,CSP,BufferedPut,0x20001138,"context=0x20001138, channel=(anonymous namespace)::MainApp_Task(void*)::uplinkSamples, count=1, capacity=1, policy=KeepNewest, slot=0"
+8.07600282,RTOS,TaskSwitchedOut,0x20001138,pxCurrentTCB=0x20001138
+8.07600796,RTOS,TaskSwitchedIn,0x20001a70,pxCurrentTCB=0x20001A70
+8.07602068,CSP,Resume,0x20001a70,"context=0x20001a70, object=(anonymous namespace)::MainApp_Task(void*)::console+0x688, tick=60076, deadline=660000"
+8.07606149,CSP,BufferedGet,0x20001a70,"context=0x20001a70, channel=(anonymous namespace)::MainApp_Task(void*)::samples, count=0, capacity=1, policy=KeepNewest, slot=0"
+8.07606830,CSP,AltSelected,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=0"
+8.07700315,RTOS,TaskSwitchedOut,0x20001a70,pxCurrentTCB=0x20001A70
+8.07700825,RTOS,TaskSwitchedIn,0x20001138,pxCurrentTCB=0x20001138
+8.07703689,CSP,AltGuard,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, guard=0, kind=timeout, ticks=5000"
+8.07706579,CSP,AltDeadline,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, now=60077, deadline=65077"
+8.07707330,CSP,WaitAlt,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, enabled=0x00000001, guards=1"
+8.07709252,RTOS,TaskSwitchedOut,0x20001138,pxCurrentTCB=0x20001138
+8.07709766,RTOS,TaskSwitchedIn,0x20001a70,pxCurrentTCB=0x20001A70
+8.08139417,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=0, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::samples"
+8.08140144,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=1, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::check"
+8.08140799,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=2, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::status"
+8.08141448,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=3, kind=timeout, ticks=599919"
+8.08147155,CSP,AltDeadline,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, now=60081, deadline=660000"
+8.08148000,CSP,WaitAlt,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, enabled=0x0000000F, guards=4"
+8.08149929,RTOS,TaskSwitchedOut,0x20001a70,pxCurrentTCB=0x20001A70
+8.08150692,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+8.08151955,CSP,Resume,0x20002ba8,"context=0x20002ba8, object=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, tick=60081, deadline=67066"
+8.08154989,CSP,BufferedGet,0x20002ba8,"context=0x20002ba8, channel=(anonymous namespace)::MainApp_Task(void*)::uplinkSamples, count=0, capacity=1, policy=KeepNewest, slot=0"
+8.08155670,CSP,AltSelected,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=0"
+8.08158916,CSP,AltGuard,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=0, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::uplinkSamples"
+8.08159635,CSP,AltGuard,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=1, kind=timeout, ticks=6985"
+8.08163447,CSP,AltDeadline,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, now=60081, deadline=67066"
+8.08164230,CSP,WaitAlt,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, enabled=0x00000003, guards=2"
+8.08166159,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+8.08166926,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+9.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=61"
+10.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=62"
+11.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=63"
+12.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=64"
+13.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=65"
+13.07700625,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+13.07701135,RTOS,TaskSwitchedIn,0x20001138,pxCurrentTCB=0x20001138
+13.07702380,CSP,ResumeTimeout,0x20001138,"context=0x20001138, object=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, tick=65077, deadline=65077"
+13.07703591,CSP,AltSelected,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, guard=0"
+13.07895000,CSP,BufferedPut,0x20001138,"context=0x20001138, channel=(anonymous namespace)::MainApp_Task(void*)::samples, count=1, capacity=1, policy=KeepNewest, slot=0"
+13.07898335,CSP,BufferedPut,0x20001138,"context=0x20001138, channel=(anonymous namespace)::MainApp_Task(void*)::uplinkSamples, count=1, capacity=1, policy=KeepNewest, slot=0"
+13.07900282,RTOS,TaskSwitchedOut,0x20001138,pxCurrentTCB=0x20001138
+13.07900796,RTOS,TaskSwitchedIn,0x20001a70,pxCurrentTCB=0x20001A70
+13.07902068,CSP,Resume,0x20001a70,"context=0x20001a70, object=(anonymous namespace)::MainApp_Task(void*)::console+0x688, tick=65079, deadline=660000"
+13.07906149,CSP,BufferedGet,0x20001a70,"context=0x20001a70, channel=(anonymous namespace)::MainApp_Task(void*)::samples, count=0, capacity=1, policy=KeepNewest, slot=0"
+13.07906830,CSP,AltSelected,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=0"
+13.08000315,RTOS,TaskSwitchedOut,0x20001a70,pxCurrentTCB=0x20001A70
+13.08000825,RTOS,TaskSwitchedIn,0x20001138,pxCurrentTCB=0x20001138
+13.08003657,CSP,AltGuard,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, guard=0, kind=timeout, ticks=5000"
+13.08006547,CSP,AltDeadline,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, now=65080, deadline=70080"
+13.08007299,CSP,WaitAlt,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, enabled=0x00000001, guards=1"
+13.08009220,RTOS,TaskSwitchedOut,0x20001138,pxCurrentTCB=0x20001138
+13.08009734,RTOS,TaskSwitchedIn,0x20001a70,pxCurrentTCB=0x20001A70
+13.08439389,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=0, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::samples"
+13.08440115,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=1, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::check"
+13.08440770,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=2, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::status"
+13.08441419,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=3, kind=timeout, ticks=594916"
+13.08447126,CSP,AltDeadline,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, now=65084, deadline=660000"
+13.08447971,CSP,WaitAlt,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, enabled=0x0000000F, guards=4"
+13.08449900,RTOS,TaskSwitchedOut,0x20001a70,pxCurrentTCB=0x20001A70
+13.08450664,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+13.08451926,CSP,Resume,0x20002ba8,"context=0x20002ba8, object=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, tick=65084, deadline=67066"
+13.08454960,CSP,BufferedGet,0x20002ba8,"context=0x20002ba8, channel=(anonymous namespace)::MainApp_Task(void*)::uplinkSamples, count=0, capacity=1, policy=KeepNewest, slot=0"
+13.08455641,CSP,AltSelected,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=0"
+13.08458886,CSP,AltGuard,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=0, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::uplinkSamples"
+13.08459605,CSP,AltGuard,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=1, kind=timeout, ticks=1982"
+13.08463417,CSP,AltDeadline,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, now=65084, deadline=67066"
+13.08464200,CSP,WaitAlt,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, enabled=0x00000003, guards=2"
+13.08466110,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+13.08466878,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+14.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=66"
+15.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=67"
+15.06600625,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.06601135,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.06602380,CSP,ResumeTimeout,0x20002ba8,"context=0x20002ba8, object=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, tick=67066, deadline=67066"
+15.06604268,CSP,AltSelected,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=1"
+15.06619431,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.06620199,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.06700634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.06701144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.06702886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.06703654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.06800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.06801144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.06802886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.06803654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.06900634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.06901144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.06902886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.06903654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07000634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07001144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07002886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07003654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07100634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07101144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07102886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07103654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07200634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07201144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07202886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07203654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07300634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07301144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07302886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07303654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07400634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07401144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07402886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07403654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07500634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07501144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07502886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07503654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07600634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07601144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07602886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07603654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07700634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07701144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07702886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07703654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07801144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07802886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07803654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07900634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.07901144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07917814,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.07918581,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.17900625,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.17901135,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18064319,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18065086,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18100634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18101144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18125021,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18125789,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18200634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18201144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18232049,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18232816,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18300634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18301144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18302886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18303654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18400634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18401144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18426904,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18427671,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18500634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18501144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18527111,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18527879,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18600634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18601144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18624994,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18625761,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18700634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18701144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18725073,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18725840,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18801144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18802886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18803654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18900634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.18901144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18902886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.18903654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19000634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19001144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19002886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19003654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19100634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19101144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19102886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19103654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19200634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19201144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19202886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19203654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19300634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19301144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19302886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19303654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19400634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19401144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19402886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19403654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19500634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19501144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19502886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19503654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19600634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19601144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19602886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19603654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19700634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19701144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19702886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19703654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19801144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19802886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19803654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19900634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.19901144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19902886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.19903654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20000634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20001144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20002886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20003654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20100634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20101144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20102886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20103654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20200634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20201144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20202886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20203654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20300634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20301144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20302886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20303654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20400634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20401144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20402886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20403654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20500634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20501144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20502886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20503654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20600634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20601144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20602886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20603654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20700634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20701144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20702886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20703654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20801144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20802886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20803654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20900634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.20901144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20902886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.20903654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21000634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21001144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21002886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21003654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21100634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21101144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21102886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21103654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21200634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21201144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21202886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21203654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21300634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21301144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21302886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21303654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21400634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21401144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21402886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21403654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21500634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21501144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21502886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21503654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21600634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21601144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21602886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21603654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21700634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21701144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21702886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21703654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21801144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21802886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21803654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21900634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.21901144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21902886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.21903654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22000634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22001144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22002886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22003654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22100634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22101144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22102886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22103654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22200634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22201144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22202886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22203654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22300634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22301144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22302886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22303654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22400634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22401144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22402886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22403654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22500634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22501144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22502886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22503654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22600634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22601144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22602886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22603654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22700634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22701144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22702886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22703654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22801144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22802886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22803654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22900634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.22901144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22902886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.22903654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23000634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23001144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23002886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23003654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23100634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23101144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23102886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23103654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23200634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23201144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23202886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23203654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23300634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23301144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23302886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23303654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23400634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23401144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23402886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23403654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23500634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23501144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23502886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23503654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23600634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23601144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23602886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23603654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23700634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23701144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23702886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23703654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23801144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23802886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23803654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23900634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.23901144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23902886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.23903654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24000634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24001144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24002886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24003654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24100634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24101144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24102886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24103654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24200634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24201144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24202886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24203654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24300634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24301144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24302886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24303654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24400634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24401144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24402886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24403654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24500634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24501144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24502886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24503654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24600634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24601144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24602886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24603654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24700634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24701144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24702886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24703654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24801144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24802886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24803654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24900634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.24901144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24902886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.24903654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25000634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25001144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25002886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25003654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25100634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25101144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25102886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25103654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25200634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25201144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25202886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25203654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25300634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25301144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25302886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25303654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25400634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25401144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25402886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25403654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25500634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25501144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25502886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25503654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25600634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25601144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25602886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25603654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25700634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25701144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25702886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25703654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25801144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25802886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25803654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25900634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.25901144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25902886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.25903654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26000634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26001144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26002886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26003654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26100634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26101144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26102886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26103654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26200634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26201144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26202886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26203654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26300634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26301144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26302886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26303654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26400634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26401144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26402886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26403654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26500634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26501144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26502886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26503654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26600634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26601144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26602886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26603654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26700634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26701144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26702886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26703654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26801144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26802886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26803654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26900634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.26901144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26902886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.26903654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27000634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27001144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27002886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27003654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27100634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27101144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27102886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27103654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27200634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27201144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27227363,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27227872,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.27232651,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.27233165,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27235472,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27235983,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.27248635,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.27249899,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27277828,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27278595,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27300634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27301144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.27324666,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.27326184,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27400634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27401144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.27420063,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.27421326,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27433636,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27434404,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27500634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27501144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27539384,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27540151,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27600634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27601144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27621601,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27622111,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.27636059,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.27637326,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27639441,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.27640209,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27700634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27701144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.27724666,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.27726184,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.27801144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.27819820,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.27821337,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.28600699,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.28601209,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.28615035,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.28616552,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.28700634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.28701144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.28724666,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.28726184,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.28800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.28801144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.28819820,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.28821337,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.29600699,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.29601209,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.29615035,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.29616552,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.29700634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.29701144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.29724666,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.29726184,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.29800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.29801144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.29819820,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.29821337,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.30600699,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.30601209,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.30615035,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.30616553,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.30700634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.30701144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.30724666,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.30726184,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.30800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.30801144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.30819820,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.30821337,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.31600699,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.31601209,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.31615035,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.31616553,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.31700634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.31701144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.31724666,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.31726184,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.31800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.31801144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.31819820,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.31821337,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.32600699,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.32601209,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.32615035,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.32616553,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.32700634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.32701144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.32724666,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.32726184,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.32800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.32801144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.32802810,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.32804328,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.32900634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.32901144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.32919820,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.32921338,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.33700699,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.33701209,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.33715035,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.33716552,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.33800634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.33801144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.33824666,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.33826184,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.33900634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.33901144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.33902810,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.33904327,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.34000634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.34001144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.34019820,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.34021337,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.34800699,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.34801209,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.34815035,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.34816553,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.34900634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.34901144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.34917277,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.34918795,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.35000634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.35001144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.35010235,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.35011752,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.35100634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.35101144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.35102810,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.35104328,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.35200634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.35201144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.35219820,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.35221337,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.36000699,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.36001209,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.36015035,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.36016552,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.36100634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.36101144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.36128333,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.36129850,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.36200634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.36201144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.36202810,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.36204327,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.36300634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.36301144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.36319820,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.36321338,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.37100699,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.37101209,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.37115035,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.37116553,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.37200634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.37201144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.37224666,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.37226184,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.37300634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.37301144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.37302810,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.37304328,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.37400634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.37401144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.37419820,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.37421338,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.38200699,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.38201209,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.38215035,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.38216552,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.38300634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.38301144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.38389800,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.38391317,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.38400634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.38401144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.38402810,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.38404327,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.38500634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.38501144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.38807597,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.38808861,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.38812666,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.38813434,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.38900634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.38901144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.38924666,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.38926184,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.39000634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.39001144,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.39030281,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.39031545,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.39084363,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.39085130,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.39100634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.39101144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.39102886,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.39103654,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.39200634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.39201144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.39225101,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.39225869,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.39300634,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.39301144,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.39465434,CSP,BufferedPut,0x20002ba8,"context=0x20002ba8, channel=(anonymous namespace)::MainApp_Task(void*)::status, count=1, capacity=8, policy=KeepNewest, slot=3"
+15.39467815,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.39468325,RTOS,TaskSwitchedIn,0x20001a70,pxCurrentTCB=0x20001A70
+15.39469593,CSP,Resume,0x20001a70,"context=0x20001a70, object=(anonymous namespace)::MainApp_Task(void*)::console+0x688, tick=67394, deadline=660000"
+15.39473864,CSP,BufferedGet,0x20001a70,"context=0x20001a70, channel=(anonymous namespace)::MainApp_Task(void*)::status, count=0, capacity=8, policy=KeepNewest, slot=3"
+15.39474542,CSP,AltSelected,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=2"
+15.39800747,RTOS,TaskSwitchedOut,0x20001a70,pxCurrentTCB=0x20001A70
+15.39801257,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.39804575,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.39805592,RTOS,TaskSwitchedIn,0x20001a70,pxCurrentTCB=0x20001A70
+15.40313085,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=0, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::samples"
+15.40313811,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=1, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::check"
+15.40314466,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=2, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::status"
+15.40315115,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=3, kind=timeout, ticks=592597"
+15.40320823,CSP,AltDeadline,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, now=67403, deadline=660000"
+15.40321667,CSP,WaitAlt,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, enabled=0x0000000F, guards=4"
+15.40323614,RTOS,TaskSwitchedOut,0x20001a70,pxCurrentTCB=0x20001A70
+15.40324381,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.40325631,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.40326141,RTOS,TaskSwitchedIn,0x20001a70,pxCurrentTCB=0x20001A70
+15.40327857,RTOS,TaskSwitchedOut,0x20001a70,pxCurrentTCB=0x20001A70
+15.40328625,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.40332010,CSP,AltGuard,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=0, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::uplinkSamples"
+15.40332729,CSP,AltGuard,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=1, kind=timeout, ticks=59991"
+15.40336976,CSP,AltDeadline,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, now=67403, deadline=127394"
+15.40337759,CSP,WaitAlt,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, enabled=0x00000003, guards=2"
+15.40339705,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+15.40340472,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.40600699,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+15.40601209,RTOS,TaskSwitchedIn,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.40603690,RTOS,TaskSwitchedOut,0x20003ac4,pxCurrentTCB=0x20003AC4
+15.40605207,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+16.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=68"
+17.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=69"
+18.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=70"
+18.08000625,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+18.08001135,RTOS,TaskSwitchedIn,0x20001138,pxCurrentTCB=0x20001138
+18.08002380,CSP,ResumeTimeout,0x20001138,"context=0x20001138, object=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, tick=70080, deadline=70080"
+18.08003591,CSP,AltSelected,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, guard=0"
+18.08195000,CSP,BufferedPut,0x20001138,"context=0x20001138, channel=(anonymous namespace)::MainApp_Task(void*)::samples, count=1, capacity=1, policy=KeepNewest, slot=0"
+18.08198335,CSP,BufferedPut,0x20001138,"context=0x20001138, channel=(anonymous namespace)::MainApp_Task(void*)::uplinkSamples, count=1, capacity=1, policy=KeepNewest, slot=0"
+18.08200283,RTOS,TaskSwitchedOut,0x20001138,pxCurrentTCB=0x20001138
+18.08200796,RTOS,TaskSwitchedIn,0x20001a70,pxCurrentTCB=0x20001A70
+18.08202067,CSP,Resume,0x20001a70,"context=0x20001a70, object=(anonymous namespace)::MainApp_Task(void*)::console+0x688, tick=70082, deadline=660000"
+18.08206149,CSP,BufferedGet,0x20001a70,"context=0x20001a70, channel=(anonymous namespace)::MainApp_Task(void*)::samples, count=0, capacity=1, policy=KeepNewest, slot=0"
+18.08206830,CSP,AltSelected,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=0"
+18.08300315,RTOS,TaskSwitchedOut,0x20001a70,pxCurrentTCB=0x20001A70
+18.08300825,RTOS,TaskSwitchedIn,0x20001138,pxCurrentTCB=0x20001138
+18.08303658,CSP,AltGuard,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, guard=0, kind=timeout, ticks=5000"
+18.08306548,CSP,AltDeadline,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, now=70083, deadline=75083"
+18.08307299,CSP,WaitAlt,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, enabled=0x00000001, guards=1"
+18.08309221,RTOS,TaskSwitchedOut,0x20001138,pxCurrentTCB=0x20001138
+18.08309735,RTOS,TaskSwitchedIn,0x20001a70,pxCurrentTCB=0x20001A70
+18.08739535,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=0, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::samples"
+18.08740261,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=1, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::check"
+18.08740916,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=2, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::status"
+18.08741565,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=3, kind=timeout, ticks=589913"
+18.08747273,CSP,AltDeadline,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, now=70087, deadline=660000"
+18.08748118,CSP,WaitAlt,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, enabled=0x0000000F, guards=4"
+18.08750046,RTOS,TaskSwitchedOut,0x20001a70,pxCurrentTCB=0x20001A70
+18.08750810,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+18.08752073,CSP,Resume,0x20002ba8,"context=0x20002ba8, object=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, tick=70087, deadline=127394"
+18.08755106,CSP,BufferedGet,0x20002ba8,"context=0x20002ba8, channel=(anonymous namespace)::MainApp_Task(void*)::uplinkSamples, count=0, capacity=1, policy=KeepNewest, slot=0"
+18.08755788,CSP,AltSelected,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=0"
+18.08759036,CSP,AltGuard,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=0, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::uplinkSamples"
+18.08759755,CSP,AltGuard,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=1, kind=timeout, ticks=57307"
+18.08763568,CSP,AltDeadline,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, now=70087, deadline=127394"
+18.08764350,CSP,WaitAlt,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, enabled=0x00000003, guards=2"
+18.08766279,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+18.08767046,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+19.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=71"
+20.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=72"
+21.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=73"
+22.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=74"
+23.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=75"
+23.08300625,RTOS,TaskSwitchedOut,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+23.08301135,RTOS,TaskSwitchedIn,0x20001138,pxCurrentTCB=0x20001138
+23.08302380,CSP,ResumeTimeout,0x20001138,"context=0x20001138, object=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, tick=75083, deadline=75083"
+23.08303591,CSP,AltSelected,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, guard=0"
+23.08495000,CSP,BufferedPut,0x20001138,"context=0x20001138, channel=(anonymous namespace)::MainApp_Task(void*)::samples, count=1, capacity=1, policy=KeepNewest, slot=0"
+23.08498335,CSP,BufferedPut,0x20001138,"context=0x20001138, channel=(anonymous namespace)::MainApp_Task(void*)::uplinkSamples, count=1, capacity=1, policy=KeepNewest, slot=0"
+23.08500283,RTOS,TaskSwitchedOut,0x20001138,pxCurrentTCB=0x20001138
+23.08500796,RTOS,TaskSwitchedIn,0x20001a70,pxCurrentTCB=0x20001A70
+23.08502067,CSP,Resume,0x20001a70,"context=0x20001a70, object=(anonymous namespace)::MainApp_Task(void*)::console+0x688, tick=75085, deadline=660000"
+23.08506149,CSP,BufferedGet,0x20001a70,"context=0x20001a70, channel=(anonymous namespace)::MainApp_Task(void*)::samples, count=0, capacity=1, policy=KeepNewest, slot=0"
+23.08506830,CSP,AltSelected,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=0"
+23.08600315,RTOS,TaskSwitchedOut,0x20001a70,pxCurrentTCB=0x20001A70
+23.08600825,RTOS,TaskSwitchedIn,0x20001138,pxCurrentTCB=0x20001138
+23.08603658,CSP,AltGuard,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, guard=0, kind=timeout, ticks=5000"
+23.08606548,CSP,AltDeadline,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, now=75086, deadline=80086"
+23.08607299,CSP,WaitAlt,0x20001138,"context=0x20001138, alt=(anonymous namespace)::MainApp_Task(void*)::sensors+0x6e0, enabled=0x00000001, guards=1"
+23.08609221,RTOS,TaskSwitchedOut,0x20001138,pxCurrentTCB=0x20001138
+23.08609735,RTOS,TaskSwitchedIn,0x20001a70,pxCurrentTCB=0x20001A70
+23.09039539,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=0, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::samples"
+23.09040265,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=1, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::check"
+23.09040920,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=2, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::status"
+23.09041569,CSP,AltGuard,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, guard=3, kind=timeout, ticks=584910"
+23.09047276,CSP,AltDeadline,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, now=75090, deadline=660000"
+23.09048121,CSP,WaitAlt,0x20001a70,"context=0x20001a70, alt=(anonymous namespace)::MainApp_Task(void*)::console+0x688, enabled=0x0000000F, guards=4"
+23.09050050,RTOS,TaskSwitchedOut,0x20001a70,pxCurrentTCB=0x20001A70
+23.09050814,RTOS,TaskSwitchedIn,0x20002ba8,pxCurrentTCB=0x20002BA8
+23.09052076,CSP,Resume,0x20002ba8,"context=0x20002ba8, object=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, tick=75090, deadline=127394"
+23.09055110,CSP,BufferedGet,0x20002ba8,"context=0x20002ba8, channel=(anonymous namespace)::MainApp_Task(void*)::uplinkSamples, count=0, capacity=1, policy=KeepNewest, slot=0"
+23.09055791,CSP,AltSelected,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=0"
+23.09059040,CSP,AltGuard,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=0, kind=input, channel=(anonymous namespace)::MainApp_Task(void*)::uplinkSamples"
+23.09059759,CSP,AltGuard,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, guard=1, kind=timeout, ticks=52304"
+23.09063571,CSP,AltDeadline,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, now=75090, deadline=127394"
+23.09064354,CSP,WaitAlt,0x20002ba8,"context=0x20002ba8, alt=(anonymous namespace)::MainApp_Task(void*)::uplink+0xe14, enabled=0x00000003, guards=2"
+23.09066282,RTOS,TaskSwitchedOut,0x20002ba8,pxCurrentTCB=0x20002BA8
+23.09067050,RTOS,TaskSwitchedIn,0x2000a3c4,pxCurrentTCB=0x2000A3C4
+24.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=76"
+25.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=77"
+26.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=78"
+27.00000000,RTOS,Heartbeat,,"clock_hz=80000000, beat=79"
