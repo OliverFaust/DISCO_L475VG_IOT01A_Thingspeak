@@ -10,6 +10,7 @@ updates) are added together with the phases they build on.
 |---|---|---|
 | 9.1 | Relative and absolute timeouts | board, serial console |
 | 9.2 | When does KeepNewest overwrite? | board, Debug-Trace (chapter 6) |
+| 9.3 | Capturing a chosen event: conditional breakpoint or B1 | board, Debug-Trace (chapter 6, 6.6) |
 
 ---
 
@@ -165,8 +166,8 @@ after a reset for about 5.7 s; a failed join for about 16 s. Sensors samples eve
 4. Build and flash **Debug-Trace** (6.2). Catch the first overwrite after a reset with the
    breakpoint of 6.6 (`break buffered_channel.h:200`, `continue`). You should now see the breakpoint
    hit with `this=... <...::uplinkSamples>` at a kernel time that matches your prediction from
-   question 2 (`print xTickCount`). Dump the ring (`next`, then `dump binary memory ...`), decode it
-   (6.4) and find the `OverwroteOldest` event in `events.csv` and in Perfetto. Which thread was
+   question 2 (`print xTickCount`). Dump the ring (`next`, then `dump binary memory ...`; or in one
+   step with the script, 6.6 example 2), decode it (6.4) and find the `OverwroteOldest` event in `events.csv` and in Perfetto. Which thread was
    running just before it, and what was the Uplink doing?
 5. Delete the breakpoint and let the program run for a few minutes; then dump (6.3) within 20 s of an
    upload line. `summary.txt` should show `0 overwrites` under "ring slots".
@@ -205,3 +206,101 @@ after a reset for about 5.7 s; a failed join for about 16 s. Sensors samples eve
 - Q9: KeepNewest loses data by design; KeepOldest loses the newest; a blocking channel loses nothing
   but stops Sensors (and with it the Console) while the Uplink is busy. A bigger buffer moves the
   limit but does not remove it: size it for the longest busy time you accept (16 s / *P*).
+
+---
+
+## 9.3 Capturing a chosen event: conditional breakpoint or B1
+
+### Background
+
+The ring holds the newest 1024 records (chapter 6, 6.1). To see a particular event, the board must
+stop soon after it. Chapter 6, 6.6 offers two ways: a breakpoint, possibly with a condition, that
+stops the program where the event happens in the source (`tools/trace_dump.sh --break`); and the
+trigger `trace_trigger(post_ms)`, called by the user button B1 with `post_ms` = 500, which stops the
+program `post_ms` after the call if a debugger is attached (`tools/trace_dump.sh --wait`). Rates
+measured on the lab board: about 13 records per second between uploads, about 690 records in the
+0.35 s of an upload.
+
+### Level A: choose and predict
+
+1. For each event, choose a conditional breakpoint or B1, and say why: (a) the third successful
+   upload after a reset; (b) the moment you breathe on the board (the humidity rises); (c) an upload
+   rejected by ThingSpeak; (d) whatever happens when you unplug the Wi-Fi access point.
+2. You press B1 between two uploads, 30 s after the last one. How much time before the press does
+   the dump cover, and does it contain that upload? And if you press 100 ms after an upload has
+   started?
+3. A breakpoint stops *before* its line runs, the trigger 500 ms *after* the call. What does the
+   ring contain in each case about the line's own effect? When do you need `--next`?
+4. You want to stop at the 1000th thread switch into the Wi-Fi driver's thread. Estimate how long a
+   conditional breakpoint on `csp_trace_task_switched_in` would take to get there (chapter 6, 6.6:
+   about 60 ms per evaluated pass; about 4500 switches per second during an upload, of which about a
+   third into that thread), and what the program would do meanwhile. What do you do instead?
+
+### Level B: on the board
+
+5. Stop at the third successful upload after a reset, with the condition on the Uplink's counter
+   (line 222 of `Core/Src/uplink_process.cpp`, `++uploadsOk_`, runs once per successful upload):
+   ```bash
+   tools/trace_dump.sh --break uplink_process.cpp:222 --if "uploadsOk_ == 2" --reset \
+     Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf trace_out/ring.bin
+   ```
+   Why `== 2` for the third? Check on the console that the board stopped before printing the third
+   `-> entry` line, and in the decoded trace that the window ends inside an upload.
+   Start it at least 15 s after the last `-> entry` line: the reset restarts the upload timing, and
+   an upload within 15 s of the previous one is rejected by ThingSpeak's rate limit (chapter 2, 2.3)
+   -- then the third *successful* upload comes a minute later than you expect (it happened once on
+   the lab board: `REJECTED by ThingSpeak (HTTP 200, entry 0)` 7.3 s after the reset).
+6. Press B1 during an upload, by hand: start `tools/trace_dump.sh --wait ...`, watch the console,
+   and press when you expect the next upload (it starts 60 s after the previous upload ended, i.e.
+   shortly before the `-> entry` line). Decode and open Perfetto: how far from the Uplink's
+   `AltSelected ... guard=1` (the upload's start) is *armed (B1 / trace_trigger())*? Repeat three times; what does the
+   spread tell you about pressing a button "at the right moment"?
+7. Call the trigger from the program instead of the button: in `UplinkProcess::run()`, after an
+   upload returned `Rejected`, call `trace_trigger(200)` (include `trace_trigger.h`). Provoke a
+   rejection with a wrong write key (chapter 7, 7.2), dump with `--wait`, and find `TriggerArmed
+   remaining_ms=200` 200 ms before the end of the window. Then build Debug and Release and check
+   that their images are unchanged by your edit (`arm-none-eabi-objcopy -O binary`, `cmp`): why?
+
+### Level C: design
+
+8. With the ring fixed at 1024 records, how would you choose `post_ms` for an event whose cause lies
+   seconds before it (a failed join takes 16 s) and for one whose consequences follow within
+   milliseconds? What is the price of a long `post_ms`?
+9. Both methods need a debugger. Outline a trigger that works without one (the ring stops recording
+   `post_ms` after the call, and you dump later at leisure). What must the trace format record so that
+   the decoder knows the ring was frozen, and where the trigger was? (Compare note 6 in
+   `docs/upstream/csp4cmsis-dev-tracing-notes.md`.)
+
+### Checking your answers
+
+- Q1: (a) breakpoint with a condition: the event is a line in the source and a counter says which
+  pass; (b) B1: no line in the source marks it, only you notice it; (c) breakpoint (`--if "ev ==
+  UplinkEvent::Rejected"` on line 221) or a call `trace_trigger()` in the code (Q7); (d) B1 just
+  after unplugging, or a breakpoint on the rejoin path; B1 is simpler.
+- Q2: at 13 records/s, the 30 s since the upload and the 500 ms after the press are about 400
+  records; with the upload's 690 that is more than 1024, so the start of the upload (about 60
+  records) is overwritten and the window begins inside it, about 30 s before the press. 100 ms into
+  an upload: the upload and the 500 ms after the press take about 700 records, and the remaining
+  ~320 reach back about 25 s before the upload's start (320 / 13 s); the rest of the upload lies in
+  the 500 ms after the press.
+- Q3: a breakpoint stops before the line's trace call, so its record is not yet in the ring (`--next`
+  executes the line first); the trigger includes everything up to 500 ms after the call.
+- Q4: every switch into any thread is a pass, about 3000 passes for 1000 into the driver's
+  thread: about 3 minutes, during which the program barely runs (the kernel tick hardly advances,
+  6.6) -- the upload it was meant to show never happens at its normal speed. Count in the program
+  and call `trace_trigger(0)` when the count is reached; the cost is a compare per switch.
+- Q5: the condition is checked before `++uploadsOk_`, which still holds the number of earlier
+  successful uploads. On the lab board: after the reset `-> entry` at 11.1 s and 71.5 s, then the
+  halt and the dump (about a second on the terminal), then the third `-> entry` line at 131.8 s.
+- Q6: the lab tests pressed in software (`--press`) 148 ms and 128 ms into an upload (6.6 and its record). By hand, expect a
+  spread of several hundred milliseconds: an upload lasts 0.35 s, so a hand press lands inside it
+  only now and then. That is why a condition in the source is the tool for exact moments.
+- Q7: without `CSP4CMSIS_TRACE`, `trace_trigger(post_ms)` is a macro that generates no code and does
+  not evaluate its argument (`Core/Inc/trace_trigger.h`).
+- Q8: the ring is shared between the time before and after the trigger: every record after it is one
+  fewer from before. For a slow cause use a small `post_ms` (or 0); for fast consequences a few
+  hundred milliseconds are enough.
+- Q9: e.g. a "freeze after N records" call: the ring backend stops writing after N more records
+  and marks the header (frozen, trigger index); the decoder then knows where the trigger is and that
+  nothing was overwritten after it.
+

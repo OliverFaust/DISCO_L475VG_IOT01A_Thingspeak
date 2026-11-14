@@ -27,6 +27,8 @@ Python scripts run unchanged; the shell scripts in `tools/` need Git Bash or WSL
 | The ring | `Core/Src/csp_trace_board.c`, `csp_trace.ld` | 1024 records (16 KB + 32-byte header) in SRAM2 at `0x10000000`, `NOLOAD`: flashing does not touch it, `csp_trace_ring_init()` clears it before `main()` |
 | Heartbeat | `vApplicationTickHook()` in `csp_trace_board.c` | one record per second, so that the 32-bit cycle counter can be unwrapped |
 | Thread switches | `Core/Inc/FreeRTOSConfig.h`, USER CODE Defines | FreeRTOS's `traceTASK_CREATE`, `traceTASK_SWITCHED_IN/OUT` hooks: which thread runs when |
+| Trigger | `Core/Src/trace_trigger.c` | the user button B1 or a call `trace_trigger(post_ms)`: the core halts `post_ms` later if a debugger is attached (6.6) |
+| HAL time base | `Core/Src/main.c`, USER CODE SysInit | TIM6 stops while the core is halted (`__HAL_DBGMCU_FREEZE_TIM6()`, 6.6) |
 
 All of these exist only when `CSP4CMSIS_TRACE` is defined, which only Debug-Trace does. The hooks in
 `FreeRTOSConfig.h` sit in a USER CODE section and survive regeneration in STM32CubeMX (checked).
@@ -67,7 +69,8 @@ first 1024 records after reset -- the Wi-Fi join fills those within a second.)
 The ring must be read while the core is **halted**, so that it does not change during the copy.
 
 **With the script** (Ubuntu; it starts the ST-LINK GDB server in *attach* mode -- no reset --, lets GDB
-connect, which halts the core, dumps the ring, reads the threads' names, and lets the board run on):
+connect, which halts the core, dumps the ring, reads the threads' names, and lets the board run on;
+to stop at a chosen moment instead -- a source line, or a press of B1 -- see 6.6):
 
 ```bash
 tools/trace_dump.sh Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf trace_out/ring.bin
@@ -284,25 +287,224 @@ a quarter of a second: catch it with a breakpoint (6.6).
 
 ---
 
-## 6.6 Catching a rare event with a breakpoint
+## 6.6 Stopping at a chosen moment: breakpoints and the B1 trigger
 
-To stop exactly when the Sensors process overwrites an unread sample in `uplinkSamples`, set a
-breakpoint on the line of `offer()` that records the overwrite, let the board start (the join at
-start-up keeps the Uplink busy for about 5.7 s), and dump when it hits:
+Dumping "within 20 s after the upload line" (6.3) catches what happens often. For a rare event, or
+an exact moment, let the board stop **itself** there and dump then: the ring then ends at that
+moment and holds what led up to it. `tools/trace_dump.sh` has two modes for this, besides the plain
+"halt now" of 6.3:
+
+| Mode | Stops when | Use it for |
+|---|---|---|
+| `--break LOC` (`--if COND`, `--next`, `--reset`) | the program reaches `LOC`, a function or `file:line` (and `COND` is true there) | an event you can name in the source |
+| `--wait` (`--press`) | the program executes `trace_trigger()`'s breakpoint instruction, e.g. 500 ms after you press **B1** | "now, and a little after" -- by hand, with the board in front of you |
+
+Both modes give up after `--timeout` seconds (default 300) without dumping, delete the breakpoint
+and let the board run on; `tools/trace_dump.sh --help` lists the options. While the script waits
+the board runs at full speed: a breakpoint in flash is a hardware breakpoint (the Cortex-M4 has 6),
+which costs nothing until it is hit -- but with `--if` every pass is a hit (see *What a halt does*
+below).
+
+### Breakpoint mode: example 1, an upload has finished
+
+Line 222 of `Core/Src/uplink_process.cpp` runs right after `upload()` has returned `Uploaded`:
+
+```bash
+sed -n 222p Core/Src/uplink_process.cpp       #  ++uploadsOk_; failedUploads = 0;
+tools/trace_dump.sh --break uplink_process.cpp:222 Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf trace_out/ring.bin
+```
+
+You should now see, when the next upload has finished:
 
 ```
-(gdb) break buffered_channel.h:200
-(gdb) continue
-Breakpoint 1.3, csp::internal::BufferedChannel<Sample, 1u, (csp::BufferPolicy)1>::offer (this=0x200005f4 <(anonymous namespace)::MainApp_Task(void*)::uplinkSamples>, ...)
-(gdb) next
-(gdb) dump binary memory ring.bin &csp_trace_ring ((char *)&csp_trace_ring) + sizeof(csp_trace_ring)
+Breakpoint 1 at 0x8007cec: file ../Core/Src/uplink_process.cpp, line 222.
+Note: automatically using hardware breakpoints for read-only addresses.
+== running until the breakpoint is hit (at most 300 s)
+
+Breakpoint 1, UplinkProcess::run (this=0x20001b98 <(anonymous namespace)::MainApp_Task(void*)::uplink>) at ../Core/Src/uplink_process.cpp:222
+222	            ++uploadsOk_; failedUploads = 0;
+halted at pc = 0x8007cec, write_count = 84528
+...
+== wrote trace_out/ring.bin (16416 bytes) and trace_out/ring.names (5 names); the board is running again
 ```
 
-`next` executes the trace call, so the record is in the ring. In STM32CubeIDE: double-click left of
-line 200 of `lib/csp4cmsis-trace/csp4cmsis/inc/csp/buffered_channel.h`, debug, and use the Debugger
-Console for `dump`. On the lab board it stopped at tick 5042 ms; the decoded window (0.26 s) shows
-`uplink` and the idle thread alternating 253 times (the join), `sensors` waking on its timeout, a put
-into `samples`, and `OverwroteOldest` on `uplinkSamples`.
+Decoded (6.4), the window is 30.5 s long and ends 325 ms after the Uplink's upload timeout: the whole
+upload (629 of the 1024 records) is at the end of the ring, however long you waited for it. The
+status for the console is not yet in it -- the breakpoint stops before `report(st)`. Line numbers
+change when the source changes: check the line with `sed -n` (or in the editor) first.
+
+### Breakpoint mode: example 2, the library's `OverwroteOldest` line, with a condition
+
+The trace call for a KeepNewest overwrite is line 200 of
+`lib/csp4cmsis-trace/csp4cmsis/inc/csp/buffered_channel.h`, in `offer()`. `offer()` is a template:
+GDB puts the breakpoint into each instantiation (3 locations: `Sample` for `samples` and
+`uplinkSamples`, `Hts221Check`, `UplinkStatus`). The condition selects one channel; `--next` executes
+line 200 before the dump, so that the `OverwroteOldest` record is in the ring; `--reset` restarts the
+program, because `uplinkSamples` is overwritten only while the Uplink joins the network at start-up
+(chapter 4, 4.5):
+
+```bash
+tools/trace_dump.sh --break buffered_channel.h:200 \
+  --if "this == (void *)&'(anonymous namespace)::MainApp_Task(void*)::uplinkSamples'" \
+  --next --reset Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf trace_out/ring.bin
+```
+
+You should now see
+
+```
+Breakpoint 1 at 0x8003072: buffered_channel.h:200. (3 locations)
+STM32 Successfully completed reset operation (System reset)
+== running until the breakpoint is hit (at most 300 s)
+
+Breakpoint 1.3, csp::internal::BufferedChannel<Sample, 1u, (csp::BufferPolicy)1>::offer (this=0x200005f4 <(anonymous namespace)::MainApp_Task(void*)::uplinkSamples>, ...) at ../lib/csp4cmsis-trace/csp4cmsis/inc/csp/buffered_channel.h:200
+200	                    CSP4CMSIS_BUF_TRACE(CSP4CMSIS_EVT_OVERWROTE_OLDEST,
+206	                csp_exit_critical(s);
+halted at pc = 0x800332e, write_count = 16665
+...
+```
+
+The channel's name in the condition is its symbol as GDB prints it (`print &'(anonymous
+namespace)::MainApp_Task(void*)::uplinkSamples'` in GDB shows it). Decoded, the window is 0.256 s
+long (the join fills the ring with Uplink/idle switches) and ends, at tick 5041, with the Sensors
+process waking on its timeout, a `BufferedPut` into `samples` and the `OverwroteOldest` on
+`uplinkSamples`. How a condition works: the core stops at **every** pass over the line, GDB evaluates
+`COND` and lets the core run on if it is false. Here the line runs only on overwrites, which are rare;
+a condition on a line that runs often slows the program down.
+
+**In STM32CubeIDE** (any OS): start a debug session for Debug-Trace (**Run > Debug As > STM32 C/C++
+Application**), double-click left of the line to set the breakpoint; for a condition right-click it,
+**Breakpoint Properties... > Condition**. **Resume**; when it stops, type the `dump` command of 6.3 in
+the **Debugger Console**.
+
+### The B1 trigger: `trace_trigger(post_ms)`
+
+`Core/Src/trace_trigger.c` (Debug-Trace only) adds an on-chip trigger:
+
+- `trace_trigger(post_ms)` only **stores a deadline**, `post_ms` milliseconds ahead on the HAL tick:
+  a single 32-bit write, from any thread or interrupt. While a deadline is stored, further calls are
+  ignored (no re-arm).
+- Everything else happens in the FreeRTOS **tick hook** (`trace_trigger_tick()`, every 1 ms): at its
+  first tick after the call it records `TriggerArmed`; once the deadline has passed it records
+  `TriggerFired` and executes a breakpoint instruction (`__BKPT`) -- **only if a debugger is
+  attached** (`C_DEBUGEN` in `CoreDebug->DHCSR`). Without one, nothing happens and the program runs
+  on. The ring then holds what happened before the call (pre-trigger) and `post_ms` after it
+  (post-trigger).
+- The user button **B1** (PC13, EXTI line 13, falling edge): its interrupt handler calls
+  `trace_trigger(500)`, nothing else. The bounces of the press are calls while armed, so they are
+  ignored; after firing, the tick hook holds the trigger off until B1 has been released for 50 ms, so
+  that the bounces of the release cannot arm it again.
+- The records (component 0x52, `tools/trace_trigger.scvd`): `TriggerArmed remaining_ms` (time to the
+  deadline, at most 1 ms after the call) and `TriggerFired debugger late_ms` (1 or 0; ms after the
+  deadline). `tools/trace_decode.sh` puts them into Perfetto as a group **trigger**
+  (`tools/trace_marks.py`): instants *armed (B1 / trace_trigger())* and *halt (BKPT)*, and a slice
+  *post-trigger 500 ms* between them. What lies inside the slice happened after the press.
+
+**Why B1 is not in the `.ioc`.** STM32CubeMX has one pin configuration for all build configurations.
+PC13 as `GPIO_EXTI13` with the *EXTI line[15:10]* interrupt would change `MX_GPIO_Init()` and the
+interrupt handlers of Debug and Release too, which must stay unchanged. So `trace_trigger_b1_init()`
+makes the same settings that STM32CubeMX would generate (falling edge, pull-up, NVIC priority 15, the
+priority of the FreeRTOS tick, so that handler and tick hook never interrupt each other) and is
+called from the `USER CODE MX_GPIO_Init_2` section of `main.c`; in Debug and Release that call is a
+macro without code (checked: the flash images are identical). For your own project, where every
+configuration may have the button: *Pinout view*, PC13 > `GPIO_EXTI13`; *System Core > GPIO > PC13*:
+mode *External Interrupt Mode with Falling edge trigger detection*, pull-up, label `B1`; *System Core
+> NVIC*: enable *EXTI line[15:10] interrupts*.
+
+**Wait mode.** Start the script, then press B1 when you want:
+
+```bash
+tools/trace_dump.sh --wait Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf trace_out/ring.bin
+```
+
+GDB connects (the core halts for a moment), then lets the board run and waits. 500 ms after your press
+you should now see
+
+```
+== running until the program halts at its trigger (at most 300 s)
+
+Program received signal SIGTRAP, Trace/breakpoint trap.
+trace_trigger_tick () at ../Core/Src/trace_trigger.c:80
+80	      __BKPT(0);                                 /* the debugger halts here; trace_dump.sh steps past it */
+halted at pc = 0x80074a2, write_count = 23100
+...
+== wrote trace_out/ring.bin (16416 bytes) and trace_out/ring.names (5 names); the board is running again
+```
+
+The script moves the program counter past the `BKPT` (`set $pc = $pc + 2`) before it detaches; by
+hand in STM32CubeIDE, type the same in the Debugger Console before **Resume**, or the program stops
+at the same instruction again.
+
+**Without anyone at the board,** `--press` presses B1 in software: right after connecting, GDB sets
+bit 13 of `EXTI_SWIER1`, which raises the same interrupt as the button (same handler). A test of the
+whole path, used for the record below; it does not test the pin and its bounces.
+
+**On the lab board** (`docs/results/2026-11-14_trace_trigger.md`), pressed (`--press`) 128 ms into an
+upload. Decoded, relative to *armed*:
+
+| Time | Event | |
+|---|---|---|
+| -128.0 ms | Uplink `ResumeTimeout`, `AltSelected` guard 1 | the upload starts (pre-trigger) |
+| 0 | `TriggerArmed remaining_ms=500` | B1 |
+| +134.7 ms | Uplink `BufferedPut` on `status` | the upload is done (post-trigger) |
+| +134.7 ms | Console `Resume`, `BufferedGet` from `status` | the Console takes it and prints `-> entry ...` |
+| +143.2 / +143.4 ms | Console, Uplink `WaitAlt` | both wait again |
+| +500.0 ms | `TriggerFired debugger=1, late_ms=0` | halt |
+
+The board then went on as usual (`-> entry ...` 60 s later). In Perfetto the *post-trigger 500 ms*
+slice starts in the middle of the upload: in its first 135 ms the Wi-Fi driver's thread is switched
+in 51 times, the idle thread 53 times and the Uplink 12 times (the driver polling the module); then
+comes the flow arrow of `status` from the Uplink's put to the Console's get, and for the remaining
+365 ms there are only 9 switches. A second press while armed (`call trace_trigger(2000)` in GDB,
+then the software press) was ignored: one `TriggerArmed remaining_ms=2000`, halt 2000 ms later.
+
+**Without a debugger** the trigger fires and does nothing: after a software press through
+`STM32_Programmer_CLI` (which disconnects at once), the ring showed `TriggerFired debugger=0` and the
+console went on without a gap.
+
+### What a halt does, and what to keep in mind
+
+- **A breakpoint halts whatever thread reaches the address.** Code shared by several threads or
+  channels -- `offer()` of a channel template, `Alternative::priSelect()`, a driver function -- stops
+  in the first one that gets there. To stop in one thread, add a condition on the thread,
+  `--if "pxCurrentTCB->pcTaskName[0] == 'U'"` (the Uplink; tested on `csp::Alternative::priSelect`),
+  or on the object, `--if "this == (void *)&'...::uplinkSamples'"` (example 2). The GDB in
+  STM32CubeIDE has no Python, so `$_streq()` and similar functions are not available.
+- **Conditions only on rarely executed code.** GDB evaluates a condition by halting the core at every
+  pass, reading memory over the ST-LINK and resuming. Measured: an always-false condition on a line
+  of the idle loop was evaluated 178 times in about 10.5 s, **about 60 ms per pass**, and in those
+  10.5 s the kernel tick did not advance once -- the program was effectively stopped. On a line that
+  runs once per sample or upload this is harmless; on hot code (the scheduler, the ring backend, the
+  Wi-Fi driver's polling loop) put the condition into the program instead and call the on-chip
+  trigger, which costs a compare: e.g. `if (count > 3) trace_trigger(0);`.
+- **If the condition cannot be evaluated, GDB stops anyway** (`Error in testing condition for
+  breakpoint 1: ...`), as if it were true. `trace_dump.sh` detects this and exits with an error
+  instead of reporting a dump.
+- **Torn records.** The ring backend writes a record with interrupts up to priority 5 masked
+  (`BASEPRI`), so neither a thread nor the tick hook can be stopped in the middle of one: a
+  breakpoint in application code and the trigger's `BKPT` always find the ring consistent. An
+  **external** halt -- the plain mode of 6.3, or **Suspend** in STM32CubeIDE -- stops the core at an
+  arbitrary instruction, possibly inside a record; `ring2log.py` then reports `torn` > 0 in
+  `ring_report.txt` (not seen in this chapter's dumps). A breakpoint set inside
+  the ring backend itself, or in an interrupt handler of priority 0-4, can tear one too.
+- **Time while halted.** The core's clocks for the program stop: the FreeRTOS tick (SysTick), the
+  cycle counter of the time stamps (`DWT->CYCCNT`) and `HAL_GetTick()` do not advance (measured over
+  a 3 s halt: +0 each). Debug-Trace also freezes TIM6, the HAL time base, while the core is halted
+  (`__HAL_DBGMCU_FREEZE_TIM6()` in `main.c`, USER CODE SysInit): without it, TIM6 counts on
+  (measured over 3 s: `TIM6_CNT` 353 -> 995; frozen: 489 -> 489) and the first HAL tick after the halt comes early, which
+  can end a HAL timeout up to 1 ms early. The trace's time axis therefore leaves out the
+  halts.
+- **After a dump, reset the board to continue reliably.** The world outside the core does not stop:
+  the Wi-Fi module, the access point and ThingSpeak go on, and a halt in the middle of an upload can
+  leave the program and its peers out of step (the module's buffers, a TCP connection the server has
+  closed). In the tests of this chapter the program went on uploading after every dump (eight in a
+  row, including the 10 s stall above), but that is not guaranteed. Press RESET, or
+  `STM32_Programmer_CLI -c port=SWD -hardRst`, before you rely on what the board does next.
+- **A stale `C_DEBUGEN` makes the board stop at the trigger without a debugger.** The trigger only
+  asks whether debug is enabled, not whether anyone is listening. A debugger that ends its session
+  without clearing `C_DEBUGEN` leaves the board stopped at the `BKPT` the next time B1 is pressed,
+  with nobody to continue it. RESET does not clear `C_DEBUGEN` (only power-on does): unplug the USB
+  cable and plug it in again. After `trace_dump.sh` and `STM32_Programmer_CLI` it was clear
+  (`TriggerFired debugger=0` above); after an STM32CubeIDE debug session it was not checked.
 
 ## 6.7 Conformance check (optional, needs ProB)
 
@@ -326,8 +528,8 @@ reported as UNKNOWN, while its mutation is still checked. Results:
 
 | | Debug | Debug-Trace | Difference |
 |---|---|---|---|
-| Code (text) | 109 664 B | 113 416 B | +3 752 B |
-| RAM (data + bss) | 48 528 B | 64 960 B | +16 432 B (ring in SRAM2, otherwise unused) |
+| Code (text) | 109 664 B | 113 864 B | +4 200 B (of which the B1 trigger and the TIM6 freeze about 450 B) |
+| RAM (data + bss) | 48 528 B | 64 968 B | +16 440 B (ring in SRAM2, otherwise unused) |
 | CPU per record | -- | at most about 370 cycles = 4.6 us at 80 MHz | |
 | CPU, during an upload | -- | at most about 2 % | |
 | CPU, averaged over a 60 s cycle | -- | about 0.01 % | |
@@ -342,5 +544,16 @@ reported as UNKNOWN, while its mutation is still checked. Results:
   not from `&csp_trace_ring`. Check the active build configuration.
 - **No upload in the trace** -- dumped too late (6.1): dump within 20 s after the upload line.
 - **`trace_dump.sh` resets the board** -- an old copy without `-g` (attach) for `ST-LINK_gdbserver`.
+- **`--break`: `== not stopped by the breakpoint or trigger (timeout?): no dump`** -- the line was
+  not reached within `--timeout`, or the condition was never true. Check the line number (`sed -n`),
+  the symbol in the condition (`print` it in GDB), and whether the event needs `--reset`.
+- **`--wait` never stops when B1 is pressed** -- a Debug or Release build (no trigger: the script
+  refuses to wait), or the press came before GDB had connected (`== running until ...` not yet
+  printed); press again.
+- **The board stops when B1 is pressed, without a dump session** -- a debugger left debug mode on
+  (`C_DEBUGEN`, 6.6): unplug and replug the USB cable (RESET does not clear it).
+- **`== the condition could not be evaluated`** -- the `--if` expression is wrong where the
+  breakpoint is (a symbol not in scope, or a function GDB cannot call such as `$_streq`); GDB stopped
+  at the first pass. Test the expression with `print` in a GDB session stopped at that line.
 - **Torn records > 0** -- the core was not halted during the copy (a debugger reading memory while the
   program runs). Use the script or suspend first.

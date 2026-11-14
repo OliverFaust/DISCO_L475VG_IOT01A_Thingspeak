@@ -150,3 +150,47 @@ t = (ident % k) if ident is not None else 'UNKNOWN'
 
 **Suggestion.** Start a channel's projection after the window-start gets (or after its first recorded
 put), together with note 2; the remaining trace is then checkable.
+
+---
+
+## 6. Feature request: freeze the ring N records after a trigger (run time, no debugger)
+
+**What is missing.** With policy *overwrite* the ring always holds the newest 1024 records; to keep
+the records around an event, the core must be halted soon after it -- by a breakpoint or, in this
+project, by `trace_trigger(post_ms)`, which executes `BKPT` `post_ms` after the call
+(`Core/Src/trace_trigger.c`, docs/06-tracing.md, 6.6). Both need a debugger attached at that moment.
+On a board in a lab, a field test or a classroom, usually none is attached when the interesting
+event happens, and with none attached the trigger does nothing (`C_DEBUGEN` is checked: a `BKPT`
+without a debugger would be a HardFault).
+
+Policy *stop* (`CSP_TRACE_POLICY_STOP`) does not help: it keeps the *first* records after
+`csp_trace_ring_init()`, not the ones around a later event.
+
+**Where.** `src/csp_trace_ring.c`: the record slot is chosen from `write_count` (overwrite) or
+refused when full (stop, line 87); the header has `policy`, `write_count` and `dropped`.
+
+**Workaround here.** `trace_trigger()` with a debugger, and `tools/trace_dump.sh --wait` (or a
+conditional breakpoint, `--break --if`). Nothing in CSP4CMSIS was changed.
+
+**Suggestion.** A run-time call, e.g.
+
+```c
+void csp_trace_ring_freeze_after(uint32_t n);   /* any context, also from an ISR */
+```
+
+that records a *trigger* record and stops writing `n` records later, as policy *stop* does when
+full (later records count in `dropped`). The header would carry what the decoder needs:
+
+| Field | Meaning |
+|---|---|
+| `frozen` | 0 running, 1 armed, 2 frozen |
+| `trigger_count` | `write_count` of the trigger record: the decoder can mark it and split the window into pre- and post-trigger |
+| `freeze_count` | `write_count` at which writing stopped (= `trigger_count` + `n` + 1) |
+
+With `n` < capacity, the ring then holds `capacity - n - 1` records before the trigger and `n` after
+it, and stays that way until someone dumps it -- minutes or hours later, with any debugger, or by
+the application itself (e.g. over the console). `ring2log.py` would report the trigger position
+instead of "records overwritten before this point" for the frozen part, and `decode.py` could mark
+the trigger in Perfetto (this project adds such a track itself, `tools/trace_marks.py`). A
+`csp_trace_ring_rearm()` (clear `frozen`, keep counting) would allow the next capture without a
+reset. Cost while armed: one compare per record.
