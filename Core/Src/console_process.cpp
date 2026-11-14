@@ -23,22 +23,30 @@ void printTime(uint32_t ms)
 void ConsoleProcess::run()
 {
     std::printf("\r\n"
-                "DISCO_L475VG_IOT01A_Thingspeak -- Sensors, Console, Uplink (ThingSpeak every %u s)\r\n"
+                "DISCO_L475VG_IOT01A_Thingspeak -- Sensors, Console%s%u%s\r\n"
                 "CSP4CMSIS %d.%d.%d, FreeRTOS %s (CMSIS-RTOS2), SYSCLK %lu MHz\r\n",
-                static_cast<unsigned>(APP_UPLOAD_PERIOD_S),
+                boot_.wifiDisabled ? " (Uplink NOT started: Wi-Fi unavailable after " : ", Uplink (ThingSpeak every ",
+                boot_.wifiDisabled ? static_cast<unsigned>(APP_WIFI_MAX_RESTARTS) : static_cast<unsigned>(APP_UPLOAD_PERIOD_S),
+                boot_.wifiDisabled ? " failed starts)" : " s)",
                 CSP4CMSIS_VERSION_MAJOR, CSP4CMSIS_VERSION_MINOR, CSP4CMSIS_VERSION_PATCH,
                 tskKERNEL_VERSION_NUMBER, static_cast<unsigned long>(SystemCoreClock / 1000000UL));
-    std::printf("Reset cause: %s; restarts after a failed Wi-Fi start since power-on: %lu\r\n",
-                boot_.cause, static_cast<unsigned long>(boot_.wifiRestarts));
+    std::printf("Reset cause: %s; consecutive restarts after a failed Wi-Fi start: %lu of %u\r\n",
+                boot_.cause, static_cast<unsigned long>(boot_.wifiRestarts), static_cast<unsigned>(APP_WIFI_MAX_RESTARTS));
 
     uint32_t reportAt = kStackReportFirstMs;     // absolute deadline, in ticks since boot
+    uint32_t wifiNoticeAt = 0;                   // Wi-Fi disabled: notice now, then every minute
     Sample s{};
     Hts221Check c{};
     UplinkStatus u{};
     for (;;) {
         // The report time is an absolute deadline; the ALT needs a relative timeout, so it is
         // recomputed on every pass (signed difference: correct across the tick counter's wrap).
-        const int32_t left = static_cast<int32_t>(reportAt - osKernelGetTickCount());   // 1 tick = 1 ms
+        const uint32_t now = osKernelGetTickCount();                                     // 1 tick = 1 ms
+        int32_t left = static_cast<int32_t>(reportAt - now);
+        if (boot_.wifiDisabled) {
+            const int32_t noticeLeft = static_cast<int32_t>(wifiNoticeAt - now);
+            if (noticeLeft < left) left = noticeLeft;
+        }
         RelTimeoutGuard reportTime(Milliseconds(left > 0 ? static_cast<uint32_t>(left) : 0U));
         Alternative alt(samples_ | s, check_ | c, uplink_ | u, reportTime);
         switch (alt.priSelect()) {
@@ -46,8 +54,16 @@ void ConsoleProcess::run()
             case 1: printCheck(c); break;
             case 2: printUplink(u); break;
             default:
-                printStackReport();
-                reportAt += kStackReportPeriodMs;
+                if (boot_.wifiDisabled && static_cast<int32_t>(wifiNoticeAt - osKernelGetTickCount()) <= 0) {
+                    printTime(osKernelGetTickCount());
+                    std::printf(" Wi-Fi unavailable after %u attempts - see docs/07 section 7.1 - press RESET to retry\r\n",
+                                static_cast<unsigned>(APP_WIFI_MAX_RESTARTS));
+                    wifiNoticeAt += kWifiNoticePeriodMs;
+                }
+                if (static_cast<int32_t>(reportAt - osKernelGetTickCount()) <= 0) {
+                    printStackReport();
+                    reportAt += kStackReportPeriodMs;
+                }
                 break;
         }
     }
@@ -114,9 +130,14 @@ void ConsoleProcess::printStackReport()
 {
     printTime(osKernelGetTickCount());
     std::printf(" Stack high-water marks (smallest free stack so far):\r\n");
-    std::printf("  FreeRTOS heap: free %u of %u bytes, minimum ever free %u bytes\r\n",
-                static_cast<unsigned>(xPortGetFreeHeapSize()), static_cast<unsigned>(configTOTAL_HEAP_SIZE),
-                static_cast<unsigned>(xPortGetMinimumEverFreeHeapSize()));
+    if (xPortGetMinimumEverFreeHeapSize() == 0 && xPortGetFreeHeapSize() == 0) {
+        // heap_4 reports 0 until the first allocation initialises the heap.
+        std::printf("  FreeRTOS heap: never used (%u bytes)\r\n", static_cast<unsigned>(configTOTAL_HEAP_SIZE));
+    } else {
+        std::printf("  FreeRTOS heap: free %u of %u bytes, minimum ever free %u bytes\r\n",
+                    static_cast<unsigned>(xPortGetFreeHeapSize()), static_cast<unsigned>(configTOTAL_HEAP_SIZE),
+                    static_cast<unsigned>(xPortGetMinimumEverFreeHeapSize()));
+    }
     for (std::size_t i = 0; i < nWatched_; ++i) {
         const CSProcess& p = *watched_[i];
         const uint32_t size = static_cast<uint32_t>(p.stackWords());
@@ -182,7 +203,8 @@ void ConsoleProcess::printUplink(const UplinkStatus& u)
                         stageName(u.stage), static_cast<long>(u.code), static_cast<unsigned long>(u.retryInMs / 1000));
             break;
         case UplinkEvent::Rejoining:
-            std::printf("too many failed uploads: leaving the network, joining again");
+            std::printf(u.code == 1 ? "connection lost (driver reports not connected): leaving the network, joining again"
+                                    : "3 failed uploads in a row: leaving the network, joining again");
             break;
         case UplinkEvent::SampleInvalid:
             std::printf("sample #%lu invalid, not sent", static_cast<unsigned long>(u.sampleSeq));

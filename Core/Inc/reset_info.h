@@ -17,15 +17,20 @@ extern "C" {
 
 typedef struct {
   const char *cause;          /* "power-on/brown-out", "software reset", "reset pin", "watchdog", ... */
-  uint32_t    wifiRestarts;   /* restarts by the Uplink since the last power-on */
+  uint32_t    wifiRestarts;   /* consecutive restarts by the Uplink (failed Wi-Fi starts) */
+  int         wifiDisabled;   /* nonzero: wifiRestarts reached APP_WIFI_MAX_RESTARTS; no Uplink */
 } BootInfo;
 
-/* Call first thing in main() (USER CODE 1): reads and clears the reset flags, (re)initialises the
-   counter after power-on or brown-out, when the .noinit RAM holds no valid data. */
+/* Call first thing in main() (USER CODE 1): reads and clears the reset flags. The counter is kept
+   only if this start follows a restart by reset_info_restart_for_wifi(); any other reset (power-on,
+   RESET button, debugger) sets it to 0, so pressing RESET always retries the Wi-Fi start. */
 void reset_info_capture(void);
 
 /* The values captured at start-up. */
 BootInfo reset_info_get(void);
+
+/* The Wi-Fi driver started: consecutive failures end, the counter goes back to 0. */
+void reset_info_wifi_started(void);
 
 /* Counts one more restart and resets the board. Does not return. */
 void reset_info_restart_for_wifi(void) __attribute__((noreturn));

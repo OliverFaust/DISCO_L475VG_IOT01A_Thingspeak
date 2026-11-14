@@ -12,7 +12,7 @@ enum class UplinkEvent : uint8_t {
     Uploaded,        // ThingSpeak accepted the update: entryId > 0
     Rejected,        // ThingSpeak answered, but entry id 0 (or HTTP status not 200)
     UploadFailed,    // network error at `stage` (code); retry after retryInMs
-    Rejoining,       // too many failed uploads in a row: leaving and joining again
+    Rejoining,       // leaving and joining again; code 1: driver reports connection lost, 0: failed uploads in a row
     SampleInvalid,   // the latest sample was invalid: nothing sent this time
 };
 

@@ -35,6 +35,13 @@
 #define APP_TEST_WRONG_PASSWORD 0
 #endif
 
+/* After this many consecutive restarts because the Wi-Fi driver could not be initialised, the board
+   stops restarting and runs Sensors and Console without the Uplink (docs/07, 7.1). A power-on, the
+   RESET button, a debugger reset or a successful Wi-Fi start sets the count back to 0. */
+#ifndef APP_WIFI_MAX_RESTARTS
+#define APP_WIFI_MAX_RESTARTS   3
+#endif
+
 /* Test switch for the start-up failure test (docs/results): 1 = the Wi-Fi module is held in reset
    (Core/Src/wifi_ism43362_pins.c), so the driver's Initialize() fails and the Uplink restarts the
    board every few seconds. Must be 0 in normal use. */

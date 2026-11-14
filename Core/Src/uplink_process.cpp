@@ -168,6 +168,7 @@ void UplinkProcess::run()
         if (!moduleReady) {
             if (initModule()) {
                 moduleReady = true;
+                reset_info_wifi_started();      // consecutive failed starts end here
                 reportEvent(UplinkEvent::ModuleReady);
             } else {
                 // No retry in this run: a failed Initialize() has leaked 384 bytes of FreeRTOS heap
@@ -231,11 +232,15 @@ void UplinkProcess::run()
         }
         report(st);
 
-        if (ev == UplinkEvent::UploadFailed &&
-            (failedUploads >= kFailedUploadsBeforeRejoin || !wifi.IsConnected())) {
-            reportEvent(UplinkEvent::Rejoining);
-            leave();
-            joined = false; failedUploads = 0;
+        if (ev == UplinkEvent::UploadFailed) {
+            const bool lost = !wifi.IsConnected();      // the driver says the station is not connected
+            if (lost || failedUploads >= kFailedUploadsBeforeRejoin) {
+                UplinkStatus rj{}; rj.event = UplinkEvent::Rejoining;
+                rj.code = lost ? 1 : 0;                  // 1: connection lost, 0: repeated failures
+                report(rj);
+                leave();
+                joined = false; failedUploads = 0;
+            }
         }
     }
 }

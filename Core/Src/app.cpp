@@ -67,14 +67,21 @@ void MainApp_Task(void* argument)
     static BufferedChannel<UplinkStatus, 8, BufferPolicy::KeepNewest> status;   // Uplink -> Console
     static SensorsProcess sensors(samples.writer(), uplinkSamples.writer(), check.writer(),
                                   Milliseconds(kSamplePeriodMs));
-    static ConsoleProcess console(samples.reader(), check.reader(), status.reader(), reset_info_get());
+    const BootInfo boot = reset_info_get();
+    static ConsoleProcess console(samples.reader(), check.reader(), status.reader(), boot);
     static UplinkProcess uplink(uplinkSamples.reader(), status.writer(), APP_UPLOAD_PERIOD_S * 1000U);
     console.watchStack(sensors);
     console.watchStack(console);
-    console.watchStack(uplink);
 
-    // One network priority for all; Uplink overrides it with osPriorityLow (taskPriority()).
-    Run(InParallel(sensors, console, uplink), ExecutionMode::StaticNetwork, kNetworkPriority);
+    if (boot.wifiDisabled) {
+        // APP_WIFI_MAX_RESTARTS failed Wi-Fi starts in a row: no further restarts, no Uplink.
+        // Sensors' writes to uplinkSamples never block (KeepNewest), so it needs no reader.
+        Run(InParallel(sensors, console), ExecutionMode::StaticNetwork, kNetworkPriority);
+    } else {
+        console.watchStack(uplink);
+        // One network priority for all; Uplink overrides it with osPriorityLow (taskPriority()).
+        Run(InParallel(sensors, console, uplink), ExecutionMode::StaticNetwork, kNetworkPriority);
+    }
     osThreadExit();
 }
 

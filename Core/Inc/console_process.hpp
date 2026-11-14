@@ -21,6 +21,7 @@ class ConsoleProcess : public csp::CSProcessStatic<512> {   // 512 words = 2 KB 
 public:
     static constexpr uint32_t kStackReportFirstMs  = 60000;    // first report 60 s after boot,
     static constexpr uint32_t kStackReportPeriodMs = 600000;   // then every 10 minutes
+    static constexpr uint32_t kWifiNoticePeriodMs  = 60000;    // Wi-Fi disabled: notice every minute
     static constexpr std::size_t kMaxWatched = 4;
 
     ConsoleProcess(csp::Chanin<Sample> samples, csp::Chanin<Hts221Check> check, csp::Chanin<UplinkStatus> uplink,

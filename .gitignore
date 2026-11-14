@@ -31,7 +31,11 @@ build/
 # Trace captures (raw ring dumps; decoded results that belong in the docs go to docs/results/)
 ring.bin
 
-# Editors and OS
+# Editors and OS (swap/backup files can hold secrets, e.g. Core/Inc/.app_secrets.h.swp)
+*.swp
+*.swo
+*~
+.#*
 .vscode/
 .cache/
 .clangd
