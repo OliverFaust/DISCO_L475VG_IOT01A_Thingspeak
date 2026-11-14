@@ -9,8 +9,9 @@
 # two heap counters over SWD while the program keeps running. The output file starts with a
 # header (date, commit, tools, commands) followed by the console output exactly as received.
 #
-# Needs: STM32_Programmer_CLI (STM32CubeProgrammer; on the PATH or set STM32_PROGRAMMER_CLI),
-# arm-none-eabi-nm, stty, and read access to the serial port (group "dialout").
+# Needs: STM32_Programmer_CLI and arm-none-eabi-nm -- found on the PATH or in STM32CubeIDE /
+# STM32CubeProgrammer by tools/toolchain.sh (set CUBEIDE or STM32_PROGRAMMER_CLI otherwise) --, stty,
+# and read access to the serial port (group "dialout").
 # Tested on Ubuntu. On Windows use STM32CubeIDE (Run) and a serial terminal instead (docs/03).
 set -euo pipefail
 
@@ -18,8 +19,9 @@ ELF=${1:?usage: $0 <elf> <seconds> <output.txt>}
 SECONDS_TO_CAPTURE=${2:?usage: $0 <elf> <seconds> <output.txt>}
 OUT=${3:?usage: $0 <elf> <seconds> <output.txt>}
 
-CLI=${STM32_PROGRAMMER_CLI:-$(command -v STM32_Programmer_CLI || echo "$HOME/st/STM32CubeProgrammer/bin/STM32_Programmer_CLI")}
-[ -x "$CLI" ] || { echo "STM32_Programmer_CLI not found (set STM32_PROGRAMMER_CLI)" >&2; exit 1; }
+. "$(dirname "$0")/toolchain.sh"          # STM32_Programmer_CLI and arm-none-eabi-nm (also from STM32CubeIDE)
+CLI=${STM32_PROGRAMMER_CLI:-}
+[ -n "$CLI" ] && [ -x "$CLI" ] || { echo "STM32_Programmer_CLI not found (install STM32CubeIDE or STM32CubeProgrammer, or set STM32_PROGRAMMER_CLI)" >&2; exit 1; }
 
 # The ST-LINK/V2-1 virtual COM port; by-id names do not change when other USB serial devices are plugged in.
 PORT=${VCP_PORT:-$(ls /dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_*-if02 2>/dev/null | head -1 || true)}

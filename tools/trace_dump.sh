@@ -14,15 +14,16 @@
 #  5. GDB detaches: the core runs on. The GDB server is stopped.
 # Then decode with tools/trace_decode.sh.
 #
-# Needs STM32CubeIDE 2.x (its ST-LINK_gdbserver and arm-none-eabi-gdb) and STM32CubeProgrammer;
-# set CUBEIDE / CUBEPROG if they are not in the default places below. Tested on Ubuntu.
+# Needs STM32CubeIDE 2.1.0 (its ST-LINK_gdbserver, arm-none-eabi-gdb/-nm and STM32CubeProgrammer
+# copy), found by tools/toolchain.sh; set CUBEIDE (and CUBEPROG, the programmer's bin folder) if they
+# are elsewhere. Tested on Ubuntu.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 ELF=${1:-Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf}
 OUT=${2:-trace_out/ring.bin}
-CUBEIDE=${CUBEIDE:-$HOME/st/stm32cubeide_2.1.0}
-CUBEPROG=${CUBEPROG:-$HOME/st/STM32CubeProgrammer/bin}
+. tools/toolchain.sh                    # CUBEIDE, STM32_PROGRAMMER_CLI, arm-none-eabi-nm on the PATH
+CUBEPROG=${CUBEPROG:-$(dirname "${STM32_PROGRAMMER_CLI:-$HOME/st/STM32CubeProgrammer/bin/x}")}
 PORT=${GDB_PORT:-61234}
 
 GDBSERVER=$(ls "$CUBEIDE"/plugins/com.st.stm32cube.ide.mcu.externaltools.stlink-gdb-server.*/tools/bin/ST-LINK_gdbserver 2>/dev/null | head -1)

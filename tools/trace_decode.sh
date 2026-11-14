@@ -21,6 +21,7 @@
 # FreeRTOS .scvd used here.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+. tools/toolchain.sh                    # arm-none-eabi-nm (decode.py) from STM32CubeIDE if not on the PATH
 
 RING=${1:-trace_out/ring.bin}
 ELF=${2:-Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf}
