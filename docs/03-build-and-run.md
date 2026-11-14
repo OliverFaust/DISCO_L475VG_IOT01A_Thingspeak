@@ -181,7 +181,7 @@ Check, line by line:
 | Line | Meaning | If not |
 |---|---|---|
 | `Reset cause: ...` | why the board started: `reset pin (button or debugger)` after flashing or the RESET button, `power-on/brown-out` after plugging in, `software reset` after a restart by the program or `tools/flash_and_capture.sh` | -- |
-| `HTS221 check (I2C transfers all OK)`, `WHO_AM_I ... (expect ...)` equal | the sensors answer on I2C2 | chapter 5 (HTS221) |
+| `HTS221 check (I2C transfers all OK)`, `WHO_AM_I ... (expect ...)` equal | the sensors answer on I2C2 | chapter 5, 5.1 (HTS221) |
 | `#1  T = ... RH = ... p = ...` every 5 s | Sensors and Console work | -- |
 | `Uplink: Wi-Fi module ready` within about 1 s | the Wi-Fi module started | chapter 7, 7.1 |
 | `Uplink: joined (... ms), IP ...` within about 10 s (joins took 3.0 to 8.8 s in the tests) | your network accepted the board | chapter 7, 7.4 (and chapter 1.2) |

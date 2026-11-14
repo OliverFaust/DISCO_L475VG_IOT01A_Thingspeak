@@ -1,11 +1,11 @@
 # 5. Code walkthrough
 
 This chapter explains the source, process by process. It grows with the project; this version
-covers the HTS221 conversion in the Sensors process (5.x) and the Uplink process (5.y).
+covers the HTS221 conversion in the Sensors process (5.1) and the Uplink process (5.2).
 
 ---
 
-## 5.x Temperature and humidity: the HTS221 conversion
+## 5.1 Temperature and humidity: the HTS221 conversion
 
 Files: `Core/Inc/hts221_calib.h`, `Core/Src/hts221_calib.c`, used by `Core/Src/sensors_process.cpp`.
 
@@ -98,7 +98,7 @@ which temperature is it zero (if anywhere in the sensor's range)?
 
 ---
 
-## 5.y The Uplink process: Wi-Fi and ThingSpeak
+## 5.2 The Uplink process: Wi-Fi and ThingSpeak
 
 Files: `Core/Inc/uplink_process.hpp`, `Core/Src/uplink_process.cpp`, `Core/Inc/uplink_status.hpp`,
 `Core/Src/thingspeak_http.cpp`; wiring in `Core/Src/app.cpp`; messages printed by

@@ -3,7 +3,7 @@
  *
  * The Uplink restarts the whole board (NVIC_SystemReset) when the Wi-Fi driver cannot be
  * initialised: with CMSIS-Driver 2.11.0 a retry in the same run would leak FreeRTOS heap and would
- * not reset the module (docs/05-code-walkthrough.md, 5.y). A counter in a .noinit RAM section
+ * not reset the module (docs/05-code-walkthrough.md, 5.2). A counter in a .noinit RAM section
  * survives that reset, so repeated restarts are visible on the console.
  */
 #ifndef RESET_INFO_H

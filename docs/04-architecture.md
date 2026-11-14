@@ -168,6 +168,6 @@ event flags (the stack report shows `FreeRTOS heap: free 640 of 1024 bytes`). Th
 ## 4.8 When the Wi-Fi module does not start
 
 If the module fails to start, the Uplink restarts the whole board (the driver cannot be started a
-second time; chapter 5). After 3 failed starts in a row the board stops restarting and runs Sensors and
+second time; chapter 5, 5.2). After 3 failed starts in a row the board stops restarting and runs Sensors and
 Console alone, printing once a minute that Wi-Fi is unavailable (chapter 7, 7.1). The KeepNewest
 channel `uplinkSamples` makes this simple: Sensors writes into it whether or not anyone reads.

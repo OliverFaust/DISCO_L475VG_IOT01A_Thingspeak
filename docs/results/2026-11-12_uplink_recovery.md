@@ -3,7 +3,7 @@
 Network: Sensors (I2C2, every 5 s) -> Console, Sensors -> Uplink (Wi-Fi, ThingSpeak every 60 s),
 Uplink -> Console (status). All channels buffered, KeepNewest. Uplink at `osPriorityLow`, Sensors and
 Console at `osPriorityBelowNormal`. Code: `Core/Src/uplink_process.cpp`, walkthrough
-`docs/05-code-walkthrough.md` (5.y). Debug build, 0 errors, 0 warnings (text 107204, data 152,
+`docs/05-code-walkthrough.md` (5.2). Debug build, 0 errors, 0 warnings (text 107204, data 152,
 bss 48272). Logs masked with `tools/mask_log.py` (the Uplink never prints the SSID or the key).
 
 ## 1. Soak: 31 minutes (18:40:07-19:11:07 UTC)
