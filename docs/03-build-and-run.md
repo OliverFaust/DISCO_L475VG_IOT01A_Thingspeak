@@ -156,24 +156,26 @@ The serial terminal shows (values, times and numbers will differ):
 DISCO_L475VG_IOT01A_Thingspeak -- Sensors, Console, Uplink (ThingSpeak every 60 s)
 CSP4CMSIS 3.1.0, FreeRTOS V10.3.1 (CMSIS-RTOS2), SYSCLK 80 MHz
 Reset cause: reset pin (button or debugger); consecutive restarts after a failed Wi-Fi start: 0 of 3
-[    0.029 s] HTS221 check (I2C transfers all OK)
+[    0.030 s] HTS221 check (I2C transfers all OK)
   WHO_AM_I: HTS221 @0xBE: 0xBC (expect 0xBC), LPS22HB @0xBA: 0xB1 (expect 0xB1)
   ...                                       (8 more lines of the sensor check)
-[    0.037 s] #1  T = 14.23 C  RH = 82.01 %  p = 982.52 hPa
-[    0.926 s] Uplink: Wi-Fi module ready  [ok 0, rejected 0, failed 0, joins 0]
-[    5.041 s] #2  T = 14.22 C  RH = 82.06 %  p = 982.47 hPa
-[    5.723 s] Uplink: joined (4789 ms), IP 192.168.1.28  [ok 0, rejected 0, failed 0, joins 1]
-[    7.066 s] Uplink: sample #2 -> entry 235693 (335 ms)  [ok 1, rejected 0, failed 0, joins 1]
-[   10.044 s] #3  T = 14.29 C  RH = 82.06 %  p = 982.46 hPa
+[    0.037 s] #1  T = 19.91 C  RH = 60.83 %  p = 975.24 hPa
+[    0.925 s] Uplink: Wi-Fi module ready  [ok 0, rejected 0, failed 0, joins 0]
+[    5.041 s] #2  T = 19.86 C  RH = 60.81 %  p = 975.29 hPa
+[    5.726 s] Uplink: joined (4793 ms), IP 192.168.1.28  [ok 0, rejected 0, failed 0, joins 1]
+[   10.042 s] #3  T = 19.91 C  RH = 60.85 %  p = 975.33 hPa
+[   15.043 s] #4  T = 19.95 C  RH = 60.79 %  p = 975.33 hPa
+[   15.350 s] Uplink: sample #3 -> entry 236393 (350 ms)  [ok 1, rejected 0, failed 0, joins 1]
 ...
 [   60.000 s] Stack high-water marks (smallest free stack so far):
   FreeRTOS heap: free 640 of 1024 bytes, minimum ever free 640 bytes
-  Sensors   512 words, min free  301 words, max used  211 words (41 %)
-  Console   512 words, min free  237 words, max used  275 words (53 %)
-  Uplink   1024 words, min free  761 words, max used  263 words (25 %)
-[   60.074 s] #13  T = 14.89 C  RH = 81.58 %  p = 982.41 hPa
-[   65.077 s] #14  T = 14.91 C  RH = 81.45 %  p = 982.43 hPa
-[   67.394 s] Uplink: sample #14 -> entry 235694 (328 ms)  [ok 2, rejected 0, failed 0, joins 1]
+  Sensors   512 words, min free  323 words, max used  189 words (36 %)
+  Console   512 words, min free  255 words, max used  257 words (50 %)
+  Uplink   1024 words, min free  785 words, max used  239 words (23 %)
+[   60.052 s] #13  T = 19.83 C  RH = 60.97 %  p = 975.28 hPa
+...
+[   75.055 s] #16  T = 19.91 C  RH = 60.99 %  p = 975.29 hPa
+[   75.681 s] Uplink: sample #16 -> entry 236394 (331 ms)  [ok 2, rejected 0, failed 0, joins 1]
 ```
 
 Check, line by line:
@@ -185,7 +187,7 @@ Check, line by line:
 | `#1  T = ... RH = ... p = ...` every 5 s | Sensors and Console work | -- |
 | `Uplink: Wi-Fi module ready` within about 1 s | the Wi-Fi module started | chapter 7, 7.1 |
 | `Uplink: joined (... ms), IP ...` within about 10 s (joins took 3.0 to 8.8 s in the tests) | your network accepted the board | chapter 7, 7.4 (and chapter 1.2) |
-| `Uplink: sample #N -> entry M` | ThingSpeak stored the update as entry M | chapter 7, 7.2 (`REJECTED`) |
+| `Uplink: sample #N -> entry M`, the first about 15 s after the start | ThingSpeak stored the update as entry M (the first upload waits until 15 s after the start: ThingSpeak's rate limit, chapter 2.3) | chapter 7, 7.2 (`REJECTED`) |
 | further `-> entry` lines every 60 s | the upload period | -- |
 | stack report at 60 s, then every 10 minutes | free stack of each process; `min free` must stay well above 0 | chapter 7 |
 

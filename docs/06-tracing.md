@@ -60,7 +60,7 @@ first 1024 records after reset -- the Wi-Fi join fills those within a second.)
 2. Flash and run it as usual (chapter 3), with a serial terminal on the virtual COM port. The console
    output is the same as in Debug.
 3. Wait for an upload line, e.g.
-   `[  67.394 s] Uplink: sample #14 -> entry 235694 (328 ms)`, then go to 6.3 within 20 s.
+   `[  75.681 s] Uplink: sample #16 -> entry 236394 (331 ms)`, then go to 6.3 within 20 s.
 
 ---
 

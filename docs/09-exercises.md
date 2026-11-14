@@ -246,10 +246,6 @@ measured on the lab board: about 13 records per second between uploads, about 69
    ```
    Why `== 2` for the third? Check on the console that the board stopped before printing the third
    `-> entry` line, and in the decoded trace that the window ends inside an upload.
-   Start it at least 15 s after the last `-> entry` line: the reset restarts the upload timing, and
-   an upload within 15 s of the previous one is rejected by ThingSpeak's rate limit (chapter 2, 2.3)
-   -- then the third *successful* upload comes a minute later than you expect (it happened once on
-   the lab board: `REJECTED by ThingSpeak (HTTP 200, entry 0)` 7.3 s after the reset).
 6. Press B1 during an upload, by hand: start `tools/trace_dump.sh --wait ...`, watch the console,
    and press when you expect the next upload (it starts 60 s after the previous upload ended, i.e.
    shortly before the `-> entry` line). Decode and open Perfetto: how far from the Uplink's
@@ -290,8 +286,10 @@ measured on the lab board: about 13 records per second between uploads, about 69
   6.6) -- the upload it was meant to show never happens at its normal speed. Count in the program
   and call `trace_trigger(0)` when the count is reached; the cost is a compare per switch.
 - Q5: the condition is checked before `++uploadsOk_`, which still holds the number of earlier
-  successful uploads. On the lab board: after the reset `-> entry` at 11.1 s and 71.5 s, then the
-  halt and the dump (about a second on the terminal), then the third `-> entry` line at 131.8 s.
+  successful uploads. On the lab board, started 3 s after an upload: after the reset `-> entry` at
+  15.3 s and 75.7 s, then the halt and the dump (about a second on the terminal), then the third
+  `-> entry` line at 136.0 s. The first upload waits until 15 s after the start, so a reset right
+  after an upload does not break ThingSpeak's rate limit (chapter 5, *The upload period*).
 - Q6: the lab tests pressed in software (`--press`) 148 ms and 128 ms into an upload (6.6 and its record). By hand, expect a
   spread of several hundred milliseconds: an upload lasts 0.35 s, so a hand press lands inside it
   only now and then. That is why a condition in the source is the tool for exact moments.

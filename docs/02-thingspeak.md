@@ -66,13 +66,15 @@ Connection: close
 
 ThingSpeak answers with the number of the new entry (`entry_id`, counting from 1 in each channel), or
 with `0` if it did not store the update. The program checks this number: the console line
-`Uplink: sample #14 -> entry 235694 (328 ms)` means the update was stored as entry 235694.
+`Uplink: sample #16 -> entry 236394 (331 ms)` means the update was stored as entry 236394.
 
 **Rate limit.** A free ThingSpeak account accepts at most one update per channel every **15 s**; an
 update that comes sooner is rejected (entry 0). The program uploads every **60 s** by default
 (`APP_UPLOAD_PERIOD_S` in `Core/Inc/app_config.h`); values below 15 do not compile. The period is
 measured from the end of one upload to the start of the next, so two uploads are never less than one
-period apart, even after a reconnect. Two boards writing into one channel break the limit -- give each
+period apart, even after a reconnect. The first upload after a start comes no earlier than 15 s after
+it: ThingSpeak's limit holds across resets, and the board may have been reset (RESET button, debugger,
+a restart by the program) just after an upload. Two boards writing into one channel break the limit -- give each
 board its own channel.
 
 Free accounts also have a yearly message quota; at one update per minute a board uses about 525 600

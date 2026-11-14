@@ -162,7 +162,7 @@ void UplinkProcess::run()
     bool moduleReady = false, joined = false;
     uint32_t joinBackoff = kJoinBackoffFirstMs;
     uint32_t failedUploads = 0;
-    uint32_t nextUploadAt = 0;      // first upload as soon as joined and a sample is there
+    uint32_t nextUploadAt = kMinPeriodMs;  // >= 15 s after boot: the rate limit holds across resets
 
     for (;;) {
         if (!moduleReady) {

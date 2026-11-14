@@ -145,7 +145,8 @@ configuration requires, but it only wakes briefly every 8 ms while a socket is o
    does not reset the module, and a failed `Initialize()` leaks its RTOS objects on the FreeRTOS heap
    (measured; `docs/results/2026-11-12_uplink_recovery.md`). An early version of the Uplink reset the
    driver after five failed joins and lost 384 bytes of heap doing so.
-3. **Is it time to upload?** Wait until `nextUploadAt`, then send the newest sample.
+3. **Is it time to upload?** Wait until `nextUploadAt`, then send the newest sample. The first time,
+   `nextUploadAt` is 15 s after boot (below).
 
 The process never returns. No network error leads out of the loop; each one leads to a report and a
 wait. The one exception is a failed `Initialize()`, which restarts the board.
@@ -232,6 +233,20 @@ any smaller run-time value to 15 s.
 After a *failed* attempt the next try comes 15 s later, never sooner: a request may have reached
 ThingSpeak even if the answer got lost.
 
+The **first** upload after boot also waits until 15 s after the start:
+
+```cpp
+uint32_t nextUploadAt = kMinPeriodMs;  // >= 15 s after boot: the rate limit holds across resets
+```
+
+ThingSpeak's limit counts per channel, not per boot, and nothing on the board remembers when it last
+uploaded. Reset the board -- RESET button, a debugger, the program's own restart after a failed Wi-Fi
+start -- a few seconds after an upload, and an upload "as soon as joined" (about 7 s after start, as
+in an earlier version) arrives less than 15 s after the previous one: `REJECTED by ThingSpeak (HTTP
+200, entry 0)` (measured, `docs/results/2026-11-14_first_upload_after_boot.md`). `now()` counts from
+the kernel start, which comes after the reset, so 15 s after boot is always at least 15 s after the
+last upload before it. The price is about 8 s more until the first point on the channel.
+
 ### One upload
 
 `UplinkProcess::upload()`:
@@ -251,7 +266,7 @@ ThingSpeak even if the answer got lost.
    `'\0'`. The Mbed version received into a 64-byte buffer without a terminator and then called
    `strstr()` on it.
 6. **Check the answer.** HTTP 200 and an entry id > 0: `Uploaded`. Anything else from the server
-   (for example entry id 0: wrong key, or too soon): `Rejected`. No complete answer: `UploadFailed`.
+   (HTTP 400: wrong key; HTTP 200 with entry id 0: too soon, chapter 7, 7.2): `Rejected`. No complete answer: `UploadFailed`.
 7. `SocketClose()` in every case.
 
 After three failed uploads in a row, or as soon as the driver says the station is no longer
@@ -260,9 +275,9 @@ connected (`IsConnected()`), the Uplink leaves the network and joins again (`Rej
 ### What the Console shows
 
 ```
-[    5.713 s] Uplink: joined (4786 ms), IP 192.168.1.28  [ok 0, rejected 0, failed 0, joins 1]
-[    7.061 s] Uplink: sample #2 -> entry 235574 (340 ms)  [ok 1, rejected 0, failed 0, joins 1]
-[   67.460 s] Uplink: sample #14 -> entry 235575 (399 ms)  [ok 2, rejected 0, failed 0, joins 1]
+[    5.726 s] Uplink: joined (4793 ms), IP 192.168.1.28  [ok 0, rejected 0, failed 0, joins 1]
+[   15.350 s] Uplink: sample #3 -> entry 236393 (350 ms)  [ok 1, rejected 0, failed 0, joins 1]
+[   75.681 s] Uplink: sample #16 -> entry 236394 (331 ms)  [ok 2, rejected 0, failed 0, joins 1]
 ```
 
 Each line carries the running counters, so the last line of a run tells how many uploads succeeded,
