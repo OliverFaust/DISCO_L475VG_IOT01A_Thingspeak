@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include "app.h"
 #include "reset_info.h"
+#include "trace_trigger.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -403,7 +404,8 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(ISM43362_DRDY_EXTI1_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
-
+  /* B1 as trace trigger: Debug-Trace only, Core/Src/trace_trigger.c (no code in Debug, Release) */
+  trace_trigger_b1_init();
   /* USER CODE END MX_GPIO_Init_2 */
 }
 

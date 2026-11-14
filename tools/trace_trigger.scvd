@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Trace trigger events of DISCO_L475VG_IOT01A_Thingspeak (component 0x52, Debug-Trace only):
+     Core/Src/trace_trigger.c. Passed to decode.py by tools/trace_decode.sh. -->
+<component_viewer schemaVersion="1.2.0" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="Component_Viewer.xsd">
+  <component name="Trace trigger" shortname="Trigger" version="1.0.0"/>
+  <events>
+    <group name="Trace trigger">
+      <component name="Trace trigger events" brief="Trigger" no="0x52" prefix="TRACE_TRIGGER_" info="B1 / trace_trigger(): breakpoint after post_ms"/>
+    </group>
+    <event id="0x5200 + 0x00" level="Op" property="TriggerArmed" value="remaining_ms=%d[val1]" info="Armed by trace_trigger() or B1; recorded by the tick hook at its first tick after the call: ms until the deadline."/>
+    <event id="0x5200 + 0x01" level="Op" property="TriggerFired" value="debugger=%d[val1], late_ms=%d[val2]" info="Deadline passed: BKPT if a debugger is attached (1), nothing if not (0); late_ms after the deadline."/>
+  </events>
+</component_viewer>

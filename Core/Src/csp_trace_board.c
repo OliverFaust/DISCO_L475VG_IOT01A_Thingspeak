@@ -11,6 +11,7 @@
  *    i.e. before main() and long before the first event (the first thread creation).
  *  - csp_trace_ring_tick() from the FreeRTOS tick hook: heartbeat once per second, and a record
  *    when SystemCoreClock changes (it does once: from 4 MHz MSI to 80 MHz in SystemClock_Config()).
+ *  - trace_trigger_tick() from the same hook: the breakpoint trigger of Core/Src/trace_trigger.c.
  * The thread hooks are in Core/Inc/FreeRTOSConfig.h (USER CODE Defines), likewise only with
  * CSP4CMSIS_TRACE.
  *
@@ -20,6 +21,7 @@
 
 #include "FreeRTOS.h"
 #include "csp/csp_trace_ring.h"
+#include "trace_trigger.h"
 
 struct csp_trace_ring csp_trace_ring __attribute__((section(".csp_trace"), aligned(32)));
 
@@ -32,6 +34,7 @@ __attribute__((constructor(101))) static void csp_trace_board_init(void)
 void vApplicationTickHook(void)
 {
   csp_trace_ring_tick(configTICK_RATE_HZ);
+  trace_trigger_tick();                   /* B1 or trace_trigger(): BKPT when its time has come */
 }
 
 #endif /* CSP4CMSIS_TRACE */

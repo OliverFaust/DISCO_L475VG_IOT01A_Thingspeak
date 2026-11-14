@@ -13,6 +13,7 @@
 #   stable.csv        decode.py: stable points
 #   trace.json        decode.py: Perfetto trace -- open it in https://ui.perfetto.dev; if <ring>.names
 #                     exists (tools/trace_dump.sh), threads carry their process names (trace_names.py)
+#                     and a "trigger" track shows B1 presses and the halt (trace_marks.py)
 # then, if ProB is available (PROBCLI, or probcli on the PATH):
 #   conf/             csp_trace.py: conformance check of the trace against the CSP models
 #
@@ -27,7 +28,7 @@ RING=${1:-trace_out/ring.bin}
 ELF=${2:-Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf}
 OUT=${3:-trace_out}
 T=lib/csp4cmsis-trace/tools/trace
-SCVD=lib/csp4cmsis-trace/trace/FreeRTOS_ring.scvd
+SCVD=lib/csp4cmsis-trace/trace/FreeRTOS_ring.scvd   # tools/trace_trigger.scvd: the trigger events of Core/Src/trace_trigger.c
 mkdir -p "$OUT"
 
 python3 -I "$T/ring2log.py" "$RING" -o "$OUT/events.log" --report "$OUT/ring_report.txt"
@@ -37,13 +38,14 @@ if [ -z "${EVENTLIST:-}" ] && ! command -v eventlist >/dev/null 2>&1; then
   EL=(--no-eventlist)
   echo "== eventlist not found: decode.py --no-eventlist"
 fi
-python3 -I "$T/decode.py" -a "$ELF" -I "$SCVD" "${EL[@]}" "$OUT/events.log" \
+python3 -I "$T/decode.py" -a "$ELF" -I "$SCVD" -I tools/trace_trigger.scvd "${EL[@]}" "$OUT/events.log" \
   -o "$OUT/events.csv" --summary "$OUT/summary.txt" --checks "$OUT/checks.json" \
   --stable "$OUT/stable.csv" --perfetto "$OUT/trace.json"
 NAMES=${RING%.bin}.names
 if [ -s "$NAMES" ]; then
   python3 -I tools/trace_names.py apply "$NAMES" "$OUT/trace.json" "$ELF"
 fi
+python3 -I tools/trace_marks.py "$OUT/events.csv" "$OUT/trace.json"   # B1 / trace_trigger(), if any
 echo "== decoded: $OUT/events.csv, $OUT/trace.json (open in https://ui.perfetto.dev)"
 
 PROB=${PROBCLI:-$(command -v probcli || true)}
