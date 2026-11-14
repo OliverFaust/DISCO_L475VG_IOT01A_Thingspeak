@@ -9,7 +9,9 @@
 #  2. arm-none-eabi-gdb connects: connecting halts the core, so the ring stops changing.
 #  3. GDB: dump binary memory <out> &csp_trace_ring ((char *)&csp_trace_ring) + sizeof(csp_trace_ring)
 #     -- the header (32 bytes) and all records; then print the header for the record.
-#  4. GDB detaches: the core runs on. The GDB server is stopped.
+#  4. Still halted: the process names (pcTaskName) of the threads in the ring, into <ring>.names
+#     (tools/trace_names.py; tools/trace_decode.sh puts them into trace.json).
+#  5. GDB detaches: the core runs on. The GDB server is stopped.
 # Then decode with tools/trace_decode.sh.
 #
 # Needs STM32CubeIDE 2.x (its ST-LINK_gdbserver and arm-none-eabi-gdb) and STM32CubeProgrammer;
@@ -31,10 +33,12 @@ GDB=$(ls "$CUBEIDE"/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for
 arm-none-eabi-nm "$ELF" 2>/dev/null | grep " csp_trace_ring$" >/dev/null || { echo "$ELF has no csp_trace_ring: not a Debug-Trace build" >&2; exit 2; }
 mkdir -p "$(dirname "$OUT")"
 
+NAMES=${OUT%.bin}.names
 LOG=$(mktemp)
+CMDS=$(mktemp)
 "$GDBSERVER" -g -p "$PORT" -d -l 1 -cp "$CUBEPROG" > "$LOG" 2>&1 &
 SERVER=$!
-trap 'kill $SERVER 2>/dev/null || true; wait $SERVER 2>/dev/null || true; rm -f "$LOG"' EXIT
+trap 'kill $SERVER 2>/dev/null || true; wait $SERVER 2>/dev/null || true; rm -f "$LOG" "$CMDS"' EXIT
 for _ in $(seq 1 50); do grep -q "Waiting for debugger connection" "$LOG" && break; sleep 0.2; done
 grep -q "Waiting for debugger connection" "$LOG" || { cat "$LOG" >&2; echo "GDB server did not start" >&2; exit 1; }
 
@@ -43,6 +47,10 @@ grep -q "Waiting for debugger connection" "$LOG" || { cat "$LOG" >&2; echo "GDB 
   -ex "printf \"halted at pc = %p, write_count = %u\\n\", \$pc, csp_trace_ring.header.write_count" \
   -ex "dump binary memory $OUT &csp_trace_ring ((char *)&csp_trace_ring) + sizeof(csp_trace_ring)" \
   -ex "print/x csp_trace_ring.header" \
-  -ex "detach" 2>&1 | grep -v "^warning: .*\(libthread\|auto-load\)"
+  -ex "shell python3 -I tools/trace_names.py gdb $OUT > $CMDS" \
+  -ex "source $CMDS" \
+  -ex "detach" 2>&1 | grep -v "^warning: .*\(libthread\|auto-load\)" | tee "$LOG.gdb"
+grep "^TASKNAME " "$LOG.gdb" > "$NAMES" || true
+rm -f "$LOG.gdb"
 
-echo "== wrote $OUT ($(stat -c %s "$OUT") bytes); the board is running again"
+echo "== wrote $OUT ($(stat -c %s "$OUT") bytes) and $NAMES ($(wc -l < "$NAMES") names); the board is running again"

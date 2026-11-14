@@ -11,7 +11,8 @@
 #   summary.txt       decode.py: counts per event and thread
 #   checks.json       decode.py: library state checks (buffered channel replay, ALT guards)
 #   stable.csv        decode.py: stable points
-#   trace.json        decode.py: Perfetto trace -- open it in https://ui.perfetto.dev
+#   trace.json        decode.py: Perfetto trace -- open it in https://ui.perfetto.dev; if <ring>.names
+#                     exists (tools/trace_dump.sh), threads carry their process names (trace_names.py)
 # then, if ProB is available (PROBCLI, or probcli on the PATH):
 #   conf/             csp_trace.py: conformance check of the trace against the CSP models
 #
@@ -38,6 +39,10 @@ fi
 python3 -I "$T/decode.py" -a "$ELF" -I "$SCVD" "${EL[@]}" "$OUT/events.log" \
   -o "$OUT/events.csv" --summary "$OUT/summary.txt" --checks "$OUT/checks.json" \
   --stable "$OUT/stable.csv" --perfetto "$OUT/trace.json"
+NAMES=${RING%.bin}.names
+if [ -s "$NAMES" ]; then
+  python3 -I tools/trace_names.py apply "$NAMES" "$OUT/trace.json" "$ELF"
+fi
 echo "== decoded: $OUT/events.csv, $OUT/trace.json (open in https://ui.perfetto.dev)"
 
 PROB=${PROBCLI:-$(command -v probcli || true)}
