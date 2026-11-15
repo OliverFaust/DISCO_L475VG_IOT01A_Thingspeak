@@ -8,17 +8,20 @@
 # last entry id and, per entry, entry_id, created_at, field1..field3 -- nothing else of the channel
 # (no name, description or location), and never the read key; the channel ID is shown with its
 # first 2 digits only.
-set -euo pipefail
+set -Eeuo pipefail
+# Anything unexpected that stops the script is reported (script, line, command), never silent.
+trap 'rc=$?; echo "${0##*/}: stopped by an unexpected error (exit $rc) at line $LINENO: $BASH_COMMAND" >&2' ERR
 cd "$(dirname "$0")/.."
 ENV=tools/thingspeak_host.env
 [ -f "$ENV" ] || { echo "thingspeak_feed: $ENV not found (copy $ENV.template)"; exit 2; }
-get() { sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*\(.*\)$/\1/p" "$ENV" | tr -d '\r"'"'"' \t' | head -1; }
+get() { sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*\(.*\)$/\1/p" "$ENV" | tr -d '\r"'"'"' \t' | head -1 || true; }
 CH=$(get THINGSPEAK_CHANNEL_ID); RK=$(get THINGSPEAK_READ_KEY); N=${1:-5}
-[[ "$CH" =~ ^[0-9]+$ ]] || { echo "thingspeak_feed: THINGSPEAK_CHANNEL_ID must be a number"; exit 2; }
+[[ "$CH" =~ ^[0-9]+$ ]] || { echo "thingspeak_feed: THINGSPEAK_CHANNEL_ID must be a number, without quotes (e.g. THINGSPEAK_CHANNEL_ID=1234567)"; exit 2; }
 URL="https://api.thingspeak.com/channels/$CH/feeds.json?results=$N"
 [ -n "$RK" ] && URL="$URL&api_key=$RK"
 echo "# channel ${CH:0:2}$(printf '%*s' $((${#CH}-2)) '' | tr ' ' '*'), last $N entries, read $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-curl -s --max-time 30 "$URL" | python3 -I -c '
+command -v curl >/dev/null || { echo "thingspeak_feed: curl not found (sudo apt install curl)"; exit 2; }
+{ curl -s --max-time 30 "$URL" || true; } | python3 -I -c '
 import json, sys
 raw = sys.stdin.read()
 try:
@@ -31,4 +34,4 @@ print("last_entry_id:", d.get("channel", {}).get("last_entry_id"))
 print("%-9s %-21s %-10s %-10s %-10s" % ("entry_id", "created_at", "field1", "field2", "field3"))
 for f in d["feeds"]:
     print("%-9s %-21s %-10s %-10s %-10s" % (f.get("entry_id"), f.get("created_at"), f.get("field1"), f.get("field2"), f.get("field3")))
-'
+' || exit 1   # the Python part has printed why

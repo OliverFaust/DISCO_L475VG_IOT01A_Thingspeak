@@ -20,7 +20,9 @@
 # decode.py needs eventlist (CMSIS-Toolbox 1.2) for full formatting; without it (EVENTLIST unset
 # and no eventlist on the PATH) this script uses decode.py --no-eventlist, which supports the
 # FreeRTOS .scvd used here.
-set -euo pipefail
+set -Eeuo pipefail
+# Anything unexpected that stops the script is reported (script, line, command), never silent.
+trap 'rc=$?; echo "${0##*/}: stopped by an unexpected error (exit $rc) at line $LINENO: $BASH_COMMAND" >&2' ERR
 cd "$(dirname "$0")/.."
 . tools/toolchain.sh                    # arm-none-eabi-nm (decode.py) from STM32CubeIDE if not on the PATH
 
@@ -29,6 +31,11 @@ ELF=${2:-Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf}
 OUT=${3:-trace_out}
 T=lib/csp4cmsis-trace/tools/trace
 SCVD=lib/csp4cmsis-trace/trace/FreeRTOS_ring.scvd   # tools/trace_trigger.scvd: the trigger events of Core/Src/trace_trigger.c
+[ -f "$RING" ] || { echo "${0##*/}: $RING not found: dump the ring first (tools/trace_dump.sh)" >&2; exit 2; }
+[ -f "$ELF" ]  || { echo "${0##*/}: $ELF not found: build the Debug-Trace configuration first" >&2; exit 2; }
+[ -f "$T/decode.py" ] || { echo "${0##*/}: $T/decode.py not found (lib/csp4cmsis-trace missing?)" >&2; exit 2; }
+need_cmd arm-none-eabi-nm || exit 2
+need_cmd python3 || exit 2
 mkdir -p "$OUT"
 
 python3 -I "$T/ring2log.py" "$RING" -o "$OUT/events.log" --report "$OUT/ring_report.txt"

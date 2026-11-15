@@ -14,6 +14,8 @@
 # The SSID is reported as a warning only (it is not secret in itself, but a home network name
 # identifies a place; console logs mask it, see tools/mask_log.py).
 set -uo pipefail
+# Anything unexpected that stops the script is reported (script, line, command), never silent.
+trap 'rc=$?; echo "${0##*/}: unexpected error (exit $rc), the check continues, at line $LINENO: $BASH_COMMAND" >&2' ERR
 
 SECRETS=Core/Inc/app_secrets.h
 [ -f "$SECRETS" ] || { echo "check_secrets: $SECRETS not found (nothing to check against)"; exit 2; }
@@ -33,7 +35,7 @@ check() {   # name, value, severity
   local name=$1 val=$2 sev=$3 hits
   if [ ${#val} -lt 4 ]; then echo "check_secrets: $name too short or missing, not checked"; return; fi
   hits=$( { git grep -l -F --cached -e "$val" 2>/dev/null; git grep -l -F -e "$val" 2>/dev/null;
-            grep -rlF -e "$val" docs/results 2>/dev/null; } | sort -u | grep -vx "$SECRETS")
+            grep -rlF -e "$val" docs/results 2>/dev/null; } | sort -u | grep -vx "$SECRETS" || true)
   if [ -n "$hits" ]; then
     echo "check_secrets: $sev: $name found in:"; echo "$hits" | sed 's/^/  /'
     [ "$sev" = ERROR ] && status=1

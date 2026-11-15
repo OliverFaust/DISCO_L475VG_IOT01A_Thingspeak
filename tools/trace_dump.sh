@@ -29,10 +29,14 @@
 #     GDB server is stopped.
 # Then decode with tools/trace_decode.sh.
 #
-# Needs STM32CubeIDE 2.1.0 (its ST-LINK_gdbserver, arm-none-eabi-gdb/-nm and STM32CubeProgrammer
-# copy), found by tools/toolchain.sh; set CUBEIDE (and CUBEPROG, the programmer's bin folder) if they
-# are elsewhere. Tested on Ubuntu.
-set -euo pipefail
+# Needs STM32CubeIDE (its ST-LINK_gdbserver, arm-none-eabi-gdb/-nm and STM32CubeProgrammer copy),
+# found by tools/toolchain.sh (newest stm32cubeide_* in ~/st or /opt/st); set CUBEIDE (and CUBEPROG,
+# the programmer's bin folder) if they are elsewhere. Tested on Ubuntu with STM32CubeIDE 2.1.0.
+# Output: <ring.bin> (the ring: header and records) and <ring>.names (process names); trace.json
+# for Perfetto is made from them by tools/trace_decode.sh.
+set -Eeuo pipefail
+# Anything unexpected that stops the script is reported (script, line, command), never silent.
+trap 'rc=$?; echo "${0##*/}: stopped by an unexpected error (exit $rc) at line $LINENO: $BASH_COMMAND" >&2' ERR
 cd "$(dirname "$0")/.."
 
 usage() { sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2; }
@@ -47,29 +51,32 @@ while [ $# -gt 0 ]; do
     --press)   PRESS=1; shift ;;
     --timeout) [ $# -ge 2 ] || usage; TIMEOUT=$2; shift 2 ;;
     -h|--help) usage ;;
-    -*)        echo "unknown option $1" >&2; usage ;;
+    -*)        echo "${0##*/}: unknown option $1" >&2; usage ;;
     *)         break ;;
   esac
 done
-[ -z "$COND" ] || [ "$MODE" = break ] || { echo "--if needs --break" >&2; exit 2; }
-[ "$NEXT" = 0 ] || [ "$MODE" = break ] || { echo "--next needs --break" >&2; exit 2; }
-[ "$RESET" = 0 ] || [ "$MODE" = break ] || { echo "--reset needs --break" >&2; exit 2; }
-[ "$PRESS" = 0 ] || [ "$MODE" = wait ] || { echo "--press needs --wait" >&2; exit 2; }
+[ -z "$COND" ] || [ "$MODE" = break ] || { echo "${0##*/}: --if needs --break" >&2; exit 2; }
+[ "$NEXT" = 0 ] || [ "$MODE" = break ] || { echo "${0##*/}: --next needs --break" >&2; exit 2; }
+[ "$RESET" = 0 ] || [ "$MODE" = break ] || { echo "${0##*/}: --reset needs --break" >&2; exit 2; }
+[ "$PRESS" = 0 ] || [ "$MODE" = wait ] || { echo "${0##*/}: --press needs --wait" >&2; exit 2; }
 
 ELF=${1:-Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf}
 OUT=${2:-trace_out/ring.bin}
 . tools/toolchain.sh                    # CUBEIDE, STM32_PROGRAMMER_CLI, arm-none-eabi-nm on the PATH
-CUBEPROG=${CUBEPROG:-$(dirname "${STM32_PROGRAMMER_CLI:-$HOME/st/STM32CubeProgrammer/bin/x}")}
 PORT=${GDB_PORT:-61234}
 
-GDBSERVER=$(ls "$CUBEIDE"/plugins/com.st.stm32cube.ide.mcu.externaltools.stlink-gdb-server.*/tools/bin/ST-LINK_gdbserver 2>/dev/null | head -1)
-GDB=$(ls "$CUBEIDE"/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.*/tools/bin/arm-none-eabi-gdb 2>/dev/null | head -1)
-[ -x "$GDBSERVER" ] || { echo "ST-LINK_gdbserver not found under $CUBEIDE (set CUBEIDE)" >&2; exit 2; }
-[ -x "$GDB" ]       || { echo "arm-none-eabi-gdb not found under $CUBEIDE (set CUBEIDE)" >&2; exit 2; }
-[ -f "$ELF" ]       || { echo "$ELF not found: build the Debug-Trace configuration first" >&2; exit 2; }
-arm-none-eabi-nm "$ELF" 2>/dev/null | grep " csp_trace_ring$" >/dev/null || { echo "$ELF has no csp_trace_ring: not a Debug-Trace build" >&2; exit 2; }
+GDBSERVER=$(cubeide_tool stlink-gdb-server ST-LINK_gdbserver)
+GDB=$(cubeide_tool gnu-tools-for-stm32 arm-none-eabi-gdb)
+[ -n "$GDB" ] || GDB=$(command -v arm-none-eabi-gdb || true)
+[ -n "$GDBSERVER" ] && [ -x "$GDBSERVER" ] || { toolchain_missing "ST-LINK_gdbserver (part of STM32CubeIDE)"; exit 2; }
+[ -n "$GDB" ] && [ -x "$GDB" ]             || { toolchain_missing "arm-none-eabi-gdb"; exit 2; }
+need_cmd arm-none-eabi-nm || exit 2
+[ -n "${STM32_PROGRAMMER_CLI:-}" ] || { toolchain_missing "STM32_Programmer_CLI (the GDB server needs STM32CubeProgrammer)"; exit 2; }
+[ -f "$ELF" ]       || { echo "${0##*/}: $ELF not found: build the Debug-Trace configuration first" >&2; exit 2; }
+CUBEPROG=${CUBEPROG:-$(dirname "$STM32_PROGRAMMER_CLI")}
+arm-none-eabi-nm "$ELF" 2>/dev/null | grep " csp_trace_ring$" >/dev/null || { echo "${0##*/}: $ELF has no csp_trace_ring: not a Debug-Trace build" >&2; exit 2; }
 if [ "$MODE" = wait ]; then
-  arm-none-eabi-nm "$ELF" 2>/dev/null | grep " trace_trigger_tick$" >/dev/null || { echo "$ELF has no trace_trigger_tick: no trigger to wait for" >&2; exit 2; }
+  arm-none-eabi-nm "$ELF" 2>/dev/null | grep " trace_trigger_tick$" >/dev/null || { echo "${0##*/}: $ELF has no trace_trigger_tick: no trigger to wait for" >&2; exit 2; }
 fi
 mkdir -p "$(dirname "$OUT")"
 
@@ -81,7 +88,7 @@ SERVER=$!
 GDBPID=
 trap '[ -z "$GDBPID" ] || kill $GDBPID 2>/dev/null || true; kill $SERVER 2>/dev/null || true; wait $SERVER 2>/dev/null || true; rm -rf "$TMP"' EXIT
 for _ in $(seq 1 50); do grep -q "Waiting for debugger connection" "$LOG" && break; sleep 0.2; done
-grep -q "Waiting for debugger connection" "$LOG" || { cat "$LOG" >&2; echo "GDB server did not start" >&2; exit 1; }
+grep -q "Waiting for debugger connection" "$LOG" || { cat "$LOG" >&2; echo "${0##*/}: GDB server did not start (board connected? another debug session open?)" >&2; exit 1; }
 
 # The GDB script. $hit = 1 once the core has stopped where it should; only then is the ring dumped.
 G=$TMP/dump.gdb
