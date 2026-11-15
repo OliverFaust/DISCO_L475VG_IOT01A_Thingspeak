@@ -20,8 +20,11 @@ build/
 *.d
 *.cyclo
 
-# STM32CubeIDE: launch files and per-machine state, recreated on import
+# STM32CubeIDE: launch files and per-machine state, recreated on import -- except the two shared
+# Debug-Trace launch configurations (docs/06-tracing.md, 6.3)
 *.launch
+!/Debug-Trace (flash and debug).launch
+!/Debug-Trace (attach, dump).launch
 .settings/language.settings.xml
 .metadata/
 
