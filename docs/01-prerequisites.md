@@ -80,9 +80,23 @@ can reach the internet.
    may ask you to log in to a free myST account): a Linux installer for your distribution. Run it and
    accept the licences. You also need ST's **ST-LINK udev rules** (Debian package
    `st-stlink-udev-rules`; on the test machine version 1.0.3, installed with ST's tools) -- 1.4 checks
-   them. On the test machine the IDE is in `~/st/stm32cubeide_2.1.0`; the scripts in `tools/` look there and in
-   `/opt/st/stm32cubeide_2.1.0`. If yours is elsewhere, set `CUBEIDE` to its folder
-   (`export CUBEIDE=/path/to/stm32cubeide_2.1.0`) before using the scripts.
+   them. On the test machine the IDE is in `~/st/stm32cubeide_2.1.0`. The scripts in `tools/` use the
+   newest `stm32cubeide_*` folder (any version) in `~/st` and `/opt/st`; if yours is elsewhere, or you
+   want another version, set `CUBEIDE` to its folder (`export CUBEIDE=/path/to/stm32cubeide_2.1.0`)
+   before using the scripts. `tools/toolchain.sh` (run on its own) shows what they will use; with
+   only STM32CubeIDE installed (plugin folder names shortened here):
+   ```
+   $ tools/toolchain.sh
+   toolchain: STM32CubeIDE: /home/<you>/st/stm32cubeide_2.1.0 (newest of /home/<you>/st/stm32cubeide_* /opt/st/stm32cubeide_*)
+     arm-none-eabi-nm       /home/<you>/st/stm32cubeide_2.1.0/plugins/...gnu-tools-for-stm32.14.3.rel1.linux64_.../tools/bin/arm-none-eabi-nm
+     arm-none-eabi-gdb      /home/<you>/st/stm32cubeide_2.1.0/plugins/...gnu-tools-for-stm32.14.3.rel1.linux64_.../tools/bin/arm-none-eabi-gdb
+     ST-LINK_gdbserver      /home/<you>/st/stm32cubeide_2.1.0/plugins/...stlink-gdb-server.linux64_2.2.400.../tools/bin/ST-LINK_gdbserver
+     STM32_Programmer_CLI   /home/<you>/st/stm32cubeide_2.1.0/plugins/...cubeprogrammer.linux64_2.2.400.../tools/bin/STM32_Programmer_CLI
+   ```
+   A tool on the `PATH` (e.g. Ubuntu's `arm-none-eabi-nm`, or a separate STM32CubeProgrammer in
+   `~/st/STM32CubeProgrammer`) is used instead of STM32CubeIDE's copy. A line `NOT FOUND`: the
+   scripts that need that tool stop with a message naming the folders searched. Only STM32CubeIDE
+   2.1.0 was tested.
 2. The rest from Ubuntu's packages:
    ```bash
    sudo apt install git minicom curl python3

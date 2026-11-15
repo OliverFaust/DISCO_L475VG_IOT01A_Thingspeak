@@ -1,0 +1,30 @@
+### 8b PATH without Arm tools, HOME with only stm32cubeide_2.1.0: toolchain.sh
+$ HOME=$SCRATCH/home3 PATH=$SCRATCH/noarm tools/toolchain.sh
+toolchain: STM32CubeIDE: $SCRATCH/home3/st/stm32cubeide_2.1.0 (newest of $SCRATCH/home3/st/stm32cubeide_* /opt/st/stm32cubeide_*)
+  arm-none-eabi-nm       $SCRATCH/home3/st/stm32cubeide_2.1.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.linux64_1.0.100.202602081740/tools/bin/arm-none-eabi-nm
+  arm-none-eabi-gdb      $SCRATCH/home3/st/stm32cubeide_2.1.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.linux64_1.0.100.202602081740/tools/bin/arm-none-eabi-gdb
+  ST-LINK_gdbserver      $SCRATCH/home3/st/stm32cubeide_2.1.0/plugins/com.st.stm32cube.ide.mcu.externaltools.stlink-gdb-server.linux64_2.2.400.202601091506/tools/bin/ST-LINK_gdbserver
+  STM32_Programmer_CLI   $SCRATCH/home3/st/stm32cubeide_2.1.0/plugins/com.st.stm32cube.ide.mcu.externaltools.cubeprogrammer.linux64_2.2.400.202601091506/tools/bin/STM32_Programmer_CLI
+-> exit 0
+
+### 9 PATH without Arm tools, STM32CubeIDE found: trace_decode.sh (an older ring, without its .names)
+$ PATH=$SCRATCH/noarm tools/trace_decode.sh $SCRATCH/ring.bin Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf $SCRATCH/out9
+ring: capacity 1024 records, policy overwrite oldest, write count 218706, clock 80000000 Hz, DWT_CTRL 0x40000001
+records kept: 1024 (write index 217682..218705); overwritten 217682; dropped 0; torn 0; orphan continuation records 0
+events: 889 over 26.080323 s (34 events/s, 39 records/s)
+heartbeats: 27 (beats 8130..8156); intervals not about 1 s: none
+data events truncated at 64 bytes: 0
+== eventlist not found: decode.py --no-eventlist
+== decoded: $SCRATCH/out9/events.csv, $SCRATCH/out9/trace.json (open in https://ui.perfetto.dev)
+== ProB not found (set PROBCLI): conformance check (csp_trace.py) skipped
+-> exit 0
+
+### 18 thingspeak_feed.sh
+$ tools/thingspeak_feed.sh 2
+# channel 87****, last 2 entries, read 2026-11-15 10:52:26 UTC
+last_entry_id: 237118
+entry_id  created_at            field1     field2     field3    
+237117    2026-11-15T10:50:37Z  22.66      52.98      965.47    
+237118    2026-11-15T10:51:37Z  22.39      53.10      965.39    
+-> exit 0
+

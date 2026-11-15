@@ -90,6 +90,10 @@ TASKNAME 0x2000a3c4 IDLE
 
 `magic` 0x52505343 is "CSPR"; `capacity` 0x400 = 1024 records; `clock_hz` 0x4c4b400 = 80 MHz.
 
+The dump is two files: `ring.bin`, the ring as it is in RAM (32-byte header and 1024 records of
+16 bytes: 16416 bytes), and `ring.names`, the process names. There is no `trace.json` yet: it is
+made from these two files by `tools/trace_decode.sh` (6.4), which is what you open in Perfetto.
+
 **Why the names are read separately.** The decoder names a thread after its process's `name()`
 (`SensorsProcess::name()` returns `"Sensors"`, and so on). CSP4CMSIS records that name once, when the
 process starts (`ProcessName`); in an overwrite ring that holds an upload, those records were
@@ -540,6 +544,13 @@ reported as UNKNOWN, while its mutation is still checked. Results:
 
 ## 6.9 Troubleshooting
 
+- **`... not found.` followed by `STM32CubeIDE: ...` and `Fix: ... CUBEIDE=...`** -- a script did not
+  find a tool (`ST-LINK_gdbserver`, `arm-none-eabi-gdb`/`-nm`, `STM32_Programmer_CLI`). The message
+  says which STM32CubeIDE folder it used or which folders it searched (the newest `stm32cubeide_*`
+  in `~/st` and `/opt/st`). Run `tools/toolchain.sh` to see what is found, and set `CUBEIDE` (docs/01, 1.3).
+- **`<script>: stopped by an unexpected error (exit N) at line L: <command>`** -- a command in the
+  script failed where the script did not expect it; the lines above it are usually the command's own
+  message (e.g. `ring2log.py: ... not a format 1 trace ring` for a file that is not a ring dump).
 - **`ring2log.py`: bad magic** -- `ring.bin` was dumped from a Debug or Release build (no ring), or
   not from `&csp_trace_ring`. Check the active build configuration.
 - **No upload in the trace** -- dumped too late (6.1): dump within 20 s after the upload line.
