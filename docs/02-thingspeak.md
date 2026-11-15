@@ -91,8 +91,16 @@ Request` and entry 0; the console shows `REJECTED by ThingSpeak (HTTP 400, entry
 cp tools/thingspeak_host.env.template tools/thingspeak_host.env
 ```
 
-Edit `tools/thingspeak_host.env` and fill in `THINGSPEAK_CHANNEL_ID=` and `THINGSPEAK_READ_KEY=`
-(no quotes, no spaces). After the board has uploaded (chapter 3):
+Edit `tools/thingspeak_host.env` and fill in `THINGSPEAK_CHANNEL_ID=` and `THINGSPEAK_READ_KEY=`.
+The format is `NAME=value` **without quotes and without spaces** -- unlike `app_secrets.h`, where
+the values are C strings in double quotes. With made-up values (the template shows the same):
+
+```
+THINGSPEAK_CHANNEL_ID=1234567
+THINGSPEAK_READ_KEY=ABCDEFGHIJKLMNOP
+```
+
+After the board has uploaded (chapter 3):
 
 ```bash
 tools/thingspeak_feed.sh 3

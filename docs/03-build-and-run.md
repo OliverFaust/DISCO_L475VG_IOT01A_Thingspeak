@@ -62,7 +62,7 @@ Optional, for checking uploads from the PC (chapter 2.4):
 cp tools/thingspeak_host.env.template tools/thingspeak_host.env
 ```
 
-and fill in the channel ID and read key.
+and fill in the channel ID and read key (`NAME=value`, no quotes: docs/02, 2.4).
 
 ---
 
