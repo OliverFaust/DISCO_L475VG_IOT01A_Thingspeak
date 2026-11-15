@@ -12,7 +12,8 @@ This chapter takes you through it step by step.
 > code at all: they build to exactly the same image as without Debug-Trace (checked,
 > `docs/results/2026-11-14_tracing.md`).
 
-**Tested with:** the tools of chapter 1, Python 3.13 (Ubuntu 25.04), Google Chrome with
+**Tested with:** the tools of chapter 1 (STM32CubeIDE 2.1.0; the STM32CubeIDE GUI dump of 6.3 also with
+2.2.0 on a second machine), Python 3.13 (Ubuntu 25.04), Google Chrome with
 <https://ui.perfetto.dev>, and optionally ProB 1.x (`probcli`) for the conformance check. Windows: the
 Python scripts run unchanged; the shell scripts in `tools/` need Git Bash or WSL (not tested).
 
@@ -109,8 +110,9 @@ characters (`configMAX_TASK_NAME_LEN` 16), hence `WiFi_ISM43362_A` for the Wi-Fi
 
 ### Dump from STM32CubeIDE by hand
 
-The same dump without the script, in STM32CubeIDE's debugger (also on Windows; the steps below were
-written on Ubuntu). The project ships two **shared launch configurations** for this, as files in
+The same dump without the script, in STM32CubeIDE's debugger (also on Windows, not tested). The
+launch files were checked with STM32CubeIDE 2.1.0 (headless import and build). They were used in the
+GUI with STM32CubeIDE 2.2.0 on a second machine. The project ships two **shared launch configurations** for this, as files in
 the project folder; after the import they are listed under **Run > Debug Configurations... > STM32
 C/C++ Application**:
 
@@ -119,7 +121,8 @@ C/C++ Application**:
 | **Debug-Trace (flash and debug)** | Debug-Trace | yes | yes (connect under reset) | at `main` | put the Debug-Trace build on the board |
 | **Debug-Trace (attach, dump)** | no | no | no | where the program is when the debugger connects | copy the ring of the running program |
 
-Both use `Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf`, whatever configuration is active.
+Both are set to use `Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf` and the Debug-Trace build
+configuration, whatever configuration is active. Check that STM32CubeIDE shows them that way (step 2).
 
 **Do not use Run > Debug As, or the debug (bug) button without a choice.** Both start the launch
 configuration of the *active* build configuration, which after an import is Debug. Such a session:
@@ -134,16 +137,38 @@ So only a session that attaches without download and reset can copy the ring of 
 1. **Make Debug-Trace the active configuration.** Use **Project > Build Configurations > Set Active >
    Debug-Trace**, or the arrow next to the hammer button. The hammer button and **Run > Debug As** now
    use Debug-Trace too, and the editor shows the `CSP4CMSIS_TRACE` code as active.
-2. **Flash once.** Choose **Run > Debug Configurations... > Debug-Trace (flash and debug) > Debug**.
+2. **Check both launch configurations (once, before the first launch).** Open **Run > Debug
+   Configurations...**, select **Debug-Trace (flash and debug)** under *STM32 C/C++ Application*,
+   and look at the **Main** tab (Figure 6.1):
+   - **C/C++ Application:** `Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf`
+   - **Build Configuration:** `Debug-Trace`
+
+   Then select **Debug-Trace (attach, dump)** and check the same two fields. The two launches differ
+   in the build setting: **Enable auto build** for the flash launch, **Disable auto build** for the
+   attach launch, which must not build (see below).
+
+   If a field shows something else, e.g. `Debug/DISCO_L475VG_IOT01A_Thingspeak.elf`, set it by hand.
+   Type `Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf` into **C/C++ Application** (or **Search
+   Project...** and pick the ELF under `Debug-Trace`), choose `Debug-Trace` under **Build
+   Configuration**, and click **Apply**. The path is relative to the project: do not use
+   **Browse...**, which writes an absolute path that only works on your machine. On a second machine,
+   STM32CubeIDE 2.2.0 opened the attach launch with `Debug/...elf` here, and it had to be set by
+   hand.
+
+   ![STM32CubeIDE, Debug Configurations, Main tab of the Debug-Trace launch](img/cubeide_launch_main.png)
+
+   *Figure 6.1: the Main tab of **Debug-Trace (attach, dump)**: C/C++ Application
+   `Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf`, Build Configuration `Debug-Trace`.*
+3. **Flash once.** Choose **Run > Debug Configurations... > Debug-Trace (flash and debug) > Debug**.
    It builds Debug-Trace, downloads it, resets the board and stops at `main`. Press **Resume** (F8),
    then **Terminate** (red square, Ctrl+F2). In the serial terminal you should now see the Debug-Trace
    start-up (6.2) and then the uploads. The board keeps this build until you flash another one.
-3. **Wait for what you want in the ring.** To see an upload, attach within about 20 s after an
+4. **Wait for what you want in the ring.** To see an upload, attach within about 20 s after an
    `Uplink: ... -> entry` line (6.1).
-4. **Attach.** Choose **Run > Debug Configurations... > Debug-Trace (attach, dump) > Debug**.
+5. **Attach.** Choose **Run > Debug Configurations... > Debug-Trace (attach, dump) > Debug**.
    Connecting halts the core where it is. The **Debug** view shows the threads as *Suspended*, and the
    serial console stops printing.
-5. **Check the ELF.** In the **Debugger Console** tab (Console view, the console of this session),
+6. **Check the ELF.** In the **Debugger Console** tab (Console view, the console of this session),
    type `info files` and `p &csp_trace_ring`. You should now see (your folder instead of
    `/home/<you>`):
 
@@ -155,7 +180,7 @@ So only a session that attaches without download and reset can copy the ring of 
 
    `Debug-Trace/` in the first line, and an address in SRAM2 (`0x10000000`): this is the right ELF.
    `.../Debug/...elf` and `No symbol "csp_trace_ring" in current context.`: wrong session (see below).
-6. **Dump to an absolute path.** A relative name ends up in the debugger's working directory, which
+7. **Dump to an absolute path.** A relative name ends up in the debugger's working directory, which
    depends on the launch. Create the folder first (e.g. `mkdir -p ~/trace_out` in a terminal), then type:
 
    ```
@@ -165,30 +190,31 @@ So only a session that attaches without download and reset can copy the ring of 
    GDB does not create folders. Give the full path, not `~`. On Windows write it with forward slashes,
    e.g. `C:/Users/<you>/trace_out/ring.bin` (not tested). The file must be 16416 bytes
    (`ls -l ~/trace_out/ring.bin`).
-7. **Process names (optional).** Without `ring.names`, the threads keep their symbol names in
+8. **Process names (optional).** Without `ring.names`, the threads keep their symbol names in
    Perfetto. To get the process names:
    - for each thread address, type `print ((TCB_t *)0x20001138)->pcTaskName`;
    - write the lines `TASKNAME <address> <name>` into `ring.names` next to `ring.bin`, in the format
      shown above.
-8. **Let the board run on.** Press **Resume** (F8), then **Terminate**. The console prints again.
+9. **Let the board run on.** Press **Resume** (F8), then **Terminate**. The console prints again.
    The board runs without a reset; time on the board stood still while it was halted (6.6).
-9. **Decode** in a terminal, in the project folder:
+10. **Decode** in a terminal, in the project folder:
 
-   ```bash
-   tools/trace_decode.sh ~/trace_out/ring.bin Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf ~/trace_out
-   ```
+    ```bash
+    tools/trace_decode.sh ~/trace_out/ring.bin Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf ~/trace_out
+    ```
 
-   This gives `~/trace_out/trace.json` for Perfetto (6.4, 6.5).
+    This gives `~/trace_out/trace.json` for Perfetto (6.4, 6.5).
 
 **What to keep in mind:**
 
 - **`No symbol "csp_trace_ring" in current context.`** The session loaded an ELF without the ring.
   Usually that is the Debug ELF of the default launch; `info files` names it. Terminate it and use
-  **Debug-Trace (attach, dump)**. If that session flashed the board, the board now runs Debug: flash
-  Debug-Trace again (step 2) and wait (step 3).
+  **Debug-Trace (attach, dump)**. If `info files` names `Debug/...elf` in that launch as well, its
+  **Main** tab points to the wrong ELF: set it as in step 2. If that session flashed the board, the board now runs Debug: flash
+  Debug-Trace again (step 3) and wait (step 4).
 - **Every flash wipes the ring.** A download includes a reset, and the reset starts a new, empty ring.
   This applies to the flash launch, the default launch and **Run**. Dump before flashing, never after.
-- **The attach launch does not build.** If you have changed the code since step 2, the ELF on the PC
+- **The attach launch does not build.** If you have changed the code since step 3, the ELF on the PC
   no longer matches the program on the board. Addresses and symbols would then be wrong. Flash again
   first.
 - **A debug session leaves the debug-enable bit set.** `C_DEBUGEN` in `CoreDebug->DHCSR` is set by
@@ -264,7 +290,7 @@ runs, from CSP4CMSIS's `tools/trace`:
 3. Press **W** (zoom in) and **S** (zoom out), **A**/**D** to move, or drag on the time axis.
 
 You should now see a group of tracks for each thread and one for the buffered channels (Perfetto
-may order the groups differently from Figure 6.1; drag a group's name to move it):
+may order the groups differently from Figure 6.2; drag a group's name to move it):
 
 - one group per thread, named after its process (6.3): `Sensors`, `Console`, `Uplink`, `IDLE`
   (FreeRTOS's idle thread) and `WiFi_ISM43362_A` (the Wi-Fi driver's own thread). Without
@@ -284,7 +310,7 @@ may order the groups differently from Figure 6.1; drag a group's name to move it
 
 ![Perfetto: an upload with a sample arriving during it](img/perfetto_upload.png)
 
-*Figure 6.1: the Perfetto view of `docs/results/2026-11-14_trace_upload_names/trace.json`, recorded on
+*Figure 6.2: the Perfetto view of `docs/results/2026-11-14_trace_upload_names/trace.json`, recorded on
 the board (open it yourself to follow along without a board). Zoomed to about 24.74..25.21 s; the
 time range 24.781..25.146 s (365.6 ms, shown above the tracks) is selected by dragging across the
 tracks with the mouse, so the panel at the bottom, **Current Selection > Flow Events**, counts the

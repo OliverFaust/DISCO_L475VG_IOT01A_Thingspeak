@@ -189,12 +189,22 @@ launch configuration of the active build configuration, which is Debug after an 
 Such a session has also **flashed the Debug build** and reset the board. So the board no longer runs
 Debug-Trace, and the ring you wanted is gone.
 
+It also happens with **Debug-Trace (attach, dump)** when its **Main** tab names the Debug ELF. This
+was seen with STM32CubeIDE 2.2.0. The attach launch downloads nothing, so the board still runs
+Debug-Trace and the ring is still there: correct the Main tab (step 2 below) and attach again.
+
 **What to do.**
 
 1. Terminate the session.
-2. Flash the trace build once with the shared launch configuration **Debug-Trace (flash and debug)**
+2. Check the **Main** tab of both shared launch configurations (**Run > Debug Configurations...**,
+   docs/06, 6.3, step 2, Figure 6.1). **C/C++ Application** must be
+   `Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf`, and **Build Configuration** `Debug-Trace`. If
+   it shows `Debug/...elf`, enter the project-relative path by hand (not **Browse...**), choose
+   `Debug-Trace`, and click **Apply**. STM32CubeIDE 2.2.0 did this for the attach launch on a
+   second machine.
+3. Flash the trace build once with the shared launch configuration **Debug-Trace (flash and debug)**
    (**Run > Debug Configurations...**).
-3. Wait for the event you want, then dump with **Debug-Trace (attach, dump)**. This launch downloads
+4. Wait for the event you want, then dump with **Debug-Trace (attach, dump)**. This launch downloads
    nothing and does not reset.
 
 `info files` then names `.../Debug-Trace/...elf`, and `p &csp_trace_ring` gives

@@ -147,7 +147,7 @@ the new sample replaces the unread one, and the library records `OverwroteOldest
 not.
 
 Measured on the lab board (chapter 6, `docs/results/2026-11-14_tracing.md`): an upload keeps the
-Uplink out of its ALT for about 0.35 s (24.791 to 25.139 s in Figure 6.1); the Wi-Fi start and join
+Uplink out of its ALT for about 0.35 s (24.791 to 25.139 s in Figure 6.2); the Wi-Fi start and join
 after a reset for about 5.7 s; a failed join for about 16 s. Sensors samples every 5 s
 (`kSamplePeriodMs` in `Core/Src/app.cpp`).
 
@@ -157,7 +157,7 @@ after a reset for about 5.7 s; a failed join for about 16 s. Sensors samples eve
    *P* and the time *B* for which the Uplink is out of its ALT.
 2. With *P* = 5 s: at which moments of a normal run do you expect overwrites? How many after a reset?
    None during uploads -- why not, although a sample does sometimes arrive during an upload
-   (Figure 6.1)?
+   (Figure 6.2)?
 3. Is an overwrite here a loss? Argue from what the Uplink sends (one sample per upload period) and
    from ThingSpeak's rate limit (chapter 2).
 
@@ -200,7 +200,7 @@ after a reset for about 5.7 s; a failed join for about 16 s. Sensors samples eve
 - Q2: only while the Uplink starts and joins (about 5.7 s > 5 s): one overwrite after a reset, at
   about 5 s kernel time (the lab board stopped at tick 5042). Uploads (0.35 s) are much shorter than
   5 s, so the sample put during an upload is still unread when the Uplink returns to its ALT and is
-  taken then (129.7 ms later in Figure 6.1).
+  taken then (129.7 ms later in Figure 6.2).
 - Q6/Q7: about *B*/*P* - 1 overwrites per upload on average when *B* > *P*: none at 1000, 500 and
   300 ms (300 ms is close: an occasional one in a long upload); 0 or 1 at 200 ms; 2 or 3 at 100 ms.
 - Q9: KeepNewest loses data by design; KeepOldest loses the newest; a blocking channel loses nothing
