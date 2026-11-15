@@ -168,3 +168,36 @@ the station still connected, reads "3 failed uploads in a row: ...".)
 when it came back -- at most one retry interval (60 s) later. Samples taken meanwhile are not sent
 later (the Uplink always sends the newest one), so the channel has a gap, but no duplicate or wrong
 entries. Sampling and the console carry on throughout. Only if the failures never stop, see 7.4.
+
+---
+
+## 7.6 STM32CubeIDE: `No symbol "csp_trace_ring" in current context.`
+
+**You see**, in the **Debugger Console** of an STM32CubeIDE debug session, when you type the dump
+command of docs/06 (6.3), or `p &csp_trace_ring`:
+
+```
+No symbol "csp_trace_ring" in current context.
+```
+
+**What it means.** The session loaded an ELF without the trace ring: the Debug or Release build. Only
+Debug-Trace has `csp_trace_ring`. `info files` in the same console shows which ELF it is; the first
+line ends in `.../Debug/DISCO_L475VG_IOT01A_Thingspeak.elf` instead of `.../Debug-Trace/...`. This
+happens when the session was started with **Run > Debug As**, or with the debug button. Both use the
+launch configuration of the active build configuration, which is Debug after an import.
+
+Such a session has also **flashed the Debug build** and reset the board. So the board no longer runs
+Debug-Trace, and the ring you wanted is gone.
+
+**What to do.**
+
+1. Terminate the session.
+2. Flash the trace build once with the shared launch configuration **Debug-Trace (flash and debug)**
+   (**Run > Debug Configurations...**).
+3. Wait for the event you want, then dump with **Debug-Trace (attach, dump)**. This launch downloads
+   nothing and does not reset.
+
+`info files` then names `.../Debug-Trace/...elf`, and `p &csp_trace_ring` gives
+`(struct csp_trace_ring *) 0x10000000 <csp_trace_ring>`. Step by step: docs/06, 6.3, *Dump from
+STM32CubeIDE by hand*. Afterwards, unplug the USB cable before you press B1 without a debugger
+(docs/06, 6.6): the session left the debug-enable bit set.
