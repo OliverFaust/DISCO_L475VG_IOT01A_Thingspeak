@@ -58,3 +58,18 @@ clone:
   - whether the attach launch connects without a reset and keeps the ring.
 - The board was not connected to this PC.
 - Whether **Terminate** after the attach session lets the program run on without a reset.
+
+## Addendum: STM32CubeIDE 2.2.0 on a second machine
+
+These GUI tests were run on a second machine with STM32CubeIDE **2.2.0**, not 2.1.0.
+
+- **Debug-Trace (attach, dump)** loaded `.../Debug/DISCO_L475VG_IOT01A_Thingspeak.elf`.
+- **Run > Debug Configurations > Main > C/C++ Application** had to be set by hand to
+  `Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf`.
+- The docs now include this check and the manual fix:
+  - docs/06 6.3, step 2, Figure 6.1 (`docs/img/cubeide_launch_main.png`, screenshot to be added);
+  - docs/07 7.6.
+- The launch files themselves are unchanged. The diff of the 2.2.0 working copy after the GUI
+  change was not available here, so it is not yet known:
+  - what 2.2.0 writes into the launch files;
+  - whether 2.2.0 changed `.cproject`, `.project` or the `.ioc`.

@@ -10,7 +10,8 @@ and all generated code are committed (chapter 3). Every setting below is already
 `DISCO_L475VG_IOT01A_Thingspeak.ioc`; open that file in STM32CubeMX to compare at any step.
 
 **Tested with:** Ubuntu 25.04, STM32CubeMX 6.17.0, STM32Cube FW_L4 V1.18.2 (FreeRTOS V10.3.1 with
-ST's CMSIS-RTOS2 wrapper), STM32CubeIDE 2.1.0 (GNU Tools for STM32 14.3.rel1), CSP4CMSIS 3.1.0.
+ST's CMSIS-RTOS2 wrapper), STM32CubeIDE 2.1.0 (GNU Tools for STM32 14.3.rel1), CSP4CMSIS 3.1.0. The project was also imported
+and built with STM32CubeIDE 2.2.0 on a second machine. The CubeMX steps below were done with 6.17.0 only.
 Windows: the STM32CubeMX and STM32CubeIDE dialogs are the same; not tested.
 
 Conventions: **Bold** names are what you click or select. "You should now see ..." is a check:

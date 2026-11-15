@@ -40,8 +40,8 @@ Author: Dr Oliver Faust. Licence: MIT (`LICENSE`); third-party parts: `THIRD_PAR
 
 Details and checks for every step: [docs/03-build-and-run.md](docs/03-build-and-run.md).
 
-1. Install STM32CubeIDE 2.1.0, a serial terminal and git; allow access to the board
-   ([docs/01](docs/01-prerequisites.md)).
+1. Install STM32CubeIDE 2.1.0 (tested; 2.2.0 also used for the GUI steps), a serial terminal and
+   git; allow access to the board ([docs/01](docs/01-prerequisites.md)).
 2. Create a ThingSpeak channel with **fields 1, 2 and 3 enabled**; note its Write API Key
    ([docs/02](docs/02-thingspeak.md)).
 3. Clone:

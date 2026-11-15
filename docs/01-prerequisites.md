@@ -4,7 +4,9 @@ What you need before you build the project: the board, a suitable Wi-Fi network,
 to the board's USB interfaces, and a serial terminal. Every step ends with a check ("You should now
 see ..."); do not go on until it passes.
 
-**Tested on:** Ubuntu 25.04 (x86-64), November 2026. **Windows:** the ST tools exist for Windows and
+**Tested on:** Ubuntu 25.04 (x86-64) with STM32CubeIDE 2.1.0, November 2026: everything, including all
+records in `docs/results/`. STM32CubeIDE 2.2.0 on a second machine: the GUI steps (import, build,
+debug launch configurations). The scripts in `tools/` were run with 2.1.0 only. **Windows:** the ST tools exist for Windows and
 are used in the same way in their GUI; the shell scripts in `tools/` need Git Bash or WSL. Windows was
 **not tested**; differences that are known are noted.
 
@@ -64,7 +66,7 @@ can reach the internet.
 | Tool | Version used | Needed for |
 |---|---|---|
 | Ubuntu | 25.04 | -- |
-| **STM32CubeIDE** | **2.1.0** | building, flashing, debugging (chapter 3). Contains the compiler (GNU Tools for STM32 14.3.rel1), the ST-LINK GDB server and a copy of STM32CubeProgrammer 2.22.0. |
+| **STM32CubeIDE** | **2.1.0** (2.2.0 on a second machine, GUI steps only) | building, flashing, debugging (chapter 3). Contains the compiler (GNU Tools for STM32 14.3.rel1), the ST-LINK GDB server and a copy of STM32CubeProgrammer 2.22.0. |
 | git | 2.48 | cloning the repository |
 | a serial terminal | minicom 2.x (or picocom, screen) | reading the console (1.5) |
 | Python 3 | 3.13 (standard library only) | the scripts in `tools/` |
@@ -76,7 +78,7 @@ can reach the internet.
 
 ### Install
 
-1. **STM32CubeIDE 2.1.0** from <https://www.st.com/en/development-tools/stm32cubeide.html> (st.com
+1. **STM32CubeIDE 2.1.0** (or 2.2.0: the GUI steps were also done with it) from <https://www.st.com/en/development-tools/stm32cubeide.html> (st.com
    may ask you to log in to a free myST account): a Linux installer for your distribution. Run it and
    accept the licences. You also need ST's **ST-LINK udev rules** (Debian package
    `st-stlink-udev-rules`; on the test machine version 1.0.3, installed with ST's tools) -- 1.4 checks
@@ -95,8 +97,8 @@ can reach the internet.
    ```
    A tool on the `PATH` (e.g. Ubuntu's `arm-none-eabi-nm`, or a separate STM32CubeProgrammer in
    `~/st/STM32CubeProgrammer`) is used instead of STM32CubeIDE's copy. A line `NOT FOUND`: the
-   scripts that need that tool stop with a message naming the folders searched. Only STM32CubeIDE
-   2.1.0 was tested.
+   scripts that need that tool stop with a message naming the folders searched. The scripts were
+   tested with STM32CubeIDE 2.1.0 only.
 2. The rest from Ubuntu's packages:
    ```bash
    sudo apt install git minicom curl python3

@@ -31,7 +31,7 @@
 #
 # Needs STM32CubeIDE (its ST-LINK_gdbserver, arm-none-eabi-gdb/-nm and STM32CubeProgrammer copy),
 # found by tools/toolchain.sh (newest stm32cubeide_* in ~/st or /opt/st); set CUBEIDE (and CUBEPROG,
-# the programmer's bin folder) if they are elsewhere. Tested on Ubuntu with STM32CubeIDE 2.1.0.
+# the programmer's bin folder) if they are elsewhere. Tested on Ubuntu with STM32CubeIDE 2.1.0 (not with 2.2.0).
 # Output: <ring.bin> (the ring: header and records) and <ring>.names (process names); trace.json
 # for Perfetto is made from them by tools/trace_decode.sh.
 set -Eeuo pipefail

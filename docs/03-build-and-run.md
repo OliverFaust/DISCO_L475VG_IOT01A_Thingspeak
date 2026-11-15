@@ -4,7 +4,10 @@ From an empty folder to a board that sends its measurements to ThingSpeak. You n
 (tools, board access, serial terminal) and chapter 2 (channel and write key) done.
 
 **Tested on:** Ubuntu 25.04 with STM32CubeIDE 2.1.0, November 2026 (`docs/results/` holds the
-records). **Windows:** the STM32CubeIDE steps are the same; use `copy` instead of `cp`, PuTTY or Tera
+records). The GUI steps (3.3 to 3.6) were also done with STM32CubeIDE 2.2.0 on a second machine.
+Flash-image hashes in `docs/results/` (first 16 hex digits of SHA-256 of `objcopy -O binary`) are for
+STM32CubeIDE 2.1.0 (GNU Tools for STM32 14.3.rel1). An image is byte-identical only when it is built
+with the same compiler version; another STM32CubeIDE version may give other hashes from the same source. **Windows:** the STM32CubeIDE steps are the same; use `copy` instead of `cp`, PuTTY or Tera
 Term instead of minicom, and Git Bash or WSL for the scripts. Not tested.
 
 ---

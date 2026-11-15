@@ -7,7 +7,7 @@
 # Overrides (environment): CUBEIDE (STM32CubeIDE folder), STM32_PROGRAMMER_CLI (the CLI itself).
 # Defaults: the newest stm32cubeide_* folder (any version) in ~/st or /opt/st that has a plugins/
 # folder, and STM32CubeProgrammer in ~/st/STM32CubeProgrammer or the copy inside STM32CubeIDE.
-# Tested on Ubuntu with STM32CubeIDE 2.1.0.
+# Tested on Ubuntu with STM32CubeIDE 2.1.0 (not with 2.2.0).
 #
 # Never exits the calling script: what is missing is reported by the caller through
 # toolchain_missing (below), which names the folders searched and how to set CUBEIDE.
