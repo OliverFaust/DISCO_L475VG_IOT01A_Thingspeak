@@ -151,9 +151,11 @@ So only a session that attaches without download and reset can copy the ring of 
    Type `Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf` into **C/C++ Application** (or **Search
    Project...** and pick the ELF under `Debug-Trace`), choose `Debug-Trace` under **Build
    Configuration**, and click **Apply**. The path is relative to the project: do not use
-   **Browse...**, which writes an absolute path that only works on your machine. On a second machine,
-   STM32CubeIDE 2.2.0 opened the attach launch with `Debug/...elf` here, and it had to be set by
-   hand.
+   **Browse...**, which writes an absolute path that only works on your machine. In GUI tests with
+   STM32CubeIDE 2.2.0 and 2.1.0, the attach launch loaded `Debug/...elf` and had to be set by hand.
+   That was with the launch files before the fix of 2026-11-15. Since then their
+   load list names the Debug-Trace configuration explicitly; the retest from a fresh clone is
+   pending, so keep this check.
 
    ![STM32CubeIDE, Debug Configurations, Main tab of the Debug-Trace launch](img/cubeide_launch_main.png)
 
