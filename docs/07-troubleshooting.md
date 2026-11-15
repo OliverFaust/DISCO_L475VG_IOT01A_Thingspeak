@@ -26,8 +26,10 @@ Reset cause: software reset; consecutive restarts after a failed Wi-Fi start: 3 
 repeated once a minute, between the normal sample lines.
 
 **What it means.** The Wi-Fi driver could not talk to the ISM43362 module at start-up. The Uplink then
-restarts the whole board on purpose instead of retrying in the same run (why:
-`docs/05-code-walkthrough.md`, "When the Wi-Fi module does not start"). After three such restarts in a
+restarts the whole board on purpose instead of retrying in the same run. This works around two
+defects of Arm's driver, reported as [ARM-software/CMSIS-Driver#60](https://github.com/ARM-software/CMSIS-Driver/issues/60)
+(details: `docs/05-code-walkthrough.md`, "When the Wi-Fi module does not start"). The restart can go
+once Arm fixes the driver and the project uses the fixed version. After three such restarts in a
 row it gives up until you intervene, so that a broken module does not keep the board restarting for
 ever. One restart that is followed by `Wi-Fi module ready` and `joined` was a hiccup; the counter
 then goes back to 0.

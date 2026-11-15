@@ -154,7 +154,9 @@ wait. The one exception is a failed `Initialize()`, which restarts the board.
 ### When the Wi-Fi module does not start
 
 Arm's ISM43362 driver (CMSIS-Driver 2.11.0, used unmodified) has two defects that matter only when
-`Initialize()` fails or is called a second time (`docs/upstream/cmsis-driver-ism43362-init-leak.md`):
+`Initialize()` fails or is called a second time. They are reported to Arm as
+[ARM-software/CMSIS-Driver#60](https://github.com/ARM-software/CMSIS-Driver/issues/60) (filed 2026-11-13; the text as filed:
+`docs/upstream/cmsis-driver-ism43362-init-leak.md`):
 
 - a failed `Initialize()` does not delete the two mutexes and five event flag objects it has
   created: 384 bytes of the FreeRTOS heap are lost each time (heap: 1024 bytes);
@@ -163,6 +165,12 @@ Arm's ISM43362 driver (CMSIS-Driver 2.11.0, used unmodified) has two defects tha
 So retrying in the same run would eat the heap and would not reset a stuck module. A restart of the
 board does both: all RAM, including the heap, starts afresh, and the driver's first `Initialize()`
 pulses the module's reset line. The cost is a few seconds without samples.
+
+This restart is a workaround for the driver, not part of the design. Once Arm fixes both defects
+(issue #60) and the project uses the fixed driver, it can go. The Uplink can then retry a failed
+`Initialize()` in the same run, because a failed call would release what it created, and
+`Uninitialize()` followed by `Initialize()` would reset a stuck module. The restart counter in
+`.noinit` (below) would then no longer be needed.
 
 So that repeated restarts cannot go unnoticed, `Core/Src/reset_info.c` keeps a counter in a RAM
 section that the start-up code leaves alone (`.noinit`, added to `STM32L475VGTX_FLASH.ld`). It is
