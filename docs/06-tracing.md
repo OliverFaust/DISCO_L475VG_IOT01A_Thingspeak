@@ -147,20 +147,24 @@ So only a session that attaches without download and reset can copy the ring of 
    in the build setting: **Enable auto build** for the flash launch, **Disable auto build** for the
    attach launch, which must not build (see below).
 
-   If a field shows something else, e.g. `Debug/DISCO_L475VG_IOT01A_Thingspeak.elf`, set it by hand.
-   Type `Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf` into **C/C++ Application** (or **Search
-   Project...** and pick the ELF under `Debug-Trace`), choose `Debug-Trace` under **Build
-   Configuration**, and click **Apply**. The path is relative to the project: do not use
-   **Browse...**, which writes an absolute path that only works on your machine. In GUI tests with
-   STM32CubeIDE 2.2.0 and 2.1.0, the attach launch loaded `Debug/...elf` and had to be set by hand.
-   That was with the launch files before the fix of 2026-11-15. Since then their
-   load list names the Debug-Trace configuration explicitly; the retest from a fresh clone is
-   pending, so keep this check.
+   Both fields are set in the launch files; you should not have to change them. Tested from a fresh
+   clone in an empty workspace with STM32CubeIDE 2.2.0 (2026-11-15). If a field shows something else,
+   e.g. `Debug/DISCO_L475VG_IOT01A_Thingspeak.elf`, you are probably looking at a launch
+   configuration of your own, not the shared one, or at launch files older than 2026-11-15: pull the
+   current version (docs/07, 7.6).
+
+   **Debug button greyed out?** In a fresh clone the **Debug** button may stay greyed out although
+   both fields are correct, because the ELF does not exist yet. Build Debug-Trace first (step 1 and
+   the hammer button), or run the flash launch once (step 3). Then close and reopen the dialog, or
+   click **Search Project...** once. The setting itself is correct: do not change it, and do not
+   use **Browse...**, which writes an absolute path that only works on your machine.
 
    ![STM32CubeIDE, Debug Configurations, Main tab of the Debug-Trace launch](img/cubeide_launch_main.png)
 
-   *Figure 6.1: the Main tab of **Debug-Trace (attach, dump)**: C/C++ Application
-   `Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf`, Build Configuration `Debug-Trace`.*
+   *Figure 6.1: the Main tab of **Debug-Trace (attach, dump)**, as it comes from a fresh clone
+   (STM32CubeIDE 2.2.0): C/C++ Application `Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf`, Build
+   Configuration `Debug-Trace`, **Disable auto build**. The flash launch shows the same two fields
+   with **Enable auto build**.*
 3. **Flash once.** Choose **Run > Debug Configurations... > Debug-Trace (flash and debug) > Debug**.
    It builds Debug-Trace, downloads it, resets the board and stops at `main`. Press **Resume** (F8),
    then **Terminate** (red square, Ctrl+F2). In the serial terminal you should now see the Debug-Trace

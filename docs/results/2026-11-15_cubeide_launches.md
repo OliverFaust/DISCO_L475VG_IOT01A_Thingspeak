@@ -151,3 +151,28 @@ after the first GUI session; they do not affect the build or the launches.
 dialog (both shared launches listed, `Debug-Trace (flash and debug)` selected, the flash launch's
 download in the console), not the Main tab. It does not match Figure 6.1's caption, so it was not
 added; Figure 6.1 still needs a screenshot of the Main tab.
+
+## Addendum 3: retest with STM32CubeIDE 2.2.0, fresh clone, empty workspace (2026-11-15, night)
+
+Run by the author on the second machine (STM32CubeIDE 2.2.0), with the launch files of `a546926`:
+a fresh clone from GitHub, imported into an empty workspace, **no manual change** to either launch
+configuration.
+
+| Check | Result |
+|---|---|
+| Main tab of **Debug-Trace (attach, dump)** | C/C++ Application `Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf`, Build Configuration `Debug-Trace`, as committed (Figure 6.1 in docs/06, from this run) |
+| Dump with **Debug-Trace (attach, dump)** | works |
+| **Debug** button | greyed out until **Search Project...** was clicked once; the click changed nothing in the configuration (**Apply** and **Revert** stayed greyed out). Likely cause: the dialog validated the ELF path before the ELF existed; not confirmed |
+| Reopening the dialog afterwards; any red message in the dialog | not reported |
+| `git status` after the session | not reported |
+
+**Result:** the corrected launch files load the Debug-Trace ELF with STM32CubeIDE 2.2.0 from a fresh
+clone; the root cause of the old behaviour (Addendum 2) is still not proven, but the fix is
+verified. docs/06 6.3 step 2 and docs/07 7.6 no longer tell the reader to set the Main tab by hand;
+they keep the check and say what to do when **Debug** is greyed out (build Debug-Trace or run the
+flash launch first, then reopen the dialog or click **Search Project...** once).
+
+**Figure 6.1:** `docs/img/cubeide_launch_main.png`, the author's screenshot of this run, cropped to
+the dialog (a strip of the code editor below it removed). It shows the Main tab of
+**Debug-Trace (attach, dump)** with the two fields above and **Disable auto build**; no personal
+details. It replaces the missing image of Addendum 2.

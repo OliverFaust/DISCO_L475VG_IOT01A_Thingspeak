@@ -191,9 +191,12 @@ launch configuration of the active build configuration, which is Debug after an 
 Such a session has also **flashed the Debug build** and reset the board. So the board no longer runs
 Debug-Trace, and the ring you wanted is gone.
 
-It also happens with **Debug-Trace (attach, dump)** when its **Main** tab names the Debug ELF. This
-was seen with STM32CubeIDE 2.2.0 and 2.1.0, with the launch files before 2026-11-15. The attach launch downloads nothing, so the board still runs
-Debug-Trace and the ring is still there: correct the Main tab (step 2 below) and attach again.
+It also happened with **Debug-Trace (attach, dump)** with the launch files before 2026-11-15
+(STM32CubeIDE 2.2.0 and 2.1.0): its **Main** tab named the Debug ELF. The current launch files name
+the Debug-Trace build explicitly; a fresh clone with STM32CubeIDE 2.2.0 showed the right ELF with no
+change. If you still see it, pull the current version. The attach launch downloads nothing, so the
+board still runs Debug-Trace and the ring is still there: check the Main tab (step 2 below) and
+attach again.
 
 **What to do.**
 
@@ -201,9 +204,9 @@ Debug-Trace and the ring is still there: correct the Main tab (step 2 below) and
 2. Check the **Main** tab of both shared launch configurations (**Run > Debug Configurations...**,
    docs/06, 6.3, step 2, Figure 6.1). **C/C++ Application** must be
    `Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf`, and **Build Configuration** `Debug-Trace`. If
-   it shows `Debug/...elf`, enter the project-relative path by hand (not **Browse...**), choose
-   `Debug-Trace`, and click **Apply**. This was needed for the attach launch in the GUI tests
-   with STM32CubeIDE 2.2.0 and 2.1.0 (launch files before 2026-11-15).
+   the **Debug** button is greyed out although both are correct, the ELF does not exist yet: build
+   Debug-Trace first (or run the flash launch), then reopen the dialog or click **Search
+   Project...** once. Do not change the setting, and do not use **Browse...** (absolute path).
 3. Flash the trace build once with the shared launch configuration **Debug-Trace (flash and debug)**
    (**Run > Debug Configurations...**).
 4. Wait for the event you want, then dump with **Debug-Trace (attach, dump)**. This launch downloads
