@@ -190,11 +190,61 @@ So only a session that attaches without download and reset can copy the ring of 
    GDB does not create folders. Give the full path, not `~`. On Windows write it with forward slashes,
    e.g. `C:/Users/<you>/trace_out/ring.bin` (not tested). The file must be 16416 bytes
    (`ls -l ~/trace_out/ring.bin`).
-8. **Process names (optional).** Without `ring.names`, the threads keep their symbol names in
-   Perfetto. To get the process names:
-   - for each thread address, type `print ((TCB_t *)0x20001138)->pcTaskName`;
-   - write the lines `TASKNAME <address> <name>` into `ring.names` next to `ring.bin`, in the format
-     shown above.
+8. **Process names (optional; the board must still be halted).** Without this step, Perfetto shows
+   the threads under the symbols of their control blocks: `MainApp_Task(void*)::sensors`,
+   `MainApp_Task(void*)::console`, `MainApp_Task(void*)::uplink`, `async_thread_cb_mem` (the Wi-Fi
+   driver's thread) and `Idle_TCB.3`. With it they are `Sensors`, `Console`, `Uplink`,
+   `WiFi_ISM43362_A` and `IDLE` ("Why the names are read separately", above).
+   `tools/trace_dump.sh` does this step by itself; by hand it takes three steps:
+
+   a) **In a terminal**, in the project folder: let `tools/trace_names.py` write the GDB commands for
+      the dump you just made:
+
+      ```bash
+      python3 tools/trace_names.py gdb ~/trace_out/ring.bin > ~/trace_out/names.gdb
+      ```
+
+      The script takes the thread addresses from the dump itself: every thread record in the ring
+      carries the address of the thread's FreeRTOS control block. It writes one command per thread,
+      which reads that control block's `pcTaskName` on the board. For a dump of this program
+      (`docs/results/2026-11-14_trace_trigger/break_upload/ring.bin`), `cat ~/trace_out/names.gdb` shows:
+
+      ```
+      printf "TASKNAME 0x%08x %s\n", 0x20001138, ((TCB_t *)0x20001138)->pcTaskName
+      printf "TASKNAME 0x%08x %s\n", 0x20001a70, ((TCB_t *)0x20001a70)->pcTaskName
+      printf "TASKNAME 0x%08x %s\n", 0x20002ba8, ((TCB_t *)0x20002ba8)->pcTaskName
+      printf "TASKNAME 0x%08x %s\n", 0x20003ad0, ((TCB_t *)0x20003ad0)->pcTaskName
+      printf "TASKNAME 0x%08x %s\n", 0x2000a3cc, ((TCB_t *)0x2000a3cc)->pcTaskName
+      ```
+
+      The addresses depend on the build; yours may differ.
+   b) **In the debugger console** of the session (the same one as in step 6, still halted), give the
+      full path, not `~`:
+
+      ```
+      source /home/<you>/trace_out/names.gdb
+      ```
+
+      You should now see one line per thread:
+
+      ```
+      TASKNAME 0x20001138 Sensors
+      TASKNAME 0x20001a70 Console
+      TASKNAME 0x20002ba8 Uplink
+      TASKNAME 0x20003ad0 WiFi_ISM43362_A
+      TASKNAME 0x2000a3cc IDLE
+      ```
+
+      If the lines end after the address, with no name, GDB did not read the board: the session was
+      no longer connected (GDB then reads the ELF, where `pcTaskName` is still empty). Repeat from
+      step 5. Such lines are ignored in step 10 (`trace_names: no names to apply`).
+   c) **Copy these lines** from the console into a new text file `~/trace_out/ring.names`, next to
+      `ring.bin`, and save it. You can copy more than these lines (the `source` command, empty lines,
+      other console output): `tools/trace_names.py apply` (step 10) uses only the lines that begin
+      with `TASKNAME` and ignores the rest.
+
+   Step 10 then prints `trace_names: MainApp_Task(void*)::sensors -> Sensors` and so on, one line
+   per thread. Without `ring.names` these lines are missing, and the decode is otherwise the same.
 9. **Let the board run on.** Press **Resume** (F8), then **Terminate**. The console prints again.
    The board runs without a reset; time on the board stood still while it was halted (6.6).
 10. **Decode** in a terminal, in the project folder:
