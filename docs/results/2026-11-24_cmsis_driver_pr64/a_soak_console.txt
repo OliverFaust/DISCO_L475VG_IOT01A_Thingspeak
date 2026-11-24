@@ -1,0 +1,463 @@
+# Console capture
+# date:      2026-11-24 20:24:17 UTC (start of the capture, about 0.5 s before the reset)
+# commit:    csp4cmsis-v1.0-58-g49203fd-dirty
+# elf:       <build>/app_hw1.elf (sha256 8e7b7b939e79b914...)
+# compiler:  GCC: (GNU Tools for STM32 14.3.rel1.20251027-0700) 14.3.1 20250623
+# tool:      STM32CubeProgrammer version: 2.22.0
+# flash:     STM32_Programmer_CLI -c port=SWD -w <build>/app_hw1.elf -v
+# reset:     STM32_Programmer_CLI -c port=SWD -hardRst
+# probe:     ST-LINK firmware V2J46M31
+# serial:    ST-LINK virtual COM port (/dev/ttyACM0), 115200 8N1, captured for 1880 s from before the reset
+# after the capture, read over SWD (program running):
+#   __sbrk_heap_end                = 0x00000000   (0x00000000: malloc() was never called)
+#   xMinimumEverFreeBytesRemaining = 0x00000280   (0x00000000: the FreeRTOS heap was never used)
+# ----------------------------------------------------------------------------------------
+
+DISCO_L475VG_IOT01A_Thingspeak -- Sensors, Console, Uplink (ThingSpeak every 60 s)
+CSP4CMSIS 3.1.0, FreeRTOS V10.3.1 (CMSIS-RTOS2), SYSCLK 80 MHz
+Reset cause: software reset; consecutive restarts after a failed Wi-Fi start: 0 of 3
+[    0.030 s] HTS221 check (I2C transfers all OK)
+  WHO_AM_I: HTS221 @0xBE: 0xBC (expect 0xBC), LPS22HB @0xBA: 0xB1 (expect 0xB1)
+  HTS221 CTRL_REG1: 0x85 (expect 0x85: active, BDU, 1 Hz)
+  calibration 0x30..0x3F: 3E 8B A3 10 00 C4 06 00 7A 03 C5 CE FE FF 00 03
+  same 16 registers read one at a time: identical
+  H0_rH_x2 = 62 -> H0 = 31.0 %RH, H1_rH_x2 = 139 -> H1 = 69.5 %RH
+  T0_degC_x8 = 163 -> T0 = 20.375 C, T1_degC_x8 = 272 -> T1 = 34.000 C
+  H0_T0_OUT = 6, H1_T0_OUT = -12603, T0_OUT = -2, T1_OUT = 768
+  raw sample: H_OUT = -10485, T_OUT = 1
+  T : datasheet formula (samples) 20.428 C, ST driver formula 20.055 C, BSP_TSENSOR_ReadTemp() 20.055 C
+  RH: datasheet formula (samples) 63.033 %, ST driver formula 62.617 %, BSP_HSENSOR_ReadHumidity() 62.617 %
+[    0.037 s] #1  T = 20.43 C  RH = 63.03 %  p = 983.79 hPa
+[    0.925 s] Uplink: Wi-Fi module ready  [ok 0, rejected 0, failed 0, joins 0]
+[    5.041 s] #2  T = 20.38 C  RH = 63.03 %  p = 983.90 hPa
+[    5.729 s] Uplink: joined (4796 ms), IP 192.168.1.28  [ok 0, rejected 0, failed 0, joins 1]
+[   10.042 s] #3  T = 20.38 C  RH = 63.13 %  p = 983.80 hPa
+[   15.043 s] #4  T = 20.36 C  RH = 63.25 %  p = 983.90 hPa
+[   15.344 s] Uplink: sample #3 -> entry 238510 (344 ms)  [ok 1, rejected 0, failed 0, joins 1]
+[   20.044 s] #5  T = 20.39 C  RH = 63.38 %  p = 983.70 hPa
+[   25.045 s] #6  T = 20.39 C  RH = 63.37 %  p = 983.93 hPa
+[   30.046 s] #7  T = 20.41 C  RH = 63.48 %  p = 983.80 hPa
+[   35.047 s] #8  T = 20.41 C  RH = 63.45 %  p = 983.72 hPa
+[   40.048 s] #9  T = 20.45 C  RH = 63.51 %  p = 983.84 hPa
+[   45.049 s] #10  T = 20.46 C  RH = 63.57 %  p = 983.66 hPa
+[   50.050 s] #11  T = 20.50 C  RH = 63.52 %  p = 983.75 hPa
+[   55.051 s] #12  T = 20.53 C  RH = 63.61 %  p = 983.66 hPa
+[   60.000 s] Stack high-water marks (smallest free stack so far):
+  FreeRTOS heap: free 640 of 1024 bytes, minimum ever free 640 bytes
+  Sensors   512 words, min free  323 words, max used  189 words (36 %)
+  Console   512 words, min free  255 words, max used  257 words (50 %)
+  Uplink   1024 words, min free  785 words, max used  239 words (23 %)
+[   60.052 s] #13  T = 20.55 C  RH = 63.50 %  p = 983.84 hPa
+[   65.053 s] #14  T = 20.59 C  RH = 63.49 %  p = 983.77 hPa
+[   70.054 s] #15  T = 20.62 C  RH = 63.50 %  p = 983.86 hPa
+[   75.055 s] #16  T = 20.64 C  RH = 63.49 %  p = 983.85 hPa
+[   75.698 s] Uplink: sample #16 -> entry 238511 (354 ms)  [ok 2, rejected 0, failed 0, joins 1]
+[   80.056 s] #17  T = 20.69 C  RH = 63.38 %  p = 983.72 hPa
+[   85.057 s] #18  T = 20.76 C  RH = 63.37 %  p = 983.76 hPa
+[   90.058 s] #19  T = 20.80 C  RH = 63.22 %  p = 983.81 hPa
+[   95.059 s] #20  T = 20.85 C  RH = 63.25 %  p = 983.77 hPa
+[  100.060 s] #21  T = 20.91 C  RH = 63.15 %  p = 983.79 hPa
+[  105.061 s] #22  T = 20.94 C  RH = 63.10 %  p = 983.85 hPa
+[  110.062 s] #23  T = 20.99 C  RH = 63.06 %  p = 983.78 hPa
+[  115.063 s] #24  T = 21.03 C  RH = 62.99 %  p = 983.80 hPa
+[  120.064 s] #25  T = 21.08 C  RH = 63.00 %  p = 983.72 hPa
+[  125.065 s] #26  T = 21.10 C  RH = 62.87 %  p = 983.77 hPa
+[  130.066 s] #27  T = 21.17 C  RH = 62.82 %  p = 983.79 hPa
+[  135.067 s] #28  T = 21.21 C  RH = 62.77 %  p = 983.82 hPa
+[  136.038 s] Uplink: sample #28 -> entry 238512 (340 ms)  [ok 3, rejected 0, failed 0, joins 1]
+[  140.068 s] #29  T = 21.21 C  RH = 62.63 %  p = 983.87 hPa
+[  145.069 s] #30  T = 21.28 C  RH = 62.57 %  p = 983.67 hPa
+[  150.070 s] #31  T = 21.31 C  RH = 62.51 %  p = 983.80 hPa
+[  155.071 s] #32  T = 21.37 C  RH = 62.42 %  p = 983.77 hPa
+[  160.072 s] #33  T = 21.44 C  RH = 62.32 %  p = 983.78 hPa
+[  165.073 s] #34  T = 21.47 C  RH = 62.34 %  p = 983.76 hPa
+[  170.074 s] #35  T = 21.53 C  RH = 62.20 %  p = 983.80 hPa
+[  175.075 s] #36  T = 21.53 C  RH = 62.08 %  p = 983.79 hPa
+[  180.076 s] #37  T = 21.60 C  RH = 61.98 %  p = 983.76 hPa
+[  185.077 s] #38  T = 21.63 C  RH = 61.94 %  p = 983.68 hPa
+[  190.078 s] #39  T = 21.72 C  RH = 61.85 %  p = 983.79 hPa
+[  195.079 s] #40  T = 21.76 C  RH = 61.63 %  p = 983.78 hPa
+[  196.373 s] Uplink: sample #40 -> entry 238513 (335 ms)  [ok 4, rejected 0, failed 0, joins 1]
+[  200.080 s] #41  T = 21.77 C  RH = 61.51 %  p = 983.74 hPa
+[  205.081 s] #42  T = 21.84 C  RH = 61.41 %  p = 983.83 hPa
+[  210.082 s] #43  T = 21.81 C  RH = 61.22 %  p = 983.83 hPa
+[  215.083 s] #44  T = 21.84 C  RH = 61.25 %  p = 983.89 hPa
+[  220.084 s] #45  T = 21.88 C  RH = 61.08 %  p = 983.86 hPa
+[  225.085 s] #46  T = 21.93 C  RH = 61.04 %  p = 983.84 hPa
+[  230.086 s] #47  T = 21.91 C  RH = 60.92 %  p = 983.76 hPa
+[  235.087 s] #48  T = 21.97 C  RH = 60.87 %  p = 983.83 hPa
+[  240.088 s] #49  T = 22.00 C  RH = 60.79 %  p = 983.82 hPa
+[  245.089 s] #50  T = 22.00 C  RH = 60.69 %  p = 983.68 hPa
+[  250.090 s] #51  T = 22.04 C  RH = 60.63 %  p = 983.72 hPa
+[  255.091 s] #52  T = 22.13 C  RH = 60.59 %  p = 983.71 hPa
+[  256.697 s] Uplink: sample #52 -> entry 238514 (324 ms)  [ok 5, rejected 0, failed 0, joins 1]
+[  260.092 s] #53  T = 22.09 C  RH = 60.46 %  p = 983.77 hPa
+[  265.093 s] #54  T = 22.11 C  RH = 60.42 %  p = 983.71 hPa
+[  270.094 s] #55  T = 22.14 C  RH = 60.39 %  p = 983.73 hPa
+[  275.095 s] #56  T = 22.14 C  RH = 60.23 %  p = 983.69 hPa
+[  280.096 s] #57  T = 22.14 C  RH = 60.21 %  p = 983.76 hPa
+[  285.097 s] #58  T = 22.16 C  RH = 60.16 %  p = 983.89 hPa
+[  290.098 s] #59  T = 22.20 C  RH = 60.08 %  p = 983.83 hPa
+[  295.099 s] #60  T = 22.20 C  RH = 59.96 %  p = 983.68 hPa
+[  300.100 s] #61  T = 22.27 C  RH = 60.01 %  p = 983.78 hPa
+[  305.101 s] #62  T = 22.27 C  RH = 59.84 %  p = 983.76 hPa
+[  310.102 s] #63  T = 22.32 C  RH = 59.88 %  p = 983.81 hPa
+[  315.103 s] #64  T = 22.30 C  RH = 59.83 %  p = 983.80 hPa
+[  317.024 s] Uplink: sample #64 -> entry 238515 (327 ms)  [ok 6, rejected 0, failed 0, joins 1]
+[  320.104 s] #65  T = 22.37 C  RH = 59.81 %  p = 983.84 hPa
+[  325.105 s] #66  T = 22.36 C  RH = 59.71 %  p = 983.80 hPa
+[  330.106 s] #67  T = 22.37 C  RH = 59.68 %  p = 983.67 hPa
+[  335.107 s] #68  T = 22.37 C  RH = 59.60 %  p = 983.88 hPa
+[  340.108 s] #69  T = 22.41 C  RH = 59.44 %  p = 983.70 hPa
+[  345.109 s] #70  T = 22.43 C  RH = 59.50 %  p = 983.85 hPa
+[  350.110 s] #71  T = 22.46 C  RH = 59.51 %  p = 983.83 hPa
+[  355.111 s] #72  T = 22.50 C  RH = 59.36 %  p = 983.81 hPa
+[  360.112 s] #73  T = 22.48 C  RH = 59.28 %  p = 983.84 hPa
+[  365.113 s] #74  T = 22.50 C  RH = 59.30 %  p = 983.75 hPa
+[  370.114 s] #75  T = 22.52 C  RH = 59.31 %  p = 983.86 hPa
+[  375.115 s] #76  T = 22.48 C  RH = 59.19 %  p = 983.76 hPa
+[  377.359 s] Uplink: sample #76 -> entry 238516 (335 ms)  [ok 7, rejected 0, failed 0, joins 1]
+[  380.116 s] #77  T = 22.60 C  RH = 59.27 %  p = 983.80 hPa
+[  385.117 s] #78  T = 22.59 C  RH = 59.18 %  p = 983.85 hPa
+[  390.118 s] #79  T = 22.57 C  RH = 59.13 %  p = 983.81 hPa
+[  395.119 s] #80  T = 22.57 C  RH = 59.13 %  p = 983.77 hPa
+[  400.120 s] #81  T = 22.62 C  RH = 59.00 %  p = 983.69 hPa
+[  405.121 s] #82  T = 22.60 C  RH = 59.08 %  p = 983.84 hPa
+[  410.122 s] #83  T = 22.60 C  RH = 58.87 %  p = 983.88 hPa
+[  415.123 s] #84  T = 22.66 C  RH = 58.76 %  p = 983.85 hPa
+[  420.124 s] #85  T = 22.66 C  RH = 58.82 %  p = 983.82 hPa
+[  425.125 s] #86  T = 22.66 C  RH = 58.71 %  p = 983.75 hPa
+[  430.126 s] #87  T = 22.66 C  RH = 58.73 %  p = 983.84 hPa
+[  435.127 s] #88  T = 22.69 C  RH = 58.50 %  p = 983.80 hPa
+[  437.693 s] Uplink: sample #88 -> entry 238517 (334 ms)  [ok 8, rejected 0, failed 0, joins 1]
+[  440.128 s] #89  T = 22.73 C  RH = 58.59 %  p = 983.76 hPa
+[  445.129 s] #90  T = 22.75 C  RH = 58.43 %  p = 983.78 hPa
+[  450.130 s] #91  T = 22.69 C  RH = 58.41 %  p = 983.84 hPa
+[  455.131 s] #92  T = 22.73 C  RH = 58.31 %  p = 983.76 hPa
+[  460.132 s] #93  T = 22.75 C  RH = 58.35 %  p = 983.85 hPa
+[  465.133 s] #94  T = 22.82 C  RH = 58.35 %  p = 983.66 hPa
+[  470.134 s] #95  T = 22.83 C  RH = 58.23 %  p = 983.71 hPa
+[  475.135 s] #96  T = 22.83 C  RH = 58.23 %  p = 983.69 hPa
+[  480.136 s] #97  T = 22.83 C  RH = 58.27 %  p = 983.84 hPa
+[  485.137 s] #98  T = 22.92 C  RH = 58.10 %  p = 983.80 hPa
+[  490.138 s] #99  T = 22.89 C  RH = 58.15 %  p = 983.78 hPa
+[  495.139 s] #100  T = 22.92 C  RH = 58.13 %  p = 983.75 hPa
+[  498.017 s] Uplink: sample #100 -> entry 238518 (324 ms)  [ok 9, rejected 0, failed 0, joins 1]
+[  500.140 s] #101  T = 22.91 C  RH = 58.16 %  p = 983.86 hPa
+[  505.141 s] #102  T = 22.91 C  RH = 57.99 %  p = 983.77 hPa
+[  510.142 s] #103  T = 22.87 C  RH = 57.99 %  p = 983.76 hPa
+[  515.143 s] #104  T = 22.92 C  RH = 57.92 %  p = 983.81 hPa
+[  520.144 s] #105  T = 22.98 C  RH = 57.92 %  p = 983.88 hPa
+[  525.145 s] #106  T = 22.98 C  RH = 57.88 %  p = 983.84 hPa
+[  530.146 s] #107  T = 23.03 C  RH = 57.80 %  p = 983.76 hPa
+[  535.147 s] #108  T = 22.99 C  RH = 57.74 %  p = 983.83 hPa
+[  540.148 s] #109  T = 23.01 C  RH = 57.75 %  p = 983.90 hPa
+[  545.149 s] #110  T = 23.06 C  RH = 57.72 %  p = 983.80 hPa
+[  550.150 s] #111  T = 22.98 C  RH = 57.75 %  p = 983.74 hPa
+[  555.151 s] #112  T = 23.05 C  RH = 57.70 %  p = 983.78 hPa
+[  558.354 s] Uplink: sample #112 -> entry 238519 (337 ms)  [ok 10, rejected 0, failed 0, joins 1]
+[  560.152 s] #113  T = 23.06 C  RH = 57.62 %  p = 983.80 hPa
+[  565.153 s] #114  T = 23.10 C  RH = 57.62 %  p = 983.74 hPa
+[  570.154 s] #115  T = 23.08 C  RH = 57.46 %  p = 983.84 hPa
+[  575.155 s] #116  T = 23.12 C  RH = 57.48 %  p = 983.63 hPa
+[  580.156 s] #117  T = 23.17 C  RH = 57.49 %  p = 983.77 hPa
+[  585.157 s] #118  T = 23.24 C  RH = 57.44 %  p = 983.91 hPa
+[  590.158 s] #119  T = 23.22 C  RH = 57.41 %  p = 983.82 hPa
+[  595.159 s] #120  T = 23.22 C  RH = 57.28 %  p = 983.83 hPa
+[  600.160 s] #121  T = 23.21 C  RH = 57.30 %  p = 983.82 hPa
+[  605.161 s] #122  T = 23.26 C  RH = 57.25 %  p = 983.83 hPa
+[  610.162 s] #123  T = 23.19 C  RH = 57.26 %  p = 983.84 hPa
+[  615.163 s] #124  T = 23.28 C  RH = 57.24 %  p = 983.83 hPa
+[  618.709 s] Uplink: sample #124 -> entry 238520 (355 ms)  [ok 11, rejected 0, failed 0, joins 1]
+[  620.164 s] #125  T = 23.28 C  RH = 57.26 %  p = 983.86 hPa
+[  625.165 s] #126  T = 23.35 C  RH = 57.29 %  p = 983.74 hPa
+[  630.166 s] #127  T = 23.28 C  RH = 57.12 %  p = 983.84 hPa
+[  635.167 s] #128  T = 23.29 C  RH = 57.19 %  p = 983.91 hPa
+[  640.168 s] #129  T = 23.28 C  RH = 57.10 %  p = 983.83 hPa
+[  645.169 s] #130  T = 23.29 C  RH = 57.06 %  p = 983.93 hPa
+[  650.170 s] #131  T = 23.24 C  RH = 57.05 %  p = 983.82 hPa
+[  655.171 s] #132  T = 23.28 C  RH = 56.94 %  p = 983.84 hPa
+[  660.000 s] Stack high-water marks (smallest free stack so far):
+  FreeRTOS heap: free 640 of 1024 bytes, minimum ever free 640 bytes
+  Sensors   512 words, min free  323 words, max used  189 words (36 %)
+  Console   512 words, min free  255 words, max used  257 words (50 %)
+  Uplink   1024 words, min free  785 words, max used  239 words (23 %)
+[  660.172 s] #133  T = 23.26 C  RH = 56.91 %  p = 983.86 hPa
+[  665.173 s] #134  T = 23.24 C  RH = 56.96 %  p = 983.88 hPa
+[  670.174 s] #135  T = 23.29 C  RH = 56.94 %  p = 983.84 hPa
+[  675.175 s] #136  T = 23.28 C  RH = 56.86 %  p = 983.75 hPa
+[  679.048 s] Uplink: sample #136 -> entry 238521 (339 ms)  [ok 12, rejected 0, failed 0, joins 1]
+[  680.176 s] #137  T = 23.33 C  RH = 56.85 %  p = 983.83 hPa
+[  685.177 s] #138  T = 23.37 C  RH = 56.90 %  p = 983.84 hPa
+[  690.178 s] #139  T = 23.44 C  RH = 56.88 %  p = 983.80 hPa
+[  695.179 s] #140  T = 23.38 C  RH = 56.83 %  p = 983.92 hPa
+[  700.180 s] #141  T = 23.37 C  RH = 56.78 %  p = 983.77 hPa
+[  705.181 s] #142  T = 23.33 C  RH = 56.86 %  p = 983.68 hPa
+[  710.182 s] #143  T = 23.37 C  RH = 56.86 %  p = 983.78 hPa
+[  715.183 s] #144  T = 23.37 C  RH = 56.71 %  p = 983.86 hPa
+[  720.184 s] #145  T = 23.38 C  RH = 56.65 %  p = 983.89 hPa
+[  725.185 s] #146  T = 23.37 C  RH = 56.80 %  p = 983.93 hPa
+[  730.186 s] #147  T = 23.35 C  RH = 56.76 %  p = 983.85 hPa
+[  735.187 s] #148  T = 23.40 C  RH = 56.76 %  p = 983.82 hPa
+[  739.384 s] Uplink: sample #148 -> entry 238522 (336 ms)  [ok 13, rejected 0, failed 0, joins 1]
+[  740.188 s] #149  T = 23.38 C  RH = 56.68 %  p = 983.90 hPa
+[  745.189 s] #150  T = 23.42 C  RH = 56.71 %  p = 983.84 hPa
+[  750.190 s] #151  T = 23.40 C  RH = 56.67 %  p = 983.85 hPa
+[  755.191 s] #152  T = 23.44 C  RH = 56.72 %  p = 983.84 hPa
+[  760.192 s] #153  T = 23.45 C  RH = 56.61 %  p = 983.82 hPa
+[  765.193 s] #154  T = 23.47 C  RH = 56.67 %  p = 983.95 hPa
+[  770.194 s] #155  T = 23.47 C  RH = 56.57 %  p = 983.90 hPa
+[  775.195 s] #156  T = 23.52 C  RH = 56.42 %  p = 983.76 hPa
+[  780.196 s] #157  T = 23.45 C  RH = 56.56 %  p = 983.88 hPa
+[  785.197 s] #158  T = 23.52 C  RH = 56.48 %  p = 983.87 hPa
+[  790.198 s] #159  T = 23.47 C  RH = 56.25 %  p = 983.85 hPa
+[  795.199 s] #160  T = 23.42 C  RH = 56.21 %  p = 983.87 hPa
+[  799.749 s] Uplink: sample #160 -> entry 238523 (365 ms)  [ok 14, rejected 0, failed 0, joins 1]
+[  800.200 s] #161  T = 23.47 C  RH = 56.26 %  p = 983.80 hPa
+[  805.201 s] #162  T = 23.44 C  RH = 56.27 %  p = 983.91 hPa
+[  810.202 s] #163  T = 23.44 C  RH = 56.24 %  p = 983.89 hPa
+[  815.203 s] #164  T = 23.47 C  RH = 56.15 %  p = 983.88 hPa
+[  820.204 s] #165  T = 23.51 C  RH = 56.04 %  p = 983.86 hPa
+[  825.205 s] #166  T = 23.47 C  RH = 55.92 %  p = 983.95 hPa
+[  830.206 s] #167  T = 23.40 C  RH = 56.00 %  p = 983.94 hPa
+[  835.207 s] #168  T = 23.45 C  RH = 55.84 %  p = 983.86 hPa
+[  840.208 s] #169  T = 23.47 C  RH = 56.02 %  p = 983.86 hPa
+[  845.209 s] #170  T = 23.49 C  RH = 55.92 %  p = 983.82 hPa
+[  850.210 s] #171  T = 23.47 C  RH = 55.79 %  p = 983.87 hPa
+[  855.211 s] #172  T = 23.51 C  RH = 55.71 %  p = 983.83 hPa
+[  860.094 s] Uplink: sample #172 -> entry 238524 (345 ms)  [ok 15, rejected 0, failed 0, joins 1]
+[  860.212 s] #173  T = 23.49 C  RH = 55.76 %  p = 983.83 hPa
+[  865.213 s] #174  T = 23.56 C  RH = 55.63 %  p = 983.91 hPa
+[  870.214 s] #175  T = 23.49 C  RH = 55.60 %  p = 983.78 hPa
+[  875.215 s] #176  T = 23.52 C  RH = 55.62 %  p = 983.82 hPa
+[  880.216 s] #177  T = 23.52 C  RH = 55.56 %  p = 983.79 hPa
+[  885.217 s] #178  T = 23.51 C  RH = 55.56 %  p = 983.83 hPa
+[  890.218 s] #179  T = 23.49 C  RH = 55.63 %  p = 983.79 hPa
+[  895.219 s] #180  T = 23.47 C  RH = 55.49 %  p = 983.91 hPa
+[  900.220 s] #181  T = 23.45 C  RH = 55.55 %  p = 983.89 hPa
+[  905.221 s] #182  T = 23.47 C  RH = 55.45 %  p = 983.90 hPa
+[  910.222 s] #183  T = 23.51 C  RH = 55.43 %  p = 983.70 hPa
+[  915.223 s] #184  T = 23.51 C  RH = 55.37 %  p = 983.92 hPa
+[  920.224 s] #185  T = 23.54 C  RH = 55.41 %  p = 983.89 hPa
+[  920.433 s] Uplink: sample #184 -> entry 238525 (339 ms)  [ok 16, rejected 0, failed 0, joins 1]
+[  925.225 s] #186  T = 23.56 C  RH = 55.43 %  p = 983.94 hPa
+[  930.226 s] #187  T = 23.52 C  RH = 55.50 %  p = 983.79 hPa
+[  935.227 s] #188  T = 23.54 C  RH = 55.37 %  p = 984.01 hPa
+[  940.228 s] #189  T = 23.54 C  RH = 55.37 %  p = 983.89 hPa
+[  945.229 s] #190  T = 23.58 C  RH = 55.25 %  p = 983.83 hPa
+[  950.230 s] #191  T = 23.56 C  RH = 55.28 %  p = 983.83 hPa
+[  955.231 s] #192  T = 23.58 C  RH = 55.19 %  p = 983.80 hPa
+[  960.232 s] #193  T = 23.61 C  RH = 55.20 %  p = 983.93 hPa
+[  965.233 s] #194  T = 23.51 C  RH = 55.41 %  p = 983.84 hPa
+[  970.234 s] #195  T = 23.54 C  RH = 55.30 %  p = 983.84 hPa
+[  975.235 s] #196  T = 23.60 C  RH = 55.41 %  p = 983.88 hPa
+[  980.236 s] #197  T = 23.61 C  RH = 55.15 %  p = 983.83 hPa
+[  980.759 s] Uplink: sample #197 -> entry 238526 (326 ms)  [ok 17, rejected 0, failed 0, joins 1]
+[  985.237 s] #198  T = 23.58 C  RH = 55.29 %  p = 983.93 hPa
+[  990.238 s] #199  T = 23.56 C  RH = 55.38 %  p = 983.87 hPa
+[  995.239 s] #200  T = 23.51 C  RH = 55.23 %  p = 983.78 hPa
+[ 1000.240 s] #201  T = 23.49 C  RH = 55.19 %  p = 983.88 hPa
+[ 1005.241 s] #202  T = 23.52 C  RH = 55.19 %  p = 983.83 hPa
+[ 1010.242 s] #203  T = 23.52 C  RH = 55.19 %  p = 983.78 hPa
+[ 1015.243 s] #204  T = 23.54 C  RH = 55.20 %  p = 983.97 hPa
+[ 1020.244 s] #205  T = 23.51 C  RH = 55.19 %  p = 983.81 hPa
+[ 1025.245 s] #206  T = 23.51 C  RH = 55.20 %  p = 983.87 hPa
+[ 1030.246 s] #207  T = 23.47 C  RH = 55.26 %  p = 983.86 hPa
+[ 1035.247 s] #208  T = 23.49 C  RH = 55.38 %  p = 983.86 hPa
+[ 1040.248 s] #209  T = 23.45 C  RH = 55.41 %  p = 983.91 hPa
+[ 1041.182 s] Uplink: sample #209 -> entry 238527 (423 ms)  [ok 18, rejected 0, failed 0, joins 1]
+[ 1045.249 s] #210  T = 23.47 C  RH = 55.22 %  p = 983.70 hPa
+[ 1050.250 s] #211  T = 23.44 C  RH = 55.27 %  p = 983.87 hPa
+[ 1055.251 s] #212  T = 23.38 C  RH = 55.27 %  p = 983.86 hPa
+[ 1060.252 s] #213  T = 23.38 C  RH = 55.22 %  p = 983.83 hPa
+[ 1065.253 s] #214  T = 23.44 C  RH = 55.26 %  p = 983.83 hPa
+[ 1070.254 s] #215  T = 23.35 C  RH = 55.31 %  p = 983.82 hPa
+[ 1075.255 s] #216  T = 23.38 C  RH = 55.35 %  p = 983.92 hPa
+[ 1080.256 s] #217  T = 23.37 C  RH = 55.34 %  p = 983.89 hPa
+[ 1085.257 s] #218  T = 23.35 C  RH = 55.26 %  p = 983.82 hPa
+[ 1090.258 s] #219  T = 23.40 C  RH = 55.24 %  p = 983.81 hPa
+[ 1095.259 s] #220  T = 23.44 C  RH = 55.30 %  p = 983.96 hPa
+[ 1100.260 s] #221  T = 23.37 C  RH = 55.32 %  p = 983.79 hPa
+[ 1101.510 s] Uplink: sample #221 -> entry 238528 (328 ms)  [ok 19, rejected 0, failed 0, joins 1]
+[ 1105.261 s] #222  T = 23.35 C  RH = 55.33 %  p = 983.82 hPa
+[ 1110.262 s] #223  T = 23.35 C  RH = 55.36 %  p = 983.83 hPa
+[ 1115.263 s] #224  T = 23.38 C  RH = 55.44 %  p = 983.85 hPa
+[ 1120.264 s] #225  T = 23.38 C  RH = 55.52 %  p = 983.83 hPa
+[ 1125.265 s] #226  T = 23.33 C  RH = 55.38 %  p = 983.85 hPa
+[ 1130.266 s] #227  T = 23.38 C  RH = 55.38 %  p = 983.79 hPa
+[ 1135.267 s] #228  T = 23.35 C  RH = 55.37 %  p = 983.82 hPa
+[ 1140.268 s] #229  T = 23.35 C  RH = 55.25 %  p = 983.81 hPa
+[ 1145.269 s] #230  T = 23.37 C  RH = 55.43 %  p = 983.83 hPa
+[ 1150.270 s] #231  T = 23.35 C  RH = 55.51 %  p = 983.85 hPa
+[ 1155.271 s] #232  T = 23.38 C  RH = 55.49 %  p = 983.67 hPa
+[ 1160.272 s] #233  T = 23.44 C  RH = 55.51 %  p = 983.85 hPa
+[ 1161.837 s] Uplink: sample #233 -> entry 238529 (327 ms)  [ok 20, rejected 0, failed 0, joins 1]
+[ 1165.273 s] #234  T = 23.42 C  RH = 55.62 %  p = 983.76 hPa
+[ 1170.274 s] #235  T = 23.40 C  RH = 55.48 %  p = 983.85 hPa
+[ 1175.275 s] #236  T = 23.40 C  RH = 55.42 %  p = 983.77 hPa
+[ 1180.276 s] #237  T = 23.37 C  RH = 55.45 %  p = 983.83 hPa
+[ 1185.277 s] #238  T = 23.35 C  RH = 55.43 %  p = 983.84 hPa
+[ 1190.278 s] #239  T = 23.38 C  RH = 55.49 %  p = 983.86 hPa
+[ 1195.279 s] #240  T = 23.29 C  RH = 55.42 %  p = 983.74 hPa
+[ 1200.280 s] #241  T = 23.35 C  RH = 55.59 %  p = 983.78 hPa
+[ 1205.281 s] #242  T = 23.31 C  RH = 55.50 %  p = 983.82 hPa
+[ 1210.282 s] #243  T = 23.33 C  RH = 55.40 %  p = 983.77 hPa
+[ 1215.283 s] #244  T = 23.29 C  RH = 55.45 %  p = 983.80 hPa
+[ 1220.284 s] #245  T = 23.29 C  RH = 55.50 %  p = 983.74 hPa
+[ 1222.172 s] Uplink: sample #245 -> entry 238530 (335 ms)  [ok 21, rejected 0, failed 0, joins 1]
+[ 1225.285 s] #246  T = 23.35 C  RH = 55.37 %  p = 983.74 hPa
+[ 1230.286 s] #247  T = 23.35 C  RH = 55.41 %  p = 983.82 hPa
+[ 1235.287 s] #248  T = 23.37 C  RH = 55.45 %  p = 983.86 hPa
+[ 1240.288 s] #249  T = 23.37 C  RH = 55.49 %  p = 983.76 hPa
+[ 1245.289 s] #250  T = 23.40 C  RH = 55.58 %  p = 983.80 hPa
+[ 1250.290 s] #251  T = 23.40 C  RH = 55.67 %  p = 983.76 hPa
+[ 1255.291 s] #252  T = 23.45 C  RH = 55.67 %  p = 983.84 hPa
+[ 1260.000 s] Stack high-water marks (smallest free stack so far):
+  FreeRTOS heap: free 640 of 1024 bytes, minimum ever free 640 bytes
+  Sensors   512 words, min free  323 words, max used  189 words (36 %)
+  Console   512 words, min free  255 words, max used  257 words (50 %)
+  Uplink   1024 words, min free  785 words, max used  239 words (23 %)
+[ 1260.292 s] #253  T = 23.38 C  RH = 55.46 %  p = 983.84 hPa
+[ 1265.293 s] #254  T = 23.42 C  RH = 55.54 %  p = 983.84 hPa
+[ 1270.294 s] #255  T = 23.42 C  RH = 55.63 %  p = 983.87 hPa
+[ 1275.295 s] #256  T = 23.44 C  RH = 55.48 %  p = 983.82 hPa
+[ 1280.296 s] #257  T = 23.42 C  RH = 55.57 %  p = 983.76 hPa
+[ 1282.506 s] Uplink: sample #257 -> entry 238531 (334 ms)  [ok 22, rejected 0, failed 0, joins 1]
+[ 1285.297 s] #258  T = 23.45 C  RH = 55.54 %  p = 983.83 hPa
+[ 1290.298 s] #259  T = 23.49 C  RH = 55.43 %  p = 983.78 hPa
+[ 1295.299 s] #260  T = 23.47 C  RH = 55.49 %  p = 983.95 hPa
+[ 1300.300 s] #261  T = 23.52 C  RH = 55.47 %  p = 983.79 hPa
+[ 1305.301 s] #262  T = 23.49 C  RH = 55.34 %  p = 983.81 hPa
+[ 1310.302 s] #263  T = 23.47 C  RH = 55.35 %  p = 983.80 hPa
+[ 1315.303 s] #264  T = 23.51 C  RH = 55.72 %  p = 983.82 hPa
+[ 1320.304 s] #265  T = 23.49 C  RH = 55.72 %  p = 983.77 hPa
+[ 1325.305 s] #266  T = 23.49 C  RH = 55.57 %  p = 983.79 hPa
+[ 1330.306 s] #267  T = 23.52 C  RH = 55.60 %  p = 983.92 hPa
+[ 1335.307 s] #268  T = 23.60 C  RH = 55.59 %  p = 983.77 hPa
+[ 1340.308 s] #269  T = 23.51 C  RH = 55.41 %  p = 983.77 hPa
+[ 1342.852 s] Uplink: sample #269 -> entry 238532 (346 ms)  [ok 23, rejected 0, failed 0, joins 1]
+[ 1345.309 s] #270  T = 23.58 C  RH = 55.43 %  p = 983.85 hPa
+[ 1350.310 s] #271  T = 23.58 C  RH = 55.17 %  p = 983.78 hPa
+[ 1355.311 s] #272  T = 23.54 C  RH = 55.32 %  p = 983.86 hPa
+[ 1360.312 s] #273  T = 23.52 C  RH = 55.14 %  p = 983.63 hPa
+[ 1365.313 s] #274  T = 23.52 C  RH = 55.31 %  p = 983.71 hPa
+[ 1370.314 s] #275  T = 23.47 C  RH = 55.36 %  p = 983.77 hPa
+[ 1375.315 s] #276  T = 23.47 C  RH = 55.30 %  p = 983.85 hPa
+[ 1380.316 s] #277  T = 23.49 C  RH = 55.42 %  p = 983.70 hPa
+[ 1385.317 s] #278  T = 23.45 C  RH = 55.20 %  p = 983.75 hPa
+[ 1390.318 s] #279  T = 23.42 C  RH = 55.30 %  p = 983.75 hPa
+[ 1395.319 s] #280  T = 23.40 C  RH = 55.17 %  p = 983.71 hPa
+[ 1400.320 s] #281  T = 23.40 C  RH = 55.20 %  p = 983.75 hPa
+[ 1403.188 s] Uplink: sample #281 -> entry 238533 (336 ms)  [ok 24, rejected 0, failed 0, joins 1]
+[ 1405.321 s] #282  T = 23.37 C  RH = 55.30 %  p = 983.73 hPa
+[ 1410.322 s] #283  T = 23.40 C  RH = 55.28 %  p = 983.86 hPa
+[ 1415.323 s] #284  T = 23.49 C  RH = 55.31 %  p = 983.80 hPa
+[ 1420.324 s] #285  T = 23.42 C  RH = 55.47 %  p = 983.78 hPa
+[ 1425.325 s] #286  T = 23.45 C  RH = 55.35 %  p = 983.79 hPa
+[ 1430.326 s] #287  T = 23.45 C  RH = 55.37 %  p = 983.71 hPa
+[ 1435.327 s] #288  T = 23.49 C  RH = 55.50 %  p = 983.73 hPa
+[ 1440.328 s] #289  T = 23.51 C  RH = 55.21 %  p = 983.69 hPa
+[ 1445.329 s] #290  T = 23.54 C  RH = 55.23 %  p = 983.80 hPa
+[ 1450.330 s] #291  T = 23.51 C  RH = 55.28 %  p = 983.72 hPa
+[ 1455.331 s] #292  T = 23.51 C  RH = 55.27 %  p = 983.78 hPa
+[ 1460.332 s] #293  T = 23.51 C  RH = 55.29 %  p = 983.81 hPa
+[ 1463.523 s] Uplink: sample #293 -> entry 238534 (335 ms)  [ok 25, rejected 0, failed 0, joins 1]
+[ 1465.333 s] #294  T = 23.51 C  RH = 55.07 %  p = 983.72 hPa
+[ 1470.334 s] #295  T = 23.47 C  RH = 55.14 %  p = 983.81 hPa
+[ 1475.335 s] #296  T = 23.51 C  RH = 55.38 %  p = 983.77 hPa
+[ 1480.336 s] #297  T = 23.51 C  RH = 55.11 %  p = 983.70 hPa
+[ 1485.337 s] #298  T = 23.52 C  RH = 55.16 %  p = 983.79 hPa
+[ 1490.338 s] #299  T = 23.54 C  RH = 55.26 %  p = 983.77 hPa
+[ 1495.339 s] #300  T = 23.52 C  RH = 55.14 %  p = 983.74 hPa
+[ 1500.340 s] #301  T = 23.52 C  RH = 55.27 %  p = 983.63 hPa
+[ 1505.341 s] #302  T = 23.51 C  RH = 55.26 %  p = 983.86 hPa
+[ 1510.342 s] #303  T = 23.51 C  RH = 55.16 %  p = 983.77 hPa
+[ 1515.343 s] #304  T = 23.52 C  RH = 55.19 %  p = 983.79 hPa
+[ 1520.344 s] #305  T = 23.51 C  RH = 55.16 %  p = 983.84 hPa
+[ 1523.848 s] Uplink: sample #305 -> entry 238535 (325 ms)  [ok 26, rejected 0, failed 0, joins 1]
+[ 1525.345 s] #306  T = 23.49 C  RH = 55.09 %  p = 983.82 hPa
+[ 1530.346 s] #307  T = 23.54 C  RH = 55.18 %  p = 983.72 hPa
+[ 1535.347 s] #308  T = 23.51 C  RH = 55.12 %  p = 983.81 hPa
+[ 1540.348 s] #309  T = 23.56 C  RH = 55.12 %  p = 983.81 hPa
+[ 1545.349 s] #310  T = 23.54 C  RH = 55.16 %  p = 983.73 hPa
+[ 1550.350 s] #311  T = 23.49 C  RH = 55.17 %  p = 983.79 hPa
+[ 1555.351 s] #312  T = 23.56 C  RH = 55.12 %  p = 983.79 hPa
+[ 1560.352 s] #313  T = 23.54 C  RH = 55.25 %  p = 983.64 hPa
+[ 1565.353 s] #314  T = 23.54 C  RH = 55.06 %  p = 983.75 hPa
+[ 1570.354 s] #315  T = 23.54 C  RH = 55.08 %  p = 983.75 hPa
+[ 1575.355 s] #316  T = 23.61 C  RH = 55.07 %  p = 983.79 hPa
+[ 1580.356 s] #317  T = 23.58 C  RH = 55.03 %  p = 983.70 hPa
+[ 1584.182 s] Uplink: sample #317 -> entry 238536 (334 ms)  [ok 27, rejected 0, failed 0, joins 1]
+[ 1585.357 s] #318  T = 23.56 C  RH = 54.94 %  p = 983.77 hPa
+[ 1590.358 s] #319  T = 23.54 C  RH = 55.10 %  p = 983.77 hPa
+[ 1595.359 s] #320  T = 23.56 C  RH = 54.95 %  p = 983.68 hPa
+[ 1600.360 s] #321  T = 23.58 C  RH = 55.07 %  p = 983.75 hPa
+[ 1605.361 s] #322  T = 23.60 C  RH = 55.07 %  p = 983.71 hPa
+[ 1610.362 s] #323  T = 23.58 C  RH = 55.01 %  p = 983.88 hPa
+[ 1615.363 s] #324  T = 23.58 C  RH = 55.00 %  p = 983.73 hPa
+[ 1620.364 s] #325  T = 23.56 C  RH = 55.18 %  p = 983.71 hPa
+[ 1625.365 s] #326  T = 23.56 C  RH = 55.06 %  p = 983.75 hPa
+[ 1630.366 s] #327  T = 23.58 C  RH = 55.01 %  p = 983.77 hPa
+[ 1635.367 s] #328  T = 23.60 C  RH = 54.93 %  p = 983.75 hPa
+[ 1640.368 s] #329  T = 23.63 C  RH = 54.91 %  p = 983.70 hPa
+[ 1644.532 s] Uplink: sample #329 -> entry 238537 (350 ms)  [ok 28, rejected 0, failed 0, joins 1]
+[ 1645.369 s] #330  T = 23.58 C  RH = 54.97 %  p = 983.77 hPa
+[ 1650.370 s] #331  T = 23.58 C  RH = 54.85 %  p = 983.71 hPa
+[ 1655.371 s] #332  T = 23.61 C  RH = 54.96 %  p = 983.70 hPa
+[ 1660.372 s] #333  T = 23.61 C  RH = 54.97 %  p = 983.75 hPa
+[ 1665.373 s] #334  T = 23.63 C  RH = 55.03 %  p = 983.69 hPa
+[ 1670.374 s] #335  T = 23.58 C  RH = 55.02 %  p = 983.82 hPa
+[ 1675.375 s] #336  T = 23.58 C  RH = 54.90 %  p = 983.72 hPa
+[ 1680.376 s] #337  T = 23.60 C  RH = 54.91 %  p = 983.76 hPa
+[ 1685.377 s] #338  T = 23.63 C  RH = 55.05 %  p = 983.82 hPa
+[ 1690.378 s] #339  T = 23.61 C  RH = 54.95 %  p = 983.79 hPa
+[ 1695.379 s] #340  T = 23.61 C  RH = 54.93 %  p = 983.72 hPa
+[ 1700.380 s] #341  T = 23.61 C  RH = 54.91 %  p = 983.71 hPa
+[ 1704.895 s] Uplink: sample #341 -> entry 238538 (363 ms)  [ok 29, rejected 0, failed 0, joins 1]
+[ 1705.381 s] #342  T = 23.61 C  RH = 54.90 %  p = 983.73 hPa
+[ 1710.382 s] #343  T = 23.63 C  RH = 54.99 %  p = 983.92 hPa
+[ 1715.383 s] #344  T = 23.61 C  RH = 54.99 %  p = 983.76 hPa
+[ 1720.384 s] #345  T = 23.61 C  RH = 54.97 %  p = 983.81 hPa
+[ 1725.385 s] #346  T = 23.61 C  RH = 55.03 %  p = 983.74 hPa
+[ 1730.386 s] #347  T = 23.68 C  RH = 55.03 %  p = 983.75 hPa
+[ 1735.387 s] #348  T = 23.63 C  RH = 54.95 %  p = 983.73 hPa
+[ 1740.388 s] #349  T = 23.63 C  RH = 54.98 %  p = 983.64 hPa
+[ 1745.389 s] #350  T = 23.58 C  RH = 54.98 %  p = 983.87 hPa
+[ 1750.390 s] #351  T = 23.56 C  RH = 55.08 %  p = 983.84 hPa
+[ 1755.391 s] #352  T = 23.58 C  RH = 55.06 %  p = 983.75 hPa
+[ 1760.392 s] #353  T = 23.61 C  RH = 55.05 %  p = 983.79 hPa
+[ 1765.234 s] Uplink: sample #353 -> entry 238539 (339 ms)  [ok 30, rejected 0, failed 0, joins 1]
+[ 1765.393 s] #354  T = 23.58 C  RH = 55.04 %  p = 983.77 hPa
+[ 1770.394 s] #355  T = 23.67 C  RH = 55.05 %  p = 983.69 hPa
+[ 1775.395 s] #356  T = 23.61 C  RH = 55.00 %  p = 983.75 hPa
+[ 1780.396 s] #357  T = 23.63 C  RH = 54.98 %  p = 983.74 hPa
+[ 1785.397 s] #358  T = 23.60 C  RH = 55.04 %  p = 983.70 hPa
+[ 1790.398 s] #359  T = 23.58 C  RH = 55.05 %  p = 983.68 hPa
+[ 1795.399 s] #360  T = 23.56 C  RH = 55.03 %  p = 983.73 hPa
+[ 1800.400 s] #361  T = 23.52 C  RH = 55.05 %  p = 983.73 hPa
+[ 1805.401 s] #362  T = 23.51 C  RH = 55.07 %  p = 983.70 hPa
+[ 1810.402 s] #363  T = 23.51 C  RH = 55.25 %  p = 983.78 hPa
+[ 1815.403 s] #364  T = 23.49 C  RH = 55.20 %  p = 983.83 hPa
+[ 1820.404 s] #365  T = 23.51 C  RH = 55.05 %  p = 983.77 hPa
+[ 1825.405 s] #366  T = 23.49 C  RH = 55.30 %  p = 983.79 hPa
+[ 1825.589 s] Uplink: sample #365 -> entry 238540 (355 ms)  [ok 31, rejected 0, failed 0, joins 1]
+[ 1830.406 s] #367  T = 23.47 C  RH = 55.09 %  p = 983.74 hPa
+[ 1835.407 s] #368  T = 23.47 C  RH = 55.06 %  p = 983.80 hPa
+[ 1840.408 s] #369  T = 23.52 C  RH = 55.08 %  p = 983.77 hPa
+[ 1845.409 s] #370  T = 23.51 C  RH = 55.08 %  p = 983.86 hPa
+[ 1850.410 s] #371  T = 23.54 C  RH = 55.23 %  p = 983.78 hPa
+[ 1855.411 s] #372  T = 23.56 C  RH = 55.18 %  p = 983.72 hPa
+[ 1860.000 s] Stack high-water marks (smallest free stack so far):
+  FreeRTOS heap: free 640 of 1024 bytes, minimum ever free 640 bytes
+  Sensors   512 words, min free  323 words, max used  189 words (36 %)
+  Console   512 words, min free  255 words, max used  257 words (50 %)
+  Uplink   1024 words, min free  785 words, max used  239 words (23 %)
+[ 1860.412 s] #373  T = 23.54 C  RH = 55.07 %  p = 983.76 hPa
+[ 1865.413 s] #374  T = 23.54 C  RH = 55.15 %  p = 983.76 hPa
+[ 1870.414 s] #375  T = 23.58 C  RH = 55.10 %  p = 983.82 hPa
+[ 1875.415 s] #376  T = 23.58 C  RH = 55.09 %  p = 983.75 hPa
+[ 1880.416 s] #377  T = 23.58 C  RH = 55.09 %  p = 983.75 hPa
+[ 1885.417 s] #378  T = 23.61 C  RH = 55.07 %  p = 983.78 hPa
+[ 1885.922 s] Uplink: sample #378 -> entry 238541 (333 ms)  [ok 32, rejected 0, failed 0, joins 1]
+[ 1890.418 s] #379  T = 23.58 C  RH = 54.99 %  p = 983.69 hPa
+[ 1895.419 s] #380  T = 23.60 C  RH = 54.92 %  p = 983.82 hPa

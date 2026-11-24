@@ -31,6 +31,7 @@
 #include "reset_info.h"
 #include "wifi_bringup_test.hpp"
 #include "wifi_upload_test.hpp"
+#include "wifi_driver_test.hpp"
 
 using namespace csp;
 
@@ -58,6 +59,10 @@ void MainApp_Task(void* argument)
     } else if constexpr (APP_DIAGNOSTIC_MODE == APP_DIAG_WIFI_ONE_UPLOAD) {
         static WifiUploadTest uploadTest;
         Run(InParallel(uploadTest), ExecutionMode::StaticNetwork, kNetworkPriority);
+        osThreadExit();
+    } else if constexpr (APP_DIAGNOSTIC_MODE == APP_DIAG_WIFI_DRIVER_TEST) {
+        static WifiDriverTest driverTest;
+        Run(InParallel(driverTest), ExecutionMode::StaticNetwork, kNetworkPriority);
         osThreadExit();
     }
 

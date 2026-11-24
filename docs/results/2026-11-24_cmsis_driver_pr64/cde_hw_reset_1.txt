@@ -1,0 +1,67 @@
+# Console capture
+# date:      2026-11-24 20:18:04 UTC (start of the capture, about 0.5 s before the reset)
+# commit:    csp4cmsis-v1.0-58-g49203fd-dirty
+# elf:       <build>/drvtest_hw1.elf (sha256 c1f8c300604e4aa4...)
+# compiler:  GCC: (GNU Tools for STM32 14.3.rel1.20251027-0700) 14.3.1 20250623
+# tool:      STM32CubeProgrammer version: 2.22.0
+# flash:     STM32_Programmer_CLI -c port=SWD -w <build>/drvtest_hw1.elf -v
+# reset:     STM32_Programmer_CLI -c port=SWD -hardRst
+# probe:     ST-LINK firmware V2J46M31
+# serial:    ST-LINK virtual COM port (/dev/ttyACM0), 115200 8N1, captured for 120 s from before the reset
+# after the capture, read over SWD (program running):
+#   __sbrk_heap_end                = 0x00000000   (0x00000000: malloc() was never called)
+#   xMinimumEverFreeBytesRemaining = 0x00000280   (0x00000000: the FreeRTOS heap was never used)
+# ----------------------------------------------------------------------------------------
+
+DISCO_L475VG_IOT01A_Thingspeak -- ISM43362 driver test (CMSIS-Driver PR #64)
+ISM43362 driver 1.17, WIFI_ISM43362_HW_RESET 1, APP_TEST_WIFI_INIT_FAIL 0
+    heap at start                     free     0  min-ever     0  (of 1024)
+
+[d1] Uninitialize() without a prior Initialize(), twice
+  Uninitialize (no Init) #1  -> -1 ARM_DRIVER_ERROR (0 ms; RSTN assert 0, release 0, level as requested 0)
+  Uninitialize (no Init) #2  -> -1 ARM_DRIVER_ERROR (0 ms; RSTN assert 0, release 0, level as requested 0)
+    heap after d1                     free     0  min-ever     0  (of 1024)
+
+[c] Initialize, Uninitialize, Initialize
+  Initialize #1              -> 0 ARM_DRIVER_OK (812 ms; RSTN assert 1, release 1, level as requested 2)
+  GetModuleInfo              -> ARM_DRIVER_OK: ISM43362-M3G-L44-SPI,C3.5.2.7.STM,v3.5.2,v1.4.0.rc1,v8.2.1,120000000,Inventek eS-WiFi
+    heap after Initialize #1          free   640  min-ever   640  (of 1024)
+  Uninitialize               -> 0 ARM_DRIVER_OK (1 ms; RSTN assert 0, release 0, level as requested 0)
+    heap after Uninitialize           free  1016  min-ever   640  (of 1024)
+  Initialize #2              -> 0 ARM_DRIVER_OK (812 ms; RSTN assert 1, release 1, level as requested 2)
+  GetModuleInfo              -> ARM_DRIVER_OK: ISM43362-M3G-L44-SPI,C3.5.2.7.STM,v3.5.2,v1.4.0.rc1,v8.2.1,120000000,Inventek eS-WiFi
+    heap after Initialize #2          free   640  min-ever   640  (of 1024)
+  RESULT c: Initialize #1 ARM_DRIVER_OK, Initialize #2 ARM_DRIVER_OK
+
+[d2] Uninitialize() twice in a row (after Initialize #2)
+  Uninitialize #1            -> 0 ARM_DRIVER_OK (1 ms; RSTN assert 0, release 0, level as requested 0)
+  Uninitialize #2            -> -1 ARM_DRIVER_ERROR (0 ms; RSTN assert 0, release 0, level as requested 0)
+    heap after d2                     free  1016  min-ever   640  (of 1024)
+
+[e] recovery in the same run
+  Initialize                 -> 0 ARM_DRIVER_OK (812 ms; RSTN assert 1, release 1, level as requested 2)
+  Activate (join)            -> 0 ARM_DRIVER_OK (4797 ms; RSTN assert 0, release 0, level as requested 0)
+  SocketGetHostByName        -> 0 ARM_DRIVER_OK (126 ms; RSTN assert 0, release 0, level as requested 0)
+    api.thingspeak.com -> 100.50.161.22
+  SocketConnect :80          -> 0 ARM_DRIVER_OK (169 ms; RSTN assert 0, release 0, level as requested 0)
+  SocketClose                -> 0 ARM_DRIVER_OK (3 ms; RSTN assert 0, release 0, level as requested 0)
+  RESULT e before network path (join, DNS, TCP connect): OK
+    heap module working               free   640  min-ever   640  (of 1024)
+  module held in reset (PE8 low): it does not answer any more
+  SocketGetHostByName (stuck) -> -1 ARM_DRIVER_ERROR (618 ms; RSTN assert 0, release 0, level as requested 0)
+  IsConnected (stuck)        -> 0 ARM_DRIVER_OK (619 ms; RSTN assert 0, release 0, level as requested 0)
+  recovery: Uninitialize, Initialize (PE8 still low)
+  Uninitialize               -> 0 ARM_DRIVER_OK (1 ms; RSTN assert 0, release 0, level as requested 0)
+    heap after Uninitialize           free  1016  min-ever   640  (of 1024)
+  Initialize                 -> 0 ARM_DRIVER_OK (812 ms; RSTN assert 1, release 1, level as requested 2)
+  GetModuleInfo              -> ARM_DRIVER_OK: ISM43362-M3G-L44-SPI,C3.5.2.7.STM,v3.5.2,v1.4.0.rc1,v8.2.1,120000000,Inventek eS-WiFi
+  Activate (join)            -> 0 ARM_DRIVER_OK (4789 ms; RSTN assert 0, release 0, level as requested 0)
+  SocketGetHostByName        -> 0 ARM_DRIVER_OK (107 ms; RSTN assert 0, release 0, level as requested 0)
+    api.thingspeak.com -> 100.57.125.143
+  SocketConnect :80          -> 0 ARM_DRIVER_OK (170 ms; RSTN assert 0, release 0, level as requested 0)
+  SocketClose                -> 0 ARM_DRIVER_OK (3 ms; RSTN assert 0, release 0, level as requested 0)
+  RESULT e after network path (join, DNS, TCP connect): OK
+    heap after recovery               free   640  min-ever   640  (of 1024)
+  RESULT e: before OK; recovery Initialize ARM_DRIVER_OK; after OK
+    heap at the end                   free   640  min-ever   640  (of 1024)
+Driver test finished.

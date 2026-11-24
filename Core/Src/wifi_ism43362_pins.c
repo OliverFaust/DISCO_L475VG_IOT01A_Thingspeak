@@ -34,13 +34,37 @@ void WiFi_ISM43362_Pin_Uninitialize(void)
 {
 }
 
+#if APP_DIAGNOSTIC_MODE == APP_DIAG_WIFI_DRIVER_TEST
+/* Driver test (Core/Src/wifi_driver_test.cpp): count the driver's calls, and the calls after which
+   PE8's output register really holds the requested level. wifi_test_hold_reset = 1 keeps PE8 low
+   (module in reset) whatever the driver requests; clearing it leaves PE8 as it is, so only the
+   driver's next RSTN(0) releases the module. */
+volatile uint32_t wifi_test_rstn_assert;      /* RSTN(1): PE8 low  */
+volatile uint32_t wifi_test_rstn_release;     /* RSTN(0): PE8 high */
+volatile uint32_t wifi_test_rstn_driven;      /* calls after which ODR matched the request */
+volatile uint8_t  wifi_test_hold_reset;
+#include "WiFi_ISM43362_Config.h"
+#ifndef WIFI_ISM43362_HW_RESET
+#define WIFI_ISM43362_HW_RESET 0                /* the driver's default */
+#endif
+const int wifi_test_hw_reset = WIFI_ISM43362_HW_RESET;
+#endif
+
 void WiFi_ISM43362_Pin_RSTN(uint8_t rstn)
 {
 #if APP_TEST_WIFI_INIT_FAIL
   (void)rstn;   /* test: keep the module in reset, so that the driver's Initialize() fails */
   HAL_GPIO_WritePin(ISM43362_RST_GPIO_Port, ISM43362_RST_Pin, GPIO_PIN_RESET);
+#elif APP_DIAGNOSTIC_MODE == APP_DIAG_WIFI_DRIVER_TEST
+  const GPIO_PinState level = (rstn || wifi_test_hold_reset) ? GPIO_PIN_RESET : GPIO_PIN_SET;
+  HAL_GPIO_WritePin(ISM43362_RST_GPIO_Port, ISM43362_RST_Pin, level);
 #else
   HAL_GPIO_WritePin(ISM43362_RST_GPIO_Port, ISM43362_RST_Pin, rstn ? GPIO_PIN_RESET : GPIO_PIN_SET);
+#endif
+#if APP_DIAGNOSTIC_MODE == APP_DIAG_WIFI_DRIVER_TEST
+  if (rstn) { ++wifi_test_rstn_assert; } else { ++wifi_test_rstn_release; }
+  const uint8_t low = ((ISM43362_RST_GPIO_Port->ODR & ISM43362_RST_Pin) == 0U) ? 1U : 0U;
+  if (low == (rstn ? 1U : 0U)) { ++wifi_test_rstn_driven; }
 #endif
 }
 

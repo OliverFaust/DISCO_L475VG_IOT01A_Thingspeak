@@ -83,4 +83,12 @@
 // This priority should be above user threads
 #define WIFI_ISM43362_ASYNC_PRIORITY       (osPriorityAboveNormal)
 
+// Hardware reset on every Initialize (driver V1.17, CMSIS-Driver PR #64; not in the driver's
+// Config template). 1: WiFi_ISM43362_Pin_RSTN() resets the module (Core/Src/wifi_ism43362_pins.c
+// drives PE8), so the driver resets it on every Initialize(), also after Uninitialize().
+// 0: driver default, reset on the first Initialize() only.
+#ifndef WIFI_ISM43362_HW_RESET
+#define WIFI_ISM43362_HW_RESET             1
+#endif
+
 #endif // __WIFI_ISM43362_CONFIG_H

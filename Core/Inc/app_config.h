@@ -7,6 +7,8 @@
  *                          scan, FreeRTOS heap used by the driver (Core/Src/wifi_bringup_test.cpp)
  *   APP_DIAG_WIFI_ONE_UPLOAD  one sample, one ThingSpeak update, entry id; needs
  *                          Core/Inc/app_secrets.h (Core/Src/wifi_upload_test.cpp)
+ *   APP_DIAG_WIFI_DRIVER_TEST  test of the ISM43362 driver's Initialize()/Uninitialize() (branch
+ *                          test/cmsis-driver-pr64 only; Core/Src/wifi_driver_test.cpp)
  * Change the value, rebuild, flash. Each diagnostic mode is a single process and the only one
  * that prints. docs/07-troubleshooting.md explains when to use which.
  */
@@ -16,6 +18,7 @@
 #define APP_DIAG_NONE           0
 #define APP_DIAG_WIFI_BRINGUP   1
 #define APP_DIAG_WIFI_ONE_UPLOAD 2
+#define APP_DIAG_WIFI_DRIVER_TEST 3
 
 #ifndef APP_DIAGNOSTIC_MODE
 #define APP_DIAGNOSTIC_MODE     APP_DIAG_NONE
