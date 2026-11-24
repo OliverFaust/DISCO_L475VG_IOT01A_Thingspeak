@@ -1,0 +1,37 @@
+# Console capture
+# masked:    tools/mask_log.py (API key: all but 4 characters; MAC/BSSID: last 3 bytes); SSID masked by the firmware
+# date:      2026-11-12 18:27:24 UTC (start of the capture, about 0.5 s before the reset)
+# commit:    d8f4e3f-dirty
+# elf:       Debug/DISCO_L475VG_IOT01A_Thingspeak.elf (sha256 d53dbdc7c0fe7c13...)
+# compiler:  GCC: (GNU Tools for STM32 14.3.rel1.20251027-0700) 14.3.1 20250623
+# tool:      STM32CubeProgrammer version: 2.22.0
+# flash:     STM32_Programmer_CLI -c port=SWD -w Debug/DISCO_L475VG_IOT01A_Thingspeak.elf -v
+# reset:     STM32_Programmer_CLI -c port=SWD -hardRst
+# probe:     ST-LINK firmware V2J46M31
+# serial:    ST-LINK virtual COM port (/dev/ttyACM0), 115200 8N1, captured for 30 s from before the reset
+# after the capture, read over SWD (program running):
+#   __sbrk_heap_end                = 0x00000000   (0x00000000: malloc() was never called)
+#   xMinimumEverFreeBytesRemaining = 0x00000280   (0x00000000: the FreeRTOS heap was never used)
+# ----------------------------------------------------------------------------------------
+
+DISCO_L475VG_IOT01A_Thingspeak -- phase 3 step 2: one ThingSpeak update
+[    0.014 s] sample: T = 17.14 C  RH = 74.17 %  p = 979.14 hPa
+[    0.833 s] Wi-Fi Initialize/PowerControl: OK
+[    5.631 s] join "Vod***********" (WPA2): OK (4795 ms)
+[    5.637 s] IP address (DHCP): 192.168.1.28
+[    5.758 s] resolve api.thingspeak.com: OK -> 54.163.122.218 (118 ms)
+[    5.861 s] connect 54.163.122.218:80: OK
+[    5.865 s] request (134 bytes, key masked):
+    GET /update?api_key=CJJZ************&field1=17.14&field2=74.17&field3=979.14 HTTP/1.1
+    Host: api.thingspeak.com
+    Connection: close
+    
+    
+[    5.886 s] sent 134 of 134 bytes: OK
+[    6.003 s] received 942 bytes in 115 ms
+[    6.007 s] status line: HTTP/1.1 200 OK
+[    6.011 s] ThingSpeak entry id: 235572
+[    6.018 s] SocketClose: OK
+[    6.025 s] Deactivate: OK
+[    6.027 s] FreeRTOS heap: free 640 of 1024 bytes, minimum ever free 640 bytes
+[    6.034 s] One-upload test finished.

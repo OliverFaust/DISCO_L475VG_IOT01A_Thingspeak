@@ -1,0 +1,34 @@
+{
+ "ring": {
+  "puts": 1,
+  "overwrites": 1,
+  "errors": 1
+ },
+ "ring_errors": [
+  "MainApp_Task(void*)::uplinkSamples: OverwroteOldest at 255949.188 us with no put in the buffer"
+ ],
+ "ring_channels": {
+  "MainApp_Task(void*)::samples": {
+   "capacity": 1,
+   "policy": "KeepNewest",
+   "isr_puts": 0
+  },
+  "MainApp_Task(void*)::uplinkSamples": {
+   "capacity": 1,
+   "policy": "KeepNewest",
+   "isr_puts": 0
+  }
+ },
+ "alt": {},
+ "alt_errors": [],
+ "alt_masks": [],
+ "deadlines": {
+  "errors": 1
+ },
+ "deadline_errors": [
+  "ResumeTimeout at 253990.462 us without a deadline wait"
+ ],
+ "stable_points": 0,
+ "stable_classes": {},
+ "stable_note": null
+}

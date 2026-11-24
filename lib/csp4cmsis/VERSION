@@ -1,0 +1,3 @@
+CSP4CMSIS 3.1.0
+https://github.com/OliverFaust/CSP4CMSIS, tag v3.1.0 (commit ddfcb9e1982fcbb8f2bbd2993ab7d16cd402c38e), directory csp4cmsis/ and LICENSE, unmodified.
+Extracted with: git archive v3.1.0 csp4cmsis LICENSE | tar -x

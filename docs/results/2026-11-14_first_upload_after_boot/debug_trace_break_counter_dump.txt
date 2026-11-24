@@ -1,0 +1,18 @@
+0x080166e6 in prvIdleTask (pvParameters=0x0) at ../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:3432
+3432				if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ tskIDLE_PRIORITY ] ) ) > ( UBaseType_t ) 1 )
+Breakpoint 1 at 0x8007cee: file ../Core/Src/uplink_process.cpp, line 222.
+Note: automatically using hardware breakpoints for read-only addresses.
+STM32 Successfully completed reset operation (System reset)
+== running until the breakpoint is hit (at most 180 s)
+
+Breakpoint 1, UplinkProcess::run (this=0x20001b98 <(anonymous namespace)::MainApp_Task(void*)::uplink>) at ../Core/Src/uplink_process.cpp:222
+222	            ++uploadsOk_; failedUploads = 0;
+halted at pc = 0x8007cee, write_count = 23250
+$1 = {magic = 0x52505343, format = 0x1, record_size = 0x10, capacity = 0x400, policy = 0x0, write_count = 0x5ad2, clock_hz = 0x4c4b400, dropped = 0x0, dwt_ctrl = 0x40000001}
+TASKNAME 0x20001138 Sensors
+TASKNAME 0x20001a70 Console
+TASKNAME 0x20002ba8 Uplink
+TASKNAME 0x20003ad0 WiFi_ISM43362_A
+TASKNAME 0x2000a3cc IDLE
+[Inferior 1 (Remote target) detached]
+== wrote trace_out/ring.bin (16416 bytes) and trace_out/ring.names (5 names); the board is running again

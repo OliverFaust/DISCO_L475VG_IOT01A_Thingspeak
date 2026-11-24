@@ -1,0 +1,771 @@
+-- =============================================================================
+-- CSP4CMSIS 3.x BufferedChannel (csp4cmsis/inc/csp/buffered_channel.h): ALT
+-- wakeup protocol, bounded buffer, the three policies and putFromISR.
+-- CSP-M (FDR4 dialect; also accepted by ProB). Checked with ProB 1.16.1;
+-- results at the end. Reproduce:
+--   probcli buffered_channel_v2.csp -csp_assertion '<assertion>'
+-- (The file name keeps "v2": the 3.x channel is the 2.0 design (c).)
+--
+-- Implementation and history:
+--   Part 1c  design (c) = 3.x: ALT reader, readiness from the semaphore count
+--   Part 1d  mutation controls of (c)
+--   Part 2   KeepNewest (SYS_KN_NEW = 3.x; SYS_KN_OLD = v1.0.0, positive control)
+--   Part 2b  KeepOldest / DroppedNew (3.x)
+--   Part 3   Block bounded buffer with the items/spaces tokens (3.x)
+--   Parts 2N, 2bN, 3N, 5G  the same with parameters (capacity, roles, from
+--            empty, writers writing forever): trace conformance of
+--            recorded channels of other capacities and roles
+--   Part 5   the 3.x Block channel with its ALT guards and put identities:
+--            ALT reader against an interrupt (putFromISR as an environment
+--            event), ALT writer against a blocking reader, ALT reader and
+--            ALT writer together
+--   Part 1   HISTORICAL designs, kept as positive controls of the DELIVERED
+--            observation: v1.0.0 (SYS_OLD) and the 2.0 drafts (SYS_DRAFT,
+--            SYS_NEW with back-off). Not the 3.x code.
+--   The former Part 4 (rendezvous/signal channels, "trust the wakeup": the
+--   1.x/2.0 rendezvous design) is in historical/rendezvous_trust_wakeup.csp;
+--   the 3.x rendezvous channel is modelled in alt_one_winner.csp (OWRV) and
+--   alt_owrv_extended.csp.
+--
+-- Values: no model event carries channel data. Where a model must tell
+-- elements apart it uses PUT IDENTITIES: the index of the write in record
+-- order (each BufferedPut, PutFromISR, OverwroteOldest and DroppedNew is one
+-- write), modulo K = capacity + 2. A faulty get could return one of
+-- capacity + 2 different writes: the one taken last (a duplicate), the
+-- capacity elements in the buffer, or the write in flight; any capacity + 2
+-- consecutive indices differ modulo K, so each such error shows as a wrong
+-- identity. Capacity 2: K = 4; capacity 1: K = 3.
+--
+-- Abstraction (see BUFFERED_CHANNEL_ANALYSIS.md and buffered_channel.h):
+--  * A CSP critical section (BASEPRI raised) is atomic w.r.t. every task and
+--    every ISR at or below CSP4CMSIS_MAX_SYSCALL_INTERRUPT_PRIORITY, so each
+--    critical section is ONE event on the shared-state process.
+--  * RTOS calls (thread-flag set/wait, semaphore release/acquire) are
+--    separate events, i.e. other processes may interleave around them.
+--  * An ISR is not preempted by tasks, so an ISR's whole operation is one
+--    atomic step relative to a task; tasks may be preempted between any two
+--    of their events.
+--
+-- Trace conformance (not book-facing). Events a CSP4CMSIS trace supplies
+-- (csp4cmsis_trace.h); identities come from decode.py's slot replay, which
+-- matches each BufferedGet to the write whose slot it reads:
+--   BufferedPut (index n)        -> bin.(n mod K) (Parts 3, 3N), kput.0.(n mod K) (Parts 2b, 2bN),
+--                                   put5.(n mod K) (Parts 5, 5G), t_new (Parts 2, 2N)
+--   PutFromISR (index n)         -> isr_put.(n mod K) (Part 5), kput.1.(n mod K) (Part 2b),
+--                                   isr_new (Part 2)
+--   OverwroteOldest (index n)    -> t_new / isr_new (Part 2; by context)
+--   DroppedNew (index n)         -> kdrop.w.(n mod K) (Part 2b; w: task 0, ISR 1)
+--   BufferedGet (its write's identity t) -> bout.t, rd.t, get5.t
+--   AltSelected (the input guard) and its BufferedGet -> done_alt (Part 1c)
+--   BufferedGet by a blocking reader -> done_blk (Part 1c)
+--   WaitBufferedEmpty/Full + Resume  -> acq_item / acq_space, b_acq / b_wacq (blocking side)
+--   WaitAlt + Resume                 -> wait_flag, wait_r, wait_w (ALT side)
+-- Hidden for conformance (H): the critical sections and RTOS calls that a
+-- trace does not record (registration, token count reads, token acquire
+-- with timeout 0 and releases, snapshots, signals, flag clears), stale
+-- flags, error, err5, idle, drained, isr_full (putFromISR on a full Block
+-- channel records nothing).
+-- Gaps: identities in a trace exist only after the decoder's slot replay
+-- (whose correctness is the decoder's ring-slot check); token counts are
+-- not recorded, so readiness (C) cannot be checked from a trace; the
+-- trace tool uses the parameterised parts up to capacity 4, the largest
+-- whose range assertions are checked (the types, IdsX, would allow 6).
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- Part 1 -- HISTORICAL designs (v1.0.0, 2.0 drafts), kept as positive
+--           controls: the DELIVERED observation must find their lost wakeup
+--           (#1, #2) and livelock (#3). Its definitions (STATE1's events,
+--           FIN, STALE) are also used by Part 1c.
+--           ALT reader vs. one writer that sends ONE final message (no
+--           successor). Capacity 1 suffices: the question is only whether the
+--           reader is woken.
+-- -----------------------------------------------------------------------------
+N1 = 1
+
+-- shared state: count (elements), tokens (items semaphore count),
+--               reg (reader registered), flag (reader's ALT thread flag)
+channel pending_chk : Bool      -- v1.0.0: pending() in enable(), unlocked
+channel register_old            -- v1.0.0: registerInputAlt() (separate step)
+channel notify_old : Bool       -- v1.0.0: _notifyReader(): reads reg and signals, atomically
+channel put_old                 -- v1.0.0: osMessageQueuePut() succeeded
+channel act_old                 -- v1.0.0: activate(): osMessageQueueGet(..., 0), result ignored
+channel enable_new : Bool       -- 2.0: check-and-register in ONE critical section
+channel unregister : Bool       -- disable(): unregister own registration, report readiness
+channel push_snap : Bool        -- 2.0: push + snapshot of the registration (critical section)
+channel rel_items               -- 2.0: osSemaphoreRelease(items) after the critical section
+channel act_new : Bool          -- 2.0: activate(): osSemaphoreAcquire(items, 0) + pop
+channel clear_flag, wait_flag, set_flag, stale_flag
+channel backoff_tick            -- 2.0: select()'s 1-tick back-off after a failed activate()
+channel done, idle, error
+
+STATE1(count, tokens, reg, flag) =
+     pending_chk!(count > 0)          -> STATE1(count, tokens, reg, flag)
+  [] register_old                     -> STATE1(count, tokens, true, flag)
+  [] count < N1 & put_old             -> STATE1(count + 1, tokens + 1, reg, flag)
+  [] notify_old!reg                   -> STATE1(count, tokens, reg, flag or reg)
+  [] act_old -> (if count > 0 then STATE1(count - 1, tokens - 1, reg, flag)
+                 else error -> STOP)                      -- select() returned without data
+  [] enable_new!(count > 0)           -> STATE1(count, tokens, true, flag)
+  [] unregister!(count > 0)           -> STATE1(count, tokens, false, flag)
+  [] count < N1 & push_snap!reg       -> STATE1(count + 1, tokens, reg, flag)
+  [] rel_items                        -> STATE1(count, tokens + 1, reg, flag)
+  [] act_new!(tokens > 0) ->
+       (if tokens > 0 then
+          (if count > 0 then STATE1(count - 1, tokens - 1, reg, flag) else error -> STOP)
+        else STATE1(count, tokens, reg, flag))
+  [] clear_flag                       -> STATE1(count, tokens, reg, false)
+  [] flag & wait_flag                 -> STATE1(count, tokens, reg, false)  -- osThreadFlagsWait clears
+  [] set_flag                         -> STATE1(count, tokens, reg, true)
+  [] stale_flag                       -> STATE1(count, tokens, reg, true)
+  -- Back-off wait (osThreadFlagsWait(mask, any, 1 tick)) ends by timeout.
+  -- FAIRNESS ASSUMPTION: the ALT thread sleeps for a tick, so the preempted
+  -- lower-priority partner runs and finishes its short in-flight step; the
+  -- timeout is therefore only offered once no push is in flight
+  -- (tokens == count). Without this assumption no fix based on waiting can
+  -- be shown live in an untimed model.
+  [] tokens == count & backoff_tick   -> STATE1(count, tokens, reg, flag)
+
+FIN = idle -> FIN
+
+-- v1.0.0 writer: put, then notify (reads the registration, signals if set)
+W_OLD = put_old -> notify_old?_ -> SKIP
+
+-- v1.0.0 ALT reader, one buffered input guard (select() of 1.0.0)
+R_OLD = clear_flag -> pending_chk?ready ->
+          (if ready then unregister?_ -> act_old -> done -> FIN
+           else register_old -> wait_flag -> unregister?_ -> act_old -> done -> FIN)
+
+-- 2.0 writer: push + snapshot (critical section), then token, then signal
+W_NEW = push_snap?r -> rel_items -> (if r then set_flag -> SKIP else SKIP)
+
+-- 2.0 ALT reader: rounds of enable / wait / disable / confirm / activate.
+-- bo = back-off after a failed activate() (the final design); without it
+-- (first 2.0 draft, commit d39835b) a failed activate() retried at once.
+R_NEW(bo) = clear_flag -> enable_new?ready ->
+          (if ready then unregister?r2 -> ROUND(bo, r2)
+           else wait_flag -> unregister?r2 -> ROUND(bo, r2))
+ROUND(bo, r2) =
+     if r2 then act_new?ok ->
+          (if ok then done -> FIN
+           else if bo then ((wait_flag -> R_NEW(bo)) [] (backoff_tick -> R_NEW(bo)))   -- back off
+           else R_NEW(bo))                                                           -- retry at once
+     else R_NEW(bo)                                                                  -- stale wakeup
+
+-- An adversary that may deliver ONE late signal from an earlier select()
+STALE = (stale_flag -> SKIP) [] SKIP
+
+S1 = {| pending_chk, register_old, notify_old, put_old, act_old, enable_new, unregister,
+        push_snap, rel_items, act_new, clear_flag, wait_flag, set_flag, stale_flag |}
+
+S1B = union(S1, {backoff_tick})   -- every STATE1 event except error
+-- All systems synchronise on S1B: STATE1 offers backoff_tick by itself, so a
+-- system that did not synchronise on it could always do it (the first version
+-- of SYS_OLD used S1 and was wrongly deadlock free).
+SYS_OLD = (R_OLD ||| W_OLD) [| S1B |] STATE1(0, 0, false, false)
+SYS_NEW   = (R_NEW(true)  ||| W_NEW ||| STALE) [| S1B |] STATE1(0, 0, false, false)
+SYS_DRAFT = (R_NEW(false) ||| W_NEW ||| STALE) [| S1B |] STATE1(0, 0, false, false)
+
+-- Liveness spec: the single message is eventually received, then idle forever.
+DELIVERED = done -> FIN
+
+-- expected: FAILS -- counterexample: pending_chk.false, put_old, notify_old.false,
+--           register_old, (reader blocked in wait_flag with count = 1)  = lost wakeup
+assert SYS_OLD :[deadlock free [F]]
+-- expected: FAILS (same trace; done never happens)
+assert DELIVERED [FD= SYS_OLD \ diff(Events, {done, idle})
+
+-- expected: FAILS with DIVERGENCE -- the first 2.0 draft (d39835b) livelocks:
+--           push_snap.false (writer preempted before rel_items), then the reader
+--           repeats clear_flag, enable_new.true, unregister.true, act_new.false
+--           forever (found by this model review; reproduced on the FVP by T13)
+assert DELIVERED [FD= SYS_DRAFT \ diff(Events, {done, idle})
+
+-- expected: PASSES
+assert SYS_NEW :[deadlock free [F]]
+-- expected: PASSES -- delivered despite a possible stale signal; no livelock
+assert DELIVERED [FD= SYS_NEW \ diff(Events, {done, idle})
+-- expected: PASSES -- never takes from an empty buffer
+assert STOP [T= SYS_NEW \ diff(Events, {error})
+
+-- -----------------------------------------------------------------------------
+-- Part 1c -- (c) readiness from the SEMAPHORE count (final 2.0, cb10b12; = 3.x).
+--   ALT reader  : R register (critical section), then C = token count > 0
+--   writer      : P ring update (critical), T token release, S snapshot of
+--                 the registration (critical), G signal
+--   activate()  : acquire(items, 0); failure -> new round (no back-off)
+-- -----------------------------------------------------------------------------
+channel c_register, c_unregister      -- R / disable() (critical sections)
+channel c_tokens : Bool               -- C: osSemaphoreGetCount(items) > 0
+channel c_push                        -- P
+channel c_snap : Bool                 -- S (returns the registration)
+channel c_acq_alt : Bool              -- activate(): osSemaphoreAcquire(items, 0)
+channel c_acq_blk                     -- blocking reader: osSemaphoreAcquire(items, forever)
+channel c_pop_blk                     -- blocking reader: pop (critical)
+channel done_alt, done_blk
+
+NC1 = 2   -- capacity (two messages in the competitor system)
+
+STATE1C(count, tokens, reg, flag) =
+     c_register                         -> STATE1C(count, tokens, true, flag)
+  [] c_unregister                       -> STATE1C(count, tokens, false, flag)
+  [] c_tokens!(tokens > 0)              -> STATE1C(count, tokens, reg, flag)
+  [] count < NC1 & c_push               -> STATE1C(count + 1, tokens, reg, flag)
+  [] rel_items                          -> STATE1C(count, tokens + 1, reg, flag)
+  [] c_snap!reg                         -> STATE1C(count, tokens, reg, flag)
+  [] c_acq_alt!(tokens > 0) ->
+       (if tokens > 0 then
+          (if count > 0 then STATE1C(count - 1, tokens - 1, reg, flag) else error -> STOP)
+        else STATE1C(count, tokens, reg, flag))
+  [] tokens > 0 & c_acq_blk             -> STATE1C(count, tokens - 1, reg, flag)
+  [] c_pop_blk -> (if count > 0 then STATE1C(count - 1, tokens, reg, flag) else error -> STOP)
+  [] clear_flag                         -> STATE1C(count, tokens, reg, false)
+  [] flag & wait_flag                   -> STATE1C(count, tokens, reg, false)
+  [] set_flag                           -> STATE1C(count, tokens, reg, true)
+  [] stale_flag                         -> STATE1C(count, tokens, reg, true)
+
+W_C  = c_push -> rel_items -> c_snap?r -> (if r then set_flag -> SKIP else SKIP)
+W_C2 = W_C ; W_C                                   -- two messages
+
+R_C  = clear_flag -> c_register -> c_tokens?ready ->
+         (if ready then c_unregister -> c_tokens?r2 -> ROUND_C(r2)
+          else wait_flag -> c_unregister -> c_tokens?r2 -> ROUND_C(r2))
+ROUND_C(r2) = if r2 then c_acq_alt?ok -> (if ok then done_alt -> FIN else R_C)   -- lost race: new round
+              else R_C                                                            -- stale: new round
+
+RB_C = c_acq_blk -> c_pop_blk -> done_blk -> SKIP  -- competing blocking reader
+
+SC1 = {| c_register, c_unregister, c_tokens, c_push, rel_items, c_snap, c_acq_alt, c_acq_blk,
+         c_pop_blk, clear_flag, wait_flag, set_flag, stale_flag |}
+
+-- (c1) one message, ALT reader, adversarial stale signal
+SYS_C  = (R_C ||| W_C ||| STALE) [| SC1 |] STATE1C(0, 0, false, false)
+DELIVERED_C = done_alt -> FIN
+-- expected: PASSES
+assert SYS_C :[deadlock free [F]]
+-- expected: PASSES (no livelock without any back-off)
+assert DELIVERED_C [FD= SYS_C \ diff(Events, {done_alt, idle})
+-- expected: PASSES
+assert STOP [T= SYS_C \ diff(Events, {error})
+
+-- (c2) two messages, ALT reader AND a competing blocking reader, stale signal:
+--      activate() may fail (the competitor took the token) -- this must not
+--      diverge, and both readers get one message each
+SYS_C2 = (R_C ||| RB_C ||| W_C2 ||| STALE) [| SC1 |] STATE1C(0, 0, false, false)
+-- idle (the ALT reader's FIN loop) may interleave once done_alt happened
+BOTH    = (done_alt -> AFTER_A) [] (done_blk -> done_alt -> FIN)
+AFTER_A = (done_blk -> FIN) [] (idle -> AFTER_A)
+-- expected: PASSES
+assert SYS_C2 :[deadlock free [F]]
+-- expected: PASSES (in particular: divergence-free)
+assert BOTH [FD= SYS_C2 \ diff(Events, {done_alt, done_blk, idle})
+-- expected: PASSES
+assert STOP [T= SYS_C2 \ diff(Events, {error})
+
+-- -----------------------------------------------------------------------------
+-- Part 1d -- mutation controls for (c). Each swaps ONE ordering of the final
+--            protocol; each must deadlock (lost wakeup), otherwise the model
+--            cannot tell the orderings apart and the Part 1c passes mean nothing.
+-- -----------------------------------------------------------------------------
+-- (m1) ALT side reads the token count BEFORE registering (C before R)
+R_M1 = clear_flag -> c_tokens?ready -> c_register ->
+         (if ready then c_unregister -> c_tokens?r2 -> ROUND_M1(r2)
+          else wait_flag -> c_unregister -> c_tokens?r2 -> ROUND_M1(r2))
+ROUND_M1(r2) = if r2 then c_acq_alt?ok -> (if ok then done_alt -> FIN else R_M1)
+               else R_M1
+SYS_M1 = (R_M1 ||| W_C ||| STALE) [| SC1 |] STATE1C(0, 0, false, false)
+
+-- (m2) partner snapshots the registration BEFORE releasing the token (S before T)
+W_M2 = c_push -> c_snap?r -> rel_items -> (if r then set_flag -> SKIP else SKIP)
+SYS_M2 = (R_C ||| W_M2 ||| STALE) [| SC1 |] STATE1C(0, 0, false, false)
+
+-- expected: FAILS (deadlock) -- clear_flag, c_tokens.false, c_push, rel_items,
+--           c_snap.false, c_register, then the reader waits for a signal that
+--           never comes (ProB reports a longer trace with a stale round first)
+assert SYS_M1 :[deadlock free [F]]
+-- expected: FAILS (deadlock) -- clear_flag, c_push, c_snap.false, c_register,
+--           c_tokens.false, rel_items, then the reader waits for a signal that
+--           never comes (ProB reports a longer trace with a stale round first)
+assert SYS_M2 :[deadlock free [F]]
+
+-- -----------------------------------------------------------------------------
+-- Part 2 -- KeepNewest, capacity 2, initially full with writes 0 and 1.
+--           A task and an ISR write once each (identities 2 and 3, in record
+--           order), then a reader drains. K = 4. Every serial execution ends
+--           with the two newest writes, 2 and 3, in this order.
+--           SYS_KN_OLD = v1.0.0 (HISTORICAL, positive control); SYS_KN_NEW = 3.x
+--           (offer(): one critical section, overwrite in place).
+-- -----------------------------------------------------------------------------
+NB = 2
+KB = NB + 2
+Ids = {0..KB-1}
+KMAX = 8                         -- identity type of the parameterised systems (fits capacity <= 6; used up to 4)
+IdsX = {0..KMAX-1}
+
+-- s: identities in the buffer; n: next write identity
+knwrite(s, v) = if #s < NB then s ^ <v> else tail(s) ^ <v>
+
+channel t_try : Bool            -- v1.0.0 task: osMessageQueuePut(.., 0) (fails if full)
+channel t_drop                  -- v1.0.0 task: osMessageQueueGet(.., 0) = drop oldest
+channel t_put2 : Bool           -- v1.0.0 task: second osMessageQueuePut(.., 0), result ignored
+channel isr_old                 -- v1.0.0 ISR putFromISR (its 2 steps are atomic vs. the task)
+channel t_new, isr_new          -- 3.x: one critical section each (overwrite in place)
+channel wdone
+channel rd : IdsX
+channel drained
+
+KNSTATE(s, n) =
+     t_try!(#s < NB)             -> KNSTATE(if #s < NB then s ^ <n> else s, if #s < NB then (n + 1) % KB else n)
+  [] t_drop                      -> KNSTATE(if null(s) then s else tail(s), n)
+  [] t_put2!(#s < NB)            -> KNSTATE(if #s < NB then s ^ <n> else s, if #s < NB then (n + 1) % KB else n)
+  [] isr_old                     -> KNSTATE(knwrite(s, n), (n + 1) % KB)
+  [] t_new                       -> KNSTATE(knwrite(s, n), (n + 1) % KB)
+  [] isr_new                     -> KNSTATE(knwrite(s, n), (n + 1) % KB)
+  [] not null(s) & rd!head(s)    -> KNSTATE(tail(s), n)
+  [] null(s) & drained           -> KNSTATE(s, n)
+
+T_OLD = t_try?ok -> (if ok then wdone -> SKIP else t_drop -> t_put2?_ -> wdone -> SKIP)
+I_OLD = isr_old -> wdone -> SKIP
+T_NEW = t_new   -> wdone -> SKIP
+I_NEW = isr_new -> wdone -> SKIP
+
+DRAIN   = rd?_ -> DRAIN [] drained -> FIN
+READER2 = wdone -> wdone -> DRAIN
+
+SK = {| t_try, t_drop, t_put2, isr_old, t_new, isr_new, rd, drained |}
+
+SYS_KN_OLD = ((T_OLD ||| I_OLD) [| {wdone} |] READER2) [| SK |] KNSTATE(<0,1>, 2)
+SYS_KN_NEW = ((T_NEW ||| I_NEW) [| {wdone} |] READER2) [| SK |] KNSTATE(<0,1>, 2)
+
+KN_SPEC = rd.2 -> rd.3 -> drained -> FIN
+KN_OBS  = {| rd, drained, idle |}
+
+-- expected: FAILS -- counterexample trace <rd.1, rd.2, drained>: the task drops
+--           write 0, the ISR's write (2) fills the freed slot, the task's
+--           second put fails; the task's write is lost, 1 kept
+assert KN_SPEC [T= SYS_KN_OLD \ diff(Events, KN_OBS)
+-- expected: PASSES (the two newest writes, nothing else)
+assert KN_SPEC [T= SYS_KN_NEW \ diff(Events, KN_OBS)
+assert KN_SPEC [FD= SYS_KN_NEW \ diff(Events, KN_OBS)
+
+-- -----------------------------------------------------------------------------
+-- Part 2b -- KeepOldest (DroppedNew), capacity 2, K = 4. A task (w = 0) and an
+--           ISR (w = 1) write once each, a reader takes 2 elements at any
+--           time. offer() is one critical section: a write is stored
+--           (kput.w.t, a BufferedPut/PutFromISR record) or, when full,
+--           dropped (kdrop.w.t, DroppedNew: no slot, no token); either way it
+--           takes the next identity. Being atomic, the write is one event, so
+--           this part states KeepOldest's semantics with put identities
+--           rather than checking a protocol.
+-- -----------------------------------------------------------------------------
+channel kput, kdrop : {0, 1}.IdsX
+
+KOSTATE(s, n) =
+     ([] w : {0, 1} @ (#s < NB & kput.w!n -> KOSTATE(s ^ <n>, (n + 1) % KB))
+                   [] (#s == NB & kdrop.w!n -> KOSTATE(s, (n + 1) % KB)))
+  [] not null(s) & rd!head(s) -> KOSTATE(tail(s), n)
+
+KOWR(w) = kput.w?_ -> SKIP [] kdrop.w?_ -> SKIP
+KO_W = KOWR(0) ||| KOWR(1)
+KO_R = rd?_ -> rd?_ -> FIN
+SKO = {| kput, kdrop, rd |}
+SYS_KO(s0) = (KO_W ||| KO_R) [| SKO |] KOSTATE(s0, #s0)
+
+-- KeepOldest as a buffer: stores while not full, drops (and numbers) when full
+KOSPEC(s, n, ws, r) =
+     ([] w : ws @ (if #s < NB then kput.w!n -> KOSPEC(s ^ <n>, (n + 1) % KB, diff(ws, {w}), r)
+                   else kdrop.w!n -> KOSPEC(s, (n + 1) % KB, diff(ws, {w}), r)))
+  [] (r > 0 and not null(s) & rd!head(s) -> KOSPEC(tail(s), n, ws, r - 1))
+  [] (r == 0 & idle -> KOSPEC(s, n, ws, r))
+KO_OBS = {| kput, kdrop, rd, idle |}
+-- expected: PASS -- from empty, half full and full: exactly the KeepOldest buffer
+assert KOSPEC(<>, 0, {0, 1}, 2) [FD= SYS_KO(<>) \ diff(Events, KO_OBS)
+assert KOSPEC(<0>, 1, {0, 1}, 2) [FD= SYS_KO(<0>) \ diff(Events, KO_OBS)
+assert KOSPEC(<0,1>, 2, {0, 1}, 2) [FD= SYS_KO(<0,1>) \ diff(Events, KO_OBS)
+
+-- -----------------------------------------------------------------------------
+-- Part 3 -- Block bounded buffer, capacity 1, two blocking writers (2 writes
+--           each) and one blocking reader, with the items/spaces tokens (3.x
+--           pushWithToken/popWithToken). Linearisation points: push (bin.t)
+--           and pop (bout.t) critical sections; t = write identity, K = 3.
+-- -----------------------------------------------------------------------------
+NC = 1
+KC = NC + 2
+IdsC = {0..KC-1}
+
+channel bin, bout : IdsX
+channel acq_space, rel_space, acq_item, rel_item
+
+-- state: buffer contents s (identities), next identity n, items tokens it, spaces tokens sp
+BSTATE(s, n, it, sp) =
+     sp > 0 & acq_space            -> BSTATE(s, n, it, sp - 1)
+  [] rel_space                     -> BSTATE(s, n, it, sp + 1)
+  [] it > 0 & acq_item             -> BSTATE(s, n, it - 1, sp)
+  [] rel_item                      -> BSTATE(s, n, it + 1, sp)
+  [] #s < NC & bin!n               -> BSTATE(s ^ <n>, (n + 1) % KC, it, sp)
+  [] not null(s) & bout!head(s)    -> BSTATE(tail(s), n, it, sp)
+
+WRITER(0)  = SKIP
+WRITER(m)  = acq_space -> bin?_ -> rel_item -> WRITER(m - 1)
+READER3    = acq_item -> bout?_ -> rel_space -> READER3
+
+SB = {| acq_space, rel_space, acq_item, rel_item, bin, bout |}
+SYS_BUF = ((WRITER(2) ||| WRITER(2)) ||| READER3) [| SB |] BSTATE(<>, 0, 0, NC)
+
+-- classic bounded buffer of capacity NC over write identities
+BUFF(s, n) = (#s < NC & bin!n -> BUFF(s ^ <n>, (n + 1) % KC)) [] (not null(s) & bout!head(s) -> BUFF(tail(s), n))
+
+-- expected: PASSES -- the token implementation is a bounded FIFO buffer
+assert BUFF(<>, 0) [T= SYS_BUF \ {| acq_space, rel_space, acq_item, rel_item |}
+-- (the former FIFO1, per-writer order of writer 1's values, follows from
+--  this global FIFO order over write identities and is not kept)
+
+-- -----------------------------------------------------------------------------
+-- Part 5 -- the 3.x Block channel (capacity 2, K = 4) with its ALT guards,
+--   every operation as in buffered_channel.h:
+--   ALT reader (BufferedInputGuard): R register (critical), C items > 0;
+--     disable = unregister + C again; activate = acquire(items, 0) then
+--     popWithToken: pop (critical), release(spaces), S snapshot of the ALT
+--     writer's registration (critical), G signal it.
+--   ALT writer (BufferedOutputGuard): the same with spaces / items swapped:
+--     acquire(spaces, 0), pushWithToken: push, release(items), S of the ALT
+--     reader's registration, G.
+--   blocking reader: acquire(items, forever), popWithToken.
+--   putFromISR (environment): acquire(spaces, 0); if it fails: no write
+--     (isr_full); else pushWithToken. The ISR is atomic with respect to tasks
+--     (one event), may write at any time and any number of times.
+--   One stale thread flag per ALT thread (adversary), at most once.
+-- Systems: SYS5R ALT reader + ISR; SYS5W ALT writer + blocking reader;
+-- SYS5RW ALT reader + ALT writer. Specification: the bounded FIFO over write
+-- identities, with liveness ([FD=): a write is refused only while full, a
+-- get only while empty, and nothing diverges.
+-- -----------------------------------------------------------------------------
+N5 = 2
+K5 = N5 + 2
+Ids5 = {0..K5-1}
+
+channel put5, get5 : IdsX             -- the push / pop critical section (observable)
+channel isr_put : IdsX                -- putFromISR: acquire(spaces, 0) + push + release(items) + snapshot + signal
+channel isr_full                      -- putFromISR on a full Block channel: returns false, no write
+channel r_reg, r_unreg, w_reg, w_unreg
+channel r_cnt, w_cnt : Bool           -- C: items > 0 / spaces > 0
+channel r_acq, w_acq : Bool           -- acquire(items / spaces, 0)
+channel b_acq                         -- blocking reader: acquire(items, forever)
+channel b_wacq                        -- blocking writer: acquire(spaces, forever) (SYS5G)
+channel rel_i, rel_s                  -- release(items) / release(spaces)
+channel snap_r, snap_w : Bool         -- S: snapshot of the ALT reader / ALT writer registration
+channel sig_r, sig_w                  -- G
+channel clr_r, clr_w, wait_r, wait_w, stale_r, stale_w
+channel err5
+
+-- s identities in the ring; n next identity; it/sp items/spaces tokens;
+-- rg/wg ALT reader/writer registered; fr/fw their thread flags
+ST5(s, n, it, sp, rg, wg, fr, fw) =
+     put5!n                    -> (if #s < N5 then ST5(s ^ <n>, (n + 1) % K5, it, sp, rg, wg, fr, fw) else err5 -> STOP)
+  [] not null(s) & get5!head(s) -> ST5(tail(s), n, it, sp, rg, wg, fr, fw)
+  [] null(s) & get5?_          -> err5 -> STOP                           -- pop from an empty ring
+  [] sp > 0 & isr_put!n        -> (if #s < N5 then ST5(s ^ <n>, (n + 1) % K5, it + 1, sp - 1, rg, wg, fr or rg, fw)
+                                   else err5 -> STOP)
+  [] sp == 0 & isr_full        -> ST5(s, n, it, sp, rg, wg, fr, fw)
+  [] r_reg   -> ST5(s, n, it, sp, true, wg, fr, fw)
+  [] r_unreg -> ST5(s, n, it, sp, false, wg, fr, fw)
+  [] w_reg   -> ST5(s, n, it, sp, rg, true, fr, fw)
+  [] w_unreg -> ST5(s, n, it, sp, rg, false, fr, fw)
+  [] r_cnt!(it > 0) -> ST5(s, n, it, sp, rg, wg, fr, fw)
+  [] w_cnt!(sp > 0) -> ST5(s, n, it, sp, rg, wg, fr, fw)
+  [] r_acq!(it > 0) -> ST5(s, n, if it > 0 then it - 1 else it, sp, rg, wg, fr, fw)
+  [] w_acq!(sp > 0) -> ST5(s, n, it, if sp > 0 then sp - 1 else sp, rg, wg, fr, fw)
+  [] it > 0 & b_acq -> ST5(s, n, it - 1, sp, rg, wg, fr, fw)
+  [] rel_i -> ST5(s, n, it + 1, sp, rg, wg, fr, fw)
+  [] rel_s -> ST5(s, n, it, sp + 1, rg, wg, fr, fw)
+  [] snap_r!rg -> ST5(s, n, it, sp, rg, wg, fr, fw)
+  [] snap_w!wg -> ST5(s, n, it, sp, rg, wg, fr, fw)
+  [] sig_r -> ST5(s, n, it, sp, rg, wg, true, fw)
+  [] sig_w -> ST5(s, n, it, sp, rg, wg, fr, true)
+  [] clr_r -> ST5(s, n, it, sp, rg, wg, false, fw)
+  [] clr_w -> ST5(s, n, it, sp, rg, wg, fr, false)
+  [] fr & wait_r -> ST5(s, n, it, sp, rg, wg, false, fw)
+  [] fw & wait_w -> ST5(s, n, it, sp, rg, wg, fr, false)
+  [] stale_r -> ST5(s, n, it, sp, rg, wg, true, fw)
+  [] stale_w -> ST5(s, n, it, sp, rg, wg, fr, true)
+
+-- popWithToken / pushWithToken after the token was taken
+POPT  = get5?_ -> rel_s -> snap_w?w -> (if w then sig_w -> SKIP else SKIP)
+PUSHT = put5?_ -> rel_i -> snap_r?r -> (if r then sig_r -> SKIP else SKIP)
+
+-- ALT reader, one input guard, select() forever. m1 = C before R (mutation)
+AR5(m1) = clr_r -> (if m1 then r_cnt?c -> r_reg -> AR5E(m1, c) else r_reg -> r_cnt?c -> AR5E(m1, c))
+AR5E(m1, c) = if c then r_unreg -> r_cnt?c2 -> AR5A(m1, c2)
+              else wait_r -> r_unreg -> r_cnt?c2 -> AR5A(m1, c2)
+AR5A(m1, c2) = if c2 then r_acq?ok -> (if ok then POPT ; AR5(m1) else AR5(m1))   -- lost race: new round
+               else AR5(m1)                                                      -- stale: new round
+-- ALT writer, one output guard, select() forever
+AW5 = clr_w -> w_reg -> w_cnt?c -> AW5E(c)
+AW5E(c) = if c then w_unreg -> w_cnt?c2 -> AW5A(c2)
+          else wait_w -> w_unreg -> w_cnt?c2 -> AW5A(c2)
+AW5A(c2) = if c2 then w_acq?ok -> (if ok then PUSHT ; AW5 else AW5) else AW5
+-- blocking reader, forever
+BR5 = b_acq -> POPT ; BR5
+-- the interrupt: writes whenever it likes
+ISR5 = isr_put?_ -> ISR5 [] isr_full -> ISR5
+STALE5 = (stale_r -> SKIP) [] (stale_w -> SKIP) [] SKIP
+
+S5 = {| put5, get5, isr_put, isr_full, r_reg, r_unreg, w_reg, w_unreg, r_cnt, w_cnt, r_acq, w_acq, b_acq,
+        rel_i, rel_s, snap_r, snap_w, sig_r, sig_w, clr_r, clr_w, wait_r, wait_w, stale_r, stale_w |}
+INIT5 = ST5(<>, 0, 0, N5, false, false, false, false)
+SYS5R(m1)  = (AR5(m1) ||| ISR5 ||| STALE5) [| S5 |] INIT5
+SYS5W      = (AW5 ||| BR5 ||| STALE5) [| S5 |] INIT5
+SYS5RW(m1) = (AR5(m1) ||| AW5 ||| STALE5) [| S5 |] INIT5
+
+-- bounded FIFO over write identities; ISR writes are isr_put, task writes
+-- put5; a full ISR write is isr_full
+BUF5(s, n) = (#s < N5 & put5!n -> BUF5(s ^ <n>, (n + 1) % K5))
+          [] (not null(s) & get5!head(s) -> BUF5(tail(s), n))
+-- ISR writes: putFromISR() takes a spaces token with timeout 0, so it also
+-- fails (isr_full) while a reader has popped but not yet released its
+-- spaces token: BUF5I allows isr_full at any time, BUF5IF only when full
+BUF5I(s, n) = let Q = (#s < N5 & isr_put!n -> BUF5I(s ^ <n>, (n + 1) % K5))
+                   [] (#s == N5 & isr_full -> BUF5I(s, n))
+                   [] (not null(s) & get5!head(s) -> BUF5I(tail(s), n))
+              within if #s < N5 then Q |~| (Q [] isr_full -> BUF5I(s, n)) else Q   -- a free slot: isr_full may happen
+BUF5IF(s, n) = (#s < N5 & isr_put!n -> BUF5IF(s ^ <n>, (n + 1) % K5))
+            [] (#s == N5 & isr_full -> BUF5IF(s, n))
+            [] (not null(s) & get5!head(s) -> BUF5IF(tail(s), n))
+OBS5R = {| isr_put, isr_full, get5 |}
+OBS5  = {| put5, get5 |}
+
+-- expected: PASS -- ALT reader against the interrupt: a FIFO buffer, live
+assert BUF5I(<>, 0) [FD= SYS5R(false) \ diff(Events, OBS5R)
+-- expected: FAIL -- putFromISR() on a Block channel can fail with a free
+--           slot: the reader has popped (get5) but not yet released the
+--           spaces token (trace ... get5.t, isr_full with one element left)
+assert BUF5IF(<>, 0) [T= SYS5R(false) \ diff(Events, OBS5R)
+assert STOP [T= SYS5R(false) \ diff(Events, {err5})
+-- expected: PASS -- ALT writer against a blocking reader
+assert BUF5(<>, 0) [FD= SYS5W \ diff(Events, OBS5)
+assert STOP [T= SYS5W \ diff(Events, {err5})
+-- expected: PASS -- ALT reader and ALT writer on one channel
+assert BUF5(<>, 0) [FD= SYS5RW(false) \ diff(Events, OBS5)
+assert SYS5RW(false) :[deadlock free [F]]
+assert STOP [T= SYS5RW(false) \ diff(Events, {err5})
+-- expected: FAIL -- mutation m1 (C before R) on the ALT reader: a lost
+--           wakeup, the reader waits with elements in the buffer
+assert BUF5I(<>, 0) [FD= SYS5R(true) \ diff(Events, OBS5R)
+assert BUF5(<>, 0) [FD= SYS5RW(true) \ diff(Events, OBS5)
+
+
+-- -----------------------------------------------------------------------------
+-- Parameterised configurations (trace conformance of recorded channels of
+-- other capacities and roles). K = c + 2 identities for capacity c (the
+-- trace tool: c <= 4, the capacities the range assertions cover).
+-- A writer count w >= 0 writes w times; w = -1 writes forever (any number of
+-- recorded writes: the state does not grow with them).
+-- -----------------------------------------------------------------------------
+WR_N(w, P) = if w == 0 then SKIP else P ; WR_N(if w > 0 then w - 1 else w, P)
+
+-- Part 2N -- KeepNewest, capacity c, from empty: a task writer (tw writes)
+-- and an ISR writer (iw writes), each write one critical section (offer());
+-- a reader that may take at any time.
+KNSTATEN(c, s, n) =
+     t_new   -> KNSTATEN(c, if #s < c then s ^ <n> else tail(s) ^ <n>, (n + 1) % (c + 2))
+  [] isr_new -> KNSTATEN(c, if #s < c then s ^ <n> else tail(s) ^ <n>, (n + 1) % (c + 2))
+  [] not null(s) & rd!head(s) -> KNSTATEN(c, tail(s), n)
+RDF = rd?_ -> RDF
+SKN = {| t_new, isr_new, rd |}
+SYS_KNE(c, tw, iw) = (WR_N(tw, t_new -> SKIP) ||| WR_N(iw, isr_new -> SKIP) ||| RDF) [| SKN |] KNSTATEN(c, <>, 0)
+-- KeepNewest as a buffer over identities: a write into a full buffer evicts
+-- the oldest
+KNSPEC(c, s, n) = (t_new -> KNSPEC(c, kn(c, s, n), (n + 1) % (c + 2)))
+               [] (isr_new -> KNSPEC(c, kn(c, s, n), (n + 1) % (c + 2)))
+               [] (not null(s) & rd!head(s) -> KNSPEC(c, tail(s), n))
+kn(c, s, n) = if #s < c then s ^ <n> else tail(s) ^ <n>
+
+-- Part 2bN -- KeepOldest, capacity c, from empty: tw task writes, iw ISR
+-- writes, a reader at any time.
+KOSTATEN(c, s, n) =
+     ([] w : {0, 1} @ (#s < c & kput.w!n -> KOSTATEN(c, s ^ <n>, (n + 1) % (c + 2)))
+                   [] (#s == c & kdrop.w!n -> KOSTATEN(c, s, (n + 1) % (c + 2))))
+  [] not null(s) & rd!head(s) -> KOSTATEN(c, tail(s), n)
+SYS_KOE(c, tw, iw) = (WR_N(tw, kput.0?_ -> SKIP [] kdrop.0?_ -> SKIP) ||| WR_N(iw, kput.1?_ -> SKIP [] kdrop.1?_ -> SKIP)
+                      ||| RDF) [| SKO |] KOSTATEN(c, <>, 0)
+
+-- KeepOldest as a buffer over identities: stores while not full, drops
+-- (and numbers) when full
+KOSPECN(c, s, n) = ([] w : {0, 1} @ (if #s < c then kput.w!n -> KOSPECN(c, s ^ <n>, (n + 1) % (c + 2))
+                                     else kdrop.w!n -> KOSPECN(c, s, (n + 1) % (c + 2))))
+                [] (not null(s) & rd!head(s) -> KOSPECN(c, tail(s), n))
+
+-- Part 3N -- Block, capacity c, nw blocking writers writing forever, one
+-- blocking reader, items/spaces tokens.
+BSTATEN(c, s, n, it, sp) =
+     sp > 0 & acq_space            -> BSTATEN(c, s, n, it, sp - 1)
+  [] rel_space                     -> BSTATEN(c, s, n, it, sp + 1)
+  [] it > 0 & acq_item             -> BSTATEN(c, s, n, it - 1, sp)
+  [] rel_item                      -> BSTATEN(c, s, n, it + 1, sp)
+  [] #s < c & bin!n                -> BSTATEN(c, s ^ <n>, (n + 1) % (c + 2), it, sp)
+  [] not null(s) & bout!head(s)    -> BSTATEN(c, tail(s), n, it, sp)
+WRITERF = acq_space -> bin?_ -> rel_item -> WRITERF
+SYS_BUFN(c, nw) = ((||| i : {1..nw} @ WRITERF) ||| READER3) [| SB |] BSTATEN(c, <>, 0, 0, c)
+BUFFN(c, s, n) = (#s < c & bin!n -> BUFFN(c, s ^ <n>, (n + 1) % (c + 2))) [] (not null(s) & bout!head(s) -> BUFFN(c, tail(s), n))
+
+-- Part 5G -- the Block channel of Part 5 with capacity c and any of: an ALT
+-- reader (ra), an ALT writer (wa), wb blocking writers, rb blocking readers,
+-- an interrupt writer (wi). Blocking writer: acquire(spaces, forever)
+-- (b_wacq), then pushWithToken.
+ST5N(c, s, n, it, sp, rg, wg, fr, fw) =
+     put5!n                    -> (if #s < c then ST5N(c, s ^ <n>, (n + 1) % (c + 2), it, sp, rg, wg, fr, fw) else err5 -> STOP)
+  [] not null(s) & get5!head(s) -> ST5N(c, tail(s), n, it, sp, rg, wg, fr, fw)
+  [] null(s) & get5?_          -> err5 -> STOP
+  [] sp > 0 & isr_put!n        -> (if #s < c then ST5N(c, s ^ <n>, (n + 1) % (c + 2), it + 1, sp - 1, rg, wg, fr or rg, fw)
+                                   else err5 -> STOP)
+  [] sp == 0 & isr_full        -> ST5N(c, s, n, it, sp, rg, wg, fr, fw)
+  [] r_reg   -> ST5N(c, s, n, it, sp, true, wg, fr, fw)
+  [] r_unreg -> ST5N(c, s, n, it, sp, false, wg, fr, fw)
+  [] w_reg   -> ST5N(c, s, n, it, sp, rg, true, fr, fw)
+  [] w_unreg -> ST5N(c, s, n, it, sp, rg, false, fr, fw)
+  [] r_cnt!(it > 0) -> ST5N(c, s, n, it, sp, rg, wg, fr, fw)
+  [] w_cnt!(sp > 0) -> ST5N(c, s, n, it, sp, rg, wg, fr, fw)
+  [] r_acq!(it > 0) -> ST5N(c, s, n, if it > 0 then it - 1 else it, sp, rg, wg, fr, fw)
+  [] w_acq!(sp > 0) -> ST5N(c, s, n, it, if sp > 0 then sp - 1 else sp, rg, wg, fr, fw)
+  [] it > 0 & b_acq -> ST5N(c, s, n, it - 1, sp, rg, wg, fr, fw)
+  [] sp > 0 & b_wacq -> ST5N(c, s, n, it, sp - 1, rg, wg, fr, fw)
+  [] rel_i -> ST5N(c, s, n, it + 1, sp, rg, wg, fr, fw)
+  [] rel_s -> ST5N(c, s, n, it, sp + 1, rg, wg, fr, fw)
+  [] snap_r!rg -> ST5N(c, s, n, it, sp, rg, wg, fr, fw)
+  [] snap_w!wg -> ST5N(c, s, n, it, sp, rg, wg, fr, fw)
+  [] sig_r -> ST5N(c, s, n, it, sp, rg, wg, true, fw)
+  [] sig_w -> ST5N(c, s, n, it, sp, rg, wg, fr, true)
+  [] clr_r -> ST5N(c, s, n, it, sp, rg, wg, false, fw)
+  [] clr_w -> ST5N(c, s, n, it, sp, rg, wg, fr, false)
+  [] fr & wait_r -> ST5N(c, s, n, it, sp, rg, wg, false, fw)
+  [] fw & wait_w -> ST5N(c, s, n, it, sp, rg, wg, fr, false)
+  [] stale_r -> ST5N(c, s, n, it, sp, rg, wg, true, fw)
+  [] stale_w -> ST5N(c, s, n, it, sp, rg, wg, fr, true)
+BW5 = b_wacq -> PUSHT ; BW5
+S5G = union(S5, {b_wacq})
+SYS5G(c, ra, wa, wb, rb, wi, m1) =
+  ((if ra then AR5(m1) else SKIP) ||| (if wa then AW5 else SKIP) ||| (||| i : {1..wb} @ BW5)
+   ||| (||| i : {1..rb} @ BR5) ||| (if wi then ISR5 else SKIP) ||| STALE5) [| S5G |]
+  ST5N(c, <>, 0, 0, c, false, false, false, false)
+-- the bounded FIFO over identities; any write may be a task write (put5) or
+-- an ISR write (isr_put); isr_full may happen at any time (token window)
+BUF5G(c, s, n) = (#s < c & put5!n -> BUF5G(c, s ^ <n>, (n + 1) % (c + 2)))
+              [] (#s < c & isr_put!n -> BUF5G(c, s ^ <n>, (n + 1) % (c + 2)))
+              [] (isr_full -> BUF5G(c, s, n))
+              [] (not null(s) & get5!head(s) -> BUF5G(c, tail(s), n))
+OBS5G = {| put5, get5, isr_put, isr_full |}
+
+-- -----------------------------------------------------------------------------
+-- Trace conformance: the events a trace supplies (renamed as in the header)
+-- and the events hidden for a conformance check.
+-- -----------------------------------------------------------------------------
+SigmaObs = {| done, done_alt, done_blk, wait_flag, rd, kput, kdrop, t_new, isr_new,
+              bin, bout, acq_space, acq_item, put5, get5, isr_put, b_acq, b_wacq, wait_r, wait_w |}
+H = diff(Events, SigmaObs)
+
+
+-- Parameterised configurations. expected: PASS
+-- Part 2N: KeepNewest from empty, task and ISR writing forever
+assert KNSPEC(2, <>, 0) [T= SYS_KNE(2, -1, -1) \ diff(Events, SKN)
+assert KNSPEC(1, <>, 0) [T= SYS_KNE(1, -1, -1) \ diff(Events, SKN)
+-- Part 2bN: KeepOldest from empty
+assert KOSPECN(2, <>, 0) [T= SYS_KOE(2, -1, -1) \ diff(Events, SKO)
+assert SYS_KOE(2, -1, -1) :[deadlock free [F]]
+-- Part 3N: capacity 2 with three writers (T8), capacity 3 with one (ring_wrap)
+assert BUFFN(2, <>, 0) [T= SYS_BUFN(2, 3) \ {| acq_space, rel_space, acq_item, rel_item |}
+assert BUFFN(3, <>, 0) [T= SYS_BUFN(3, 1) \ {| acq_space, rel_space, acq_item, rel_item |}
+assert SYS_BUFN(2, 3) :[deadlock free [F]]
+-- Part 5G: blocking writer + ALT reader, capacity 1 (T9, T13) and 4 (T0, T1a)
+assert BUF5G(1, <>, 0) [T= SYS5G(1, true, false, 1, 0, false, false) \ diff(Events, OBS5G)
+assert SYS5G(1, true, false, 1, 0, false, false) :[deadlock free [F]]
+assert BUF5G(4, <>, 0) [T= SYS5G(4, true, false, 1, 0, false, false) \ diff(Events, OBS5G)
+-- ALT writer + blocking writer, two blocking readers, capacity 1 (T1b, T13b)
+assert BUF5G(1, <>, 0) [T= SYS5G(1, false, true, 1, 2, false, false) \ diff(Events, OBS5G)
+assert SYS5G(1, false, true, 1, 2, false, false) :[deadlock free [F]]
+-- ISR + blocking reader, capacity 4 (env_samples)
+assert BUF5G(4, <>, 0) [T= SYS5G(4, false, false, 0, 1, true, false) \ diff(Events, OBS5G)
+-- the m1 mutation is still found with a blocking writer. expected: FAIL
+assert SYS5G(1, true, false, 1, 0, false, true) :[deadlock free [F]]
+
+-- Ranges. ProB does not type-check channel values: an expression that
+-- computes a value outside a channel's declared type still produces the
+-- event. Each value-carrying channel of SigmaObs is checked once: the system
+-- produces only values of the declared type ({| c |} holds exactly those; an
+-- out-of-type event is not in Events, so it stays visible and RANGE refuses
+-- it). The buffered parts are checked at capacity 4, the largest recorded
+-- and the largest the trace tool admits (SYS_KNE also at 6; capacity 6 of
+-- the other parts does not finish in ProB); write identities are numbered
+-- mod c + 2 <= 8 = |IdsX|.
+-- expected: PASS
+RANGE(A) = [] e : A @ e -> RANGE(A)
+assert RANGE({| rd |}) [T= SYS_KNE(6, -1, -1) \ diff(Events, {| rd |})
+assert RANGE({| kput |}) [T= SYS_KOE(4, -1, -1) \ diff(Events, {| kput |})
+assert RANGE({| kdrop |}) [T= SYS_KOE(4, -1, -1) \ diff(Events, {| kdrop |})
+assert RANGE({| bin |}) [T= SYS_BUFN(4, 3) \ diff(Events, {| bin |})
+assert RANGE({| bout |}) [T= SYS_BUFN(4, 3) \ diff(Events, {| bout |})
+assert RANGE({| put5 |}) [T= SYS5G(4, true, false, 1, 0, false, false) \ diff(Events, {| put5 |})
+assert RANGE({| get5 |}) [T= SYS5G(4, true, false, 1, 0, false, false) \ diff(Events, {| get5 |})
+assert RANGE({| isr_put |}) [T= SYS5G(4, false, false, 0, 1, true, false) \ diff(Events, {| isr_put |})
+
+-- =============================================================================
+
+-- RESULTS (ProB 1.16.1-final 716929f; first run 2026-10-19, re-measured
+-- 2026-10-21 with the same verdicts and states; all as expected; each
+-- assertion checked alone with -csp_assertion, one at a time (alongside up
+-- to five review-only runs on 22 cores); states = ProB coverage STATES)
+--  #  assertion                                            expected  ProB  states      s    note
+--  1  SYS_OLD :[deadlock free [F]]                         FAIL      FAIL      11    0.1  
+--  2  DELIVERED [FD= SYS_OLD \ diff(Events, {done, idle})  FAIL      FAIL      27    0.2  
+--  3  DELIVERED [FD= SYS_DRAFT \ diff(Events, {done, idle} FAIL      FAIL      71    0.3  
+--  4  SYS_NEW :[deadlock free [F]]                         PASS      PASS      74    0.2  
+--  5  DELIVERED [FD= SYS_NEW \ diff(Events, {done, idle})  PASS      PASS      76    0.3  
+--  6  STOP [T= SYS_NEW \ diff(Events, {error})             PASS      PASS      75    0.3  
+--  7  SYS_C :[deadlock free [F]]                           PASS      PASS     124    0.3  
+--  8  DELIVERED_C [FD= SYS_C \ diff(Events, {done_alt, idl PASS      PASS     126    0.3  
+--  9  STOP [T= SYS_C \ diff(Events, {error})               PASS      PASS     125    0.4  
+-- 10  SYS_C2 :[deadlock free [F]]                          PASS      PASS    1025    1.8  
+-- 11  BOTH [FD= SYS_C2 \ diff(Events, {done_alt, done_blk, PASS      PASS    1029    2.6  
+-- 12  STOP [T= SYS_C2 \ diff(Events, {error})              PASS      PASS    1026    2.4  
+-- 13  SYS_M1 :[deadlock free [F]]                          FAIL      FAIL      69    0.2  
+-- 14  SYS_M2 :[deadlock free [F]]                          FAIL      FAIL      54    0.2  
+-- 15  KN_SPEC [T= SYS_KN_OLD \ diff(Events, KN_OBS)        FAIL      FAIL      42    0.2  rd.1 (the task's write lost)
+-- 16  KN_SPEC [T= SYS_KN_NEW \ diff(Events, KN_OBS)        PASS      PASS      25    0.2  
+-- 17  KN_SPEC [FD= SYS_KN_NEW \ diff(Events, KN_OBS)       PASS      PASS      25    0.1  
+-- 18  KOSPEC(<>, 0, {0, 1}, 2) [FD= SYS_KO(<>) \ diff(Even PASS      PASS      17    0.1  
+-- 19  KOSPEC(<0>, 1, {0, 1}, 2) [FD= SYS_KO(<0>) \ diff(Ev PASS      PASS      27    0.1  
+-- 20  KOSPEC(<0,1>, 2, {0, 1}, 2) [FD= SYS_KO(<0,1>) \ dif PASS      PASS      43    0.2  
+-- 21  BUFF(<>, 0) [T= SYS_BUF \ {| acq_space, rel_space, a PASS      PASS      41    0.1  
+-- 22  BUF5I(<>, 0) [FD= SYS5R(false) \ diff(Events, OBS5R) PASS      PASS     720    5.6  
+-- 23  BUF5IF(<>, 0) [T= SYS5R(false) \ diff(Events, OBS5R) FAIL      FAIL     246    1.6  get5.t then isr_full with a free slot
+-- 24  STOP [T= SYS5R(false) \ diff(Events, {err5})         PASS      PASS     692    4.5  
+-- 25  BUF5(<>, 0) [FD= SYS5W \ diff(Events, OBS5)          PASS      PASS    3484   18.3  
+-- 26  STOP [T= SYS5W \ diff(Events, {err5})                PASS      PASS    3472   13.6  
+-- 27  BUF5(<>, 0) [FD= SYS5RW(false) \ diff(Events, OBS5)  PASS      PASS    9740   46.9  
+-- 28  SYS5RW(false) :[deadlock free [F]]                   PASS      PASS    9727   49.5  
+-- 29  STOP [T= SYS5RW(false) \ diff(Events, {err5})        PASS      PASS    9728   41.5  
+-- 30  BUF5I(<>, 0) [FD= SYS5R(true) \ diff(Events, OBS5R)  FAIL      FAIL     189    1.1  full, the reader waits: refuses get5
+-- 31  BUF5(<>, 0) [FD= SYS5RW(true) \ diff(Events, OBS5)   FAIL      FAIL     617    3.0  one element, the reader waits: refuses get5.0
+-- 32  KNSPEC(2, <>, 0) [T= SYS_KNE(2, -1, -1) \ diff(Event PASS      PASS      27    0.1  
+-- 33  KNSPEC(1, <>, 0) [T= SYS_KNE(1, -1, -1) \ diff(Event PASS      PASS      15    0.1  
+-- 34  KOSPECN(2, <>, 0) [T= SYS_KOE(2, -1, -1) \ diff(Even PASS      PASS     171    0.3  
+-- 35  SYS_KOE(2, -1, -1) :[deadlock free [F]]              PASS      PASS      86    0.2  
+-- 36  BUFFN(2, <>, 0) [T= SYS_BUFN(2, 3) \ {| acq_space, r PASS      PASS     135    0.2  
+-- 37  BUFFN(3, <>, 0) [T= SYS_BUFN(3, 1) \ {| acq_space, r PASS      PASS     143    0.2  
+-- 38  SYS_BUFN(2, 3) :[deadlock free [F]]                  PASS      PASS     122    0.2  
+-- 39  BUF5G(1, <>, 0) [T= SYS5G(1, true, false, 1, 0, fals PASS      PASS    1358    7.6  
+-- 40  SYS5G(1, true, false, 1, 0, false, false) :[deadlock PASS      PASS    1351    7.2  
+-- 41  BUF5G(4, <>, 0) [T= SYS5G(4, true, false, 1, 0, fals PASS      PASS   10253   69.4  
+-- 42  BUF5G(1, <>, 0) [T= SYS5G(1, false, true, 1, 2, fals PASS      PASS   45548  549.9  
+-- 43  SYS5G(1, false, true, 1, 2, false, false) :[deadlock PASS      PASS   45541  520.4  
+-- 44  BUF5G(4, <>, 0) [T= SYS5G(4, false, false, 0, 1, tru PASS      PASS     581    5.3  
+-- 45  SYS5G(1, true, false, 1, 0, false, true) :[deadlock  FAIL      FAIL     148    0.7  lost wakeup with a blocking writer
+-- Ranges:
+-- 46  RANGE({| rd |}) [T= SYS_KNE(6, -1, -1) \ diff(Events PASS      PASS      60    0.2
+-- 47  RANGE({| kput |}) [T= SYS_KOE(4, -1, -1) \ diff(Even PASS      PASS    9334   18.7
+-- 48  RANGE({| kdrop |}) [T= SYS_KOE(4, -1, -1) \ diff(Eve PASS      PASS    9334   21.9
+-- 49  RANGE({| bin |}) [T= SYS_BUFN(4, 3) \ diff(Events, { PASS      PASS     760    1.3
+-- 50  RANGE({| bout |}) [T= SYS_BUFN(4, 3) \ diff(Events,  PASS      PASS     760    1.2
+-- 51  RANGE({| put5 |}) [T= SYS5G(4, true, false, 1, 0, fa PASS      PASS   10224   54.1
+-- 52  RANGE({| get5 |}) [T= SYS5G(4, true, false, 1, 0, fa PASS      PASS   10224   76.6
+-- 53  RANGE({| isr_put |}) [T= SYS5G(4, false, false, 0, 1 PASS      PASS     552    5.3
+-- =============================================================================

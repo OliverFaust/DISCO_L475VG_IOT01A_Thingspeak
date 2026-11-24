@@ -1,0 +1,5 @@
+ring: capacity 1024 records, policy overwrite oldest, write count 218706, clock 80000000 Hz, DWT_CTRL 0x40000001
+records kept: 1024 (write index 217682..218705); overwritten 217682; dropped 0; torn 0; orphan continuation records 0
+events: 889 over 26.080323 s (34 events/s, 39 records/s)
+heartbeats: 27 (beats 8130..8156); intervals not about 1 s: none
+data events truncated at 64 bytes: 0

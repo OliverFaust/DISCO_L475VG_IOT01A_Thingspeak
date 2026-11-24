@@ -1,0 +1,8 @@
+# tools/thingspeak_feed.sh 4, run on Ubuntu right after attempt 4 (channel: fields 1-4 enabled)
+# channel 87****, last 4 entries, read 2026-11-12 18:30:28 UTC
+last_entry_id: 235573
+entry_id  created_at            field1     field2     field3    
+235570    2022-01-08T19:46:06Z  1          88         None      
+235571    2026-11-12T18:21:16Z  17.07      74.08      978.90    
+235572    2026-11-12T18:27:31Z  17.14      74.17      979.14    
+235573    2026-11-12T18:30:04Z  17.15      74.21      979.19    

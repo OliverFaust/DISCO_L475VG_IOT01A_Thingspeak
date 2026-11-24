@@ -1,0 +1,13 @@
+ring: capacity 1024 records, policy overwrite oldest, write count 84528, clock 80000000 Hz, DWT_CTRL 0x40000001
+records kept: 1024 (write index 83504..84527); overwritten 83504; dropped 0; torn 0; orphan continuation records 1
+events: 878 over 30.497367 s (29 events/s, 34 records/s)
+heartbeats: 31 (beats 2632..2662); intervals not about 1 s: none
+data events truncated at 64 bytes: 0
+== eventlist not found: decode.py --no-eventlist
+trace_names: MainApp_Task(void*)::console -> Console
+trace_names: Idle_TCB.3 -> IDLE
+trace_names: MainApp_Task(void*)::sensors -> Sensors
+trace_names: MainApp_Task(void*)::uplink -> Uplink
+trace_names: async_thread_cb_mem -> WiFi_ISM43362_A
+== decoded: $SCRATCH/out_names/events.csv, $SCRATCH/out_names/trace.json (open in https://ui.perfetto.dev)
+== ProB not found (set PROBCLI): conformance check (csp_trace.py) skipped

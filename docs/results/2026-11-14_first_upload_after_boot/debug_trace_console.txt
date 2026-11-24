@@ -1,0 +1,98 @@
+# Console capture
+# date:      2026-11-14 22:33:49 UTC (start of the capture, about 0.5 s before the reset)
+# commit:    9334017-dirty
+# elf:       Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf (sha256 77571eb9ce515d97...)
+# compiler:  GCC: (GNU Tools for STM32 14.3.rel1.20251027-0700) 14.3.1 20250623
+# tool:      STM32CubeProgrammer version: 2.22.0
+# flash:     STM32_Programmer_CLI -c port=SWD -w Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf -v
+# reset:     STM32_Programmer_CLI -c port=SWD -hardRst
+# probe:     ST-LINK firmware V2J46M31
+# serial:    ST-LINK virtual COM port (/dev/ttyACM0), 115200 8N1, captured for 200 s from before the reset
+# after the capture, read over SWD (program running):
+#   __sbrk_heap_end                = 0x00000000   (0x00000000: malloc() was never called)
+#   xMinimumEverFreeBytesRemaining = 0x00000280   (0x00000000: the FreeRTOS heap was never used)
+# ----------------------------------------------------------------------------------------
+
+DISCO_L475VG_IOT01A_Thingspeak -- Sensors, Console, Uplink (ThingSpeak every 60 s)
+CSP4CMSIS 3.2.0, FreeRTOS V10.3.1 (CMSIS-RTOS2), SYSCLK 80 MHz
+Reset cause: software reset; consecutive restarts after a failed Wi-Fi start: 0 of 3
+[    0.029 s] HTS221 check (I2C transfers all OK)
+  WHO_AM_I: HTS221 @0xBE: 0xBC (expect 0xBC), LPS22HB @0xBA: 0xB1 (expect 0xB1)
+  HTS221 CTRL_REG1: 0x85 (expect 0x85: active, BDU, 1 Hz)
+  calibration 0x30..0x3F: 3E 8B A3 10 00 C4 06 00 7A 03 C5 CE FE FF 00 03
+  same 16 registers read one at a time: identical
+  H0_rH_x2 = 62 -> H0 = 31.0 %RH, H1_rH_x2 = 139 -> H1 = 69.5 %RH
+  T0_degC_x8 = 163 -> T0 = 20.375 C, T1_degC_x8 = 272 -> T1 = 34.000 C
+  H0_T0_OUT = 6, H1_T0_OUT = -12603, T0_OUT = -2, T1_OUT = 768
+  raw sample: H_OUT = -9684, T_OUT = -26
+  T : datasheet formula (samples) 19.950 C, ST driver formula 19.564 C, BSP_TSENSOR_ReadTemp() 19.564 C
+  RH: datasheet formula (samples) 60.587 %, ST driver formula 60.203 %, BSP_HSENSOR_ReadHumidity() 60.203 %
+[    0.037 s] #1  T = 19.95 C  RH = 60.59 %  p = 975.26 hPa
+[    0.926 s] Uplink: Wi-Fi module ready  [ok 0, rejected 0, failed 0, joins 0]
+[    5.041 s] #2  T = 20.02 C  RH = 60.62 %  p = 975.16 hPa
+[    5.735 s] Uplink: joined (4801 ms), IP 192.168.1.28  [ok 0, rejected 0, failed 0, joins 1]
+[   10.044 s] #3  T = 19.95 C  RH = 60.66 %  p = 975.24 hPa
+[   15.047 s] #4  T = 19.99 C  RH = 60.71 %  p = 975.13 hPa
+[   15.337 s] Uplink: sample #3 -> entry 236396 (337 ms)  [ok 1, rejected 0, failed 0, joins 1]
+
+DISCO_L475VG_IOT01A_Thingspeak -- Sensors, Console, Uplink (ThingSpeak every 60 s)
+CSP4CMSIS 3.2.0, FreeRTOS V10.3.1 (CMSIS-RTOS2), SYSCLK 80 MHz
+Reset cause: software reset; consecutive restarts after a failed Wi-Fi start: 0 of 3
+[    0.029 s] HTS221 check (I2C transfers all OK)
+  WHO_AM_I: HTS221 @0xBE: 0xBC (expect 0xBC), LPS22HB @0xBA: 0xB1 (expect 0xB1)
+  HTS221 CTRL_REG1: 0x85 (expect 0x85: active, BDU, 1 Hz)
+  calibration 0x30..0x3F: 3E 8B A3 10 00 C4 06 00 7A 03 C5 CE FE FF 00 03
+  same 16 registers read one at a time: identical
+  H0_rH_x2 = 62 -> H0 = 31.0 %RH, H1_rH_x2 = 139 -> H1 = 69.5 %RH
+  T0_degC_x8 = 163 -> T0 = 20.375 C, T1_degC_x8 = 272 -> T1 = 34.000 C
+  H0_T0_OUT = 6, H1_T0_OUT = -12603, T0_OUT = -2, T1_OUT = 768
+  raw sample: H_OUT = -9715, T_OUT = -24
+  T : datasheet formula (samples) 19.986 C, ST driver formula 19.600 C, BSP_TSENSOR_ReadTemp() 19.600 C
+  RH: datasheet formula (samples) 60.682 %, ST driver formula 60.296 %, BSP_HSENSOR_ReadHumidity() 60.296 %
+[    0.037 s] #1  T = 19.99 C  RH = 60.68 %  p = 975.11 hPa
+[    0.926 s] Uplink: Wi-Fi module ready  [ok 0, rejected 0, failed 0, joins 0]
+[    5.041 s] #2  T = 19.99 C  RH = 60.72 %  p = 975.20 hPa
+[    5.740 s] Uplink: joined (4806 ms), IP 192.168.1.28  [ok 0, rejected 0, failed 0, joins 1]
+[   10.044 s] #3  T = 19.95 C  RH = 60.72 %  p = 975.15 hPa
+[   15.047 s] #4  T = 20.02 C  RH = 60.73 %  p = 975.22 hPa
+[   15.347 s] Uplink: sample #3 -> entry 236397 (347 ms)  [ok 1, rejected 0, failed 0, joins 1]
+[   20.050 s] #5  T = 19.97 C  RH = 60.55 %  p = 975.12 hPa
+[   25.053 s] #6  T = 19.99 C  RH = 60.66 %  p = 975.15 hPa
+[   30.056 s] #7  T = 20.00 C  RH = 60.85 %  p = 975.22 hPa
+[   35.059 s] #8  T = 19.97 C  RH = 60.67 %  p = 975.25 hPa
+[   40.062 s] #9  T = 20.02 C  RH = 60.56 %  p = 975.35 hPa
+[   45.065 s] #10  T = 20.00 C  RH = 60.68 %  p = 975.29 hPa
+[   50.068 s] #11  T = 20.04 C  RH = 60.56 %  p = 975.20 hPa
+[   55.071 s] #12  T = 19.95 C  RH = 60.51 %  p = 975.23 hPa
+[   60.000 s] Stack high-water marks (smallest free stack so far):
+  FreeRTOS heap: free 640 of 1024 bytes, minimum ever free 640 bytes
+  Sensors   512 words, min free  301 words, max used  211 words (41 %)
+  Console   512 words, min free  237 words, max used  275 words (53 %)
+  Uplink   1024 words, min free  761 words, max used  263 words (25 %)
+[   60.074 s] #13  T = 19.97 C  RH = 60.61 %  p = 975.19 hPa
+[   65.077 s] #14  T = 19.95 C  RH = 60.66 %  p = 975.18 hPa
+[   70.080 s] #15  T = 19.93 C  RH = 60.61 %  p = 975.14 hPa
+[   75.083 s] #16  T = 19.95 C  RH = 60.55 %  p = 975.16 hPa
+[   75.683 s] Uplink: sample #16 -> entry 236398 (336 ms)  [ok 2, rejected 0, failed 0, joins 1]
+[   80.086 s] #17  T = 19.95 C  RH = 60.57 %  p = 975.23 hPa
+[   85.089 s] #18  T = 19.99 C  RH = 60.72 %  p = 975.19 hPa
+[   90.092 s] #19  T = 19.99 C  RH = 60.58 %  p = 975.25 hPa
+[   95.095 s] #20  T = 19.88 C  RH = 60.54 %  p = 975.10 hPa
+[  100.098 s] #21  T = 19.97 C  RH = 60.65 %  p = 975.18 hPa
+[  105.101 s] #22  T = 19.90 C  RH = 60.61 %  p = 975.24 hPa
+[  110.104 s] #23  T = 19.95 C  RH = 60.61 %  p = 975.13 hPa
+[  115.107 s] #24  T = 19.91 C  RH = 60.63 %  p = 975.07 hPa
+[  120.110 s] #25  T = 20.00 C  RH = 60.61 %  p = 975.14 hPa
+[  125.113 s] #26  T = 19.93 C  RH = 60.64 %  p = 975.16 hPa
+[  130.116 s] #27  T = 19.95 C  RH = 60.65 %  p = 975.19 hPa
+[  135.119 s] #28  T = 20.04 C  RH = 60.60 %  p = 975.27 hPa
+[  136.024 s] Uplink: sample #28 -> entry 236399 (341 ms)  [ok 3, rejected 0, failed 0, joins 1]
+[  140.122 s] #29  T = 19.95 C  RH = 60.72 %  p = 975.15 hPa
+[  145.125 s] #30  T = 19.95 C  RH = 60.63 %  p = 975.21 hPa
+[  150.128 s] #31  T = 19.90 C  RH = 60.51 %  p = 975.21 hPa
+[  155.131 s] #32  T = 19.93 C  RH = 60.55 %  p = 975.17 hPa
+[  160.134 s] #33  T = 19.88 C  RH = 60.58 %  p = 975.22 hPa
+[  165.137 s] #34  T = 19.95 C  RH = 60.62 %  p = 975.17 hPa
+[  170.140 s] #35  T = 19.90 C  RH = 60.65 %  p = 975.22 hPa
+[  175.143 s] #36  T = 19.91 C  RH = 60.69 %  p = 975.08 hPa
+[  180.146 s] #37  T = 19.91 C  RH = 60.53 %  p = 975.07 hPa

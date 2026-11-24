@@ -1,0 +1,29 @@
+# Console capture
+# date:      2026-11-12 10:56:57 UTC
+# commit:    b6708b7-dirty
+# elf:       Debug/DISCO_L475VG_IOT01A_Thingspeak.elf (sha256 564a502d09276ae9...)
+# compiler:  GCC: (GNU Tools for STM32 14.3.rel1.20251027-0700) 14.3.1 20250623
+# tool:      STM32CubeProgrammer version: 2.22.0
+# flash:     STM32_Programmer_CLI -c port=SWD -w Debug/DISCO_L475VG_IOT01A_Thingspeak.elf -v
+# reset:     STM32_Programmer_CLI -c port=SWD -hardRst
+# probe:     ST-LINK firmware V2J46M31
+# serial:    ST-LINK virtual COM port (/dev/ttyACM0), 115200 8N1, captured for 60 s from before the reset
+# after the capture, read over SWD (program running):
+#   __sbrk_heap_end                = 0x00000000   (0x00000000: malloc() was never called)
+#   xMinimumEverFreeBytesRemaining = 0x00000000   (0x00000000: the FreeRTOS heap was never used)
+# ----------------------------------------------------------------------------------------
+
+DISCO_L475VG_IOT01A_Thingspeak -- phase 1: Sensors + Console
+CSP4CMSIS 3.1.0, FreeRTOS V10.3.1 (CMSIS-RTOS2), SYSCLK 80 MHz
+[    0.008 s] #1  T = 13.87 C  RH = 83.56 %  p = 976.17 hPa
+[    5.018 s] #2  T = 13.82 C  RH = 83.45 %  p = 976.11 hPa
+[   10.023 s] #3  T = 13.85 C  RH = 83.49 %  p = 976.15 hPa
+[   15.028 s] #4  T = 13.87 C  RH = 83.48 %  p = 976.18 hPa
+[   20.033 s] #5  T = 13.87 C  RH = 83.42 %  p = 976.16 hPa
+[   25.038 s] #6  T = 13.89 C  RH = 83.37 %  p = 976.26 hPa
+[   30.043 s] #7  T = 13.95 C  RH = 83.33 %  p = 976.19 hPa
+[   35.048 s] #8  T = 13.95 C  RH = 83.35 %  p = 976.25 hPa
+[   40.053 s] #9  T = 13.89 C  RH = 83.32 %  p = 976.13 hPa
+[   45.058 s] #10  T = 13.91 C  RH = 83.36 %  p = 976.24 hPa
+[   50.063 s] #11  T = 13.95 C  RH = 83.30 %  p = 976.22 hPa
+[   55.068 s] #12  T = 13.98 C  RH = 83.26 %  p = 976.23 hPa

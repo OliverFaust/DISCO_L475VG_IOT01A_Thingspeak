@@ -1,0 +1,145 @@
+### 1 CUBEIDE = empty folder: trace_dump.sh
+$ CUBEIDE=$SCRATCH/empty tools/trace_dump.sh
+trace_dump.sh: ST-LINK_gdbserver (part of STM32CubeIDE) not found.
+  STM32CubeIDE: CUBEIDE=$SCRATCH/empty (set in the environment)
+  $SCRATCH/empty has no plugins/ folder: not an STM32CubeIDE installation folder.
+  Also searched: the PATH (arm-none-eabi-*, STM32_Programmer_CLI).
+  Fix: install STM32CubeIDE (docs/01-prerequisites.md), or name its folder, e.g.
+    CUBEIDE=$HOME/st/stm32cubeide_2.1.0 trace_dump.sh ...
+-> exit 2
+
+### 2 CUBEIDE = a 2.0.x name that does not exist: trace_dump.sh
+$ CUBEIDE=$SCRATCH/st/stm32cubeide_2.0.3 tools/trace_dump.sh
+trace_dump.sh: ST-LINK_gdbserver (part of STM32CubeIDE) not found.
+  STM32CubeIDE: CUBEIDE=$SCRATCH/st/stm32cubeide_2.0.3 (set in the environment)
+  $SCRATCH/st/stm32cubeide_2.0.3 has no plugins/ folder: not an STM32CubeIDE installation folder.
+  Also searched: the PATH (arm-none-eabi-*, STM32_Programmer_CLI).
+  Fix: install STM32CubeIDE (docs/01-prerequisites.md), or name its folder, e.g.
+    CUBEIDE=$HOME/st/stm32cubeide_2.1.0 trace_dump.sh ...
+-> exit 2
+
+### 3 HOME with only an empty stm32cubeide_2.0.5 folder: toolchain.sh (falls back to /opt/st)
+$ HOME=$SCRATCH/home1 tools/toolchain.sh
+toolchain: STM32CubeIDE: /opt/st/stm32cubeide_1.19.0 (newest of $SCRATCH/home1/st/stm32cubeide_* /opt/st/stm32cubeide_*)
+  arm-none-eabi-nm       /bin/arm-none-eabi-nm
+  arm-none-eabi-gdb      /opt/st/stm32cubeide_1.19.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.linux64_1.0.0.202410170706/tools/bin/arm-none-eabi-gdb
+  ST-LINK_gdbserver      /opt/st/stm32cubeide_1.19.0/plugins/com.st.stm32cube.ide.mcu.externaltools.stlink-gdb-server.linux64_2.2.200.202505060755/tools/bin/ST-LINK_gdbserver
+  STM32_Programmer_CLI   /opt/st/stm32cubeide_1.19.0/plugins/com.st.stm32cube.ide.mcu.externaltools.cubeprogrammer.linux64_2.2.200.202503041107/tools/bin/STM32_Programmer_CLI
+-> exit 0
+
+### 4 HOME with stm32cubeide_2.0.9/plugins (empty), the newest: trace_dump.sh
+$ HOME=$SCRATCH/home2 tools/trace_dump.sh
+trace_dump.sh: ST-LINK_gdbserver (part of STM32CubeIDE) not found.
+  STM32CubeIDE: $SCRATCH/home2/st/stm32cubeide_2.0.9 (newest of $SCRATCH/home2/st/stm32cubeide_* /opt/st/stm32cubeide_*)
+  Also searched: the PATH (arm-none-eabi-*, STM32_Programmer_CLI).
+  Fix: install STM32CubeIDE (docs/01-prerequisites.md), or name its folder, e.g.
+    CUBEIDE=$HOME/st/stm32cubeide_2.1.0 trace_dump.sh ...
+-> exit 2
+
+### 5 PATH without Arm tools, CUBEIDE = empty folder: trace_decode.sh
+$ PATH=$SCRATCH/noarm CUBEIDE=$SCRATCH/empty tools/trace_decode.sh $SCRATCH/ring.bin Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf $SCRATCH/out5
+trace_decode.sh: arm-none-eabi-nm not found.
+  STM32CubeIDE: CUBEIDE=$SCRATCH/empty (set in the environment)
+  $SCRATCH/empty has no plugins/ folder: not an STM32CubeIDE installation folder.
+  Also searched: the PATH (arm-none-eabi-*, STM32_Programmer_CLI).
+  Fix: install STM32CubeIDE (docs/01-prerequisites.md), or name its folder, e.g.
+    CUBEIDE=$HOME/st/stm32cubeide_2.1.0 trace_decode.sh ...
+-> exit 2
+
+### 6 PATH without Arm tools, CUBEIDE = empty folder: trace_dump.sh
+$ PATH=$SCRATCH/noarm CUBEIDE=$SCRATCH/empty tools/trace_dump.sh
+trace_dump.sh: ST-LINK_gdbserver (part of STM32CubeIDE) not found.
+  STM32CubeIDE: CUBEIDE=$SCRATCH/empty (set in the environment)
+  $SCRATCH/empty has no plugins/ folder: not an STM32CubeIDE installation folder.
+  Also searched: the PATH (arm-none-eabi-*, STM32_Programmer_CLI).
+  Fix: install STM32CubeIDE (docs/01-prerequisites.md), or name its folder, e.g.
+    CUBEIDE=$HOME/st/stm32cubeide_2.1.0 trace_dump.sh ...
+-> exit 2
+
+### 7 PATH without Arm tools, CUBEIDE = empty folder: flash_and_capture.sh
+$ PATH=$SCRATCH/noarm CUBEIDE=$SCRATCH/empty tools/flash_and_capture.sh Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf 10 $SCRATCH/cap.txt
+flash_and_capture.sh: arm-none-eabi-nm not found.
+  STM32CubeIDE: CUBEIDE=$SCRATCH/empty (set in the environment)
+  $SCRATCH/empty has no plugins/ folder: not an STM32CubeIDE installation folder.
+  Also searched: the PATH (arm-none-eabi-*, STM32_Programmer_CLI).
+  Fix: install STM32CubeIDE (docs/01-prerequisites.md), or name its folder, e.g.
+    CUBEIDE=$HOME/st/stm32cubeide_2.1.0 flash_and_capture.sh ...
+-> exit 1
+
+### 8 PATH without Arm tools, STM32CubeIDE found: toolchain.sh
+$ PATH=$SCRATCH/noarm tools/toolchain.sh
+toolchain: STM32CubeIDE: ~/st/stm32cubeide_2.1.0_2 (newest of ~/st/stm32cubeide_* /opt/st/stm32cubeide_*)
+  arm-none-eabi-nm       ~/st/stm32cubeide_2.1.0_2/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.linux64_1.0.100.202602081740/tools/bin/arm-none-eabi-nm
+  arm-none-eabi-gdb      ~/st/stm32cubeide_2.1.0_2/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.linux64_1.0.100.202602081740/tools/bin/arm-none-eabi-gdb
+  ST-LINK_gdbserver      ~/st/stm32cubeide_2.1.0_2/plugins/com.st.stm32cube.ide.mcu.externaltools.stlink-gdb-server.linux64_2.2.400.202601091506/tools/bin/ST-LINK_gdbserver
+  STM32_Programmer_CLI   ~/st/STM32CubeProgrammer/bin/STM32_Programmer_CLI
+-> exit 0
+
+### 10 a ring file that is not a ring: trace_decode.sh (unexpected error, ERR trap)
+$ tools/trace_decode.sh $SCRATCH/garbage.bin Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf $SCRATCH/out10
+$SCRATCH/garbage.bin: not a format 1 trace ring (magic 0x3c521145, format 51848, record size 3226)
+trace_decode.sh: stopped by an unexpected error (exit 1) at line 41: python3 -I "$T/ring2log.py" "$RING" -o "$OUT/events.log" --report "$OUT/ring_report.txt"
+-> exit 1
+
+### 11 no ring file: trace_decode.sh
+$ tools/trace_decode.sh $SCRATCH/missing.bin
+trace_decode.sh: $SCRATCH/missing.bin not found: dump the ring first (tools/trace_dump.sh)
+-> exit 2
+
+### 12 ELF missing: trace_dump.sh
+$ tools/trace_dump.sh $SCRATCH/missing.elf
+trace_dump.sh: $SCRATCH/missing.elf not found: build the Debug-Trace configuration first
+-> exit 2
+
+### 15 unknown option: trace_dump.sh
+$ tools/trace_dump.sh --bogus
+trace_dump.sh: unknown option --bogus
+trace_dump.sh -- dump CSP4CMSIS's RAM trace ring from the running board (Debug-Trace build).
+
+  tools/trace_dump.sh [mode] [elf] [ring.bin]
+  defaults: Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf, trace_out/ring.bin
+
+Modes (docs/06-tracing.md, 6.3 and 6.6):
+  (none)               halt now and dump
+  --break LOC          run until the program reaches LOC (a function, or file:line), then dump
+    --if COND          ... only when the GDB expression COND is true there (conditional breakpoint)
+    --next             ... and execute that line before dumping (e.g. the trace call on it)
+    --reset            ... restarting the program first (for events at start-up)
+  --wait               run until the program halts itself -- B1 pressed, or trace_trigger()
+                       (Core/Inc/trace_trigger.h): a BKPT once the trigger's post_ms have passed
+    --press            ... and press B1 in software right after connecting (EXTI line 13
+                       software interrupt): the same path as a real press, for tests
+  --timeout S          for --break and --wait: give up after S seconds (default 300); no dump
+-> exit 2
+
+### 16 check_secrets.sh (success)
+$ tools/check_secrets.sh
+check_secrets: clean (password, write key, read key not found; secrets files ignored and untracked)
+-> exit 0
+
+### 13 PATH without Arm tools, STM32CubeIDE found: trace_dump.sh (success)
+$ PATH=$SCRATCH/noarm tools/trace_dump.sh Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf $SCRATCH/fresh/ring.bin
+
+
+STMicroelectronics ST-LINK GDB server. Version 7.13.0
+Copyright (c) 2026, STMicroelectronics. All rights reserved.
+
+Starting server with the following options:
+        Persistent Mode            : Disabled
+        Logging Level              : 1
+        Listen Port Number         : 61234
+        Status Refresh Delay       : 15s
+        Verbose Mode               : Disabled
+        SWD Debug                  : Enabled
+
+ST-Link enumeration failed
+
+Error in initializing ST-LINK device.
+Reason: ST-LINK DLL error.
+trace_dump.sh: GDB server did not start (board connected? another debug session open?)
+-> exit 1
+
+### 17 flash_and_capture.sh, PATH without Arm tools (success)
+$ PATH=$SCRATCH/noarm tools/flash_and_capture.sh Debug-Trace/DISCO_L475VG_IOT01A_Thingspeak.elf 25 $SCRATCH/cap.txt
+flash_and_capture.sh: no ST-LINK virtual COM port found (is the board connected by its ST-LINK USB port, CN7?)
+-> exit 1

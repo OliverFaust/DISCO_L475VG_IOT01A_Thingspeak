@@ -1,0 +1,238 @@
+{
+ "ring": {
+  "puts": 25,
+  "gets": 25,
+  "gets_ok": 25
+ },
+ "ring_errors": [],
+ "ring_channels": {
+  "MainApp_Task(void*)::status": {
+   "capacity": 8,
+   "policy": "KeepNewest",
+   "isr_puts": 0
+  },
+  "MainApp_Task(void*)::samples": {
+   "capacity": 1,
+   "policy": "KeepNewest",
+   "isr_puts": 0
+  },
+  "MainApp_Task(void*)::uplinkSamples": {
+   "capacity": 1,
+   "policy": "KeepNewest",
+   "isr_puts": 0
+  }
+ },
+ "alt": {
+  "guards_described": 90,
+  "waits": 38,
+  "enabled_bits": 90
+ },
+ "alt_errors": [],
+ "alt_masks": [
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 474844",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 479847",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 484850",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 489853",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 494856",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 499859",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 504862",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 509865",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 514868",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 519871",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 524874",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 529877",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 532106",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::sensors",
+   "guard_list": "timeout 5000",
+   "mask": 1,
+   "guards": 1,
+   "waits": 12
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 12735",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 17738",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 22741",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 2729",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 27744",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 32747",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 37750",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 42753",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 47756",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 52759",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 57762",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 59991",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 7732",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  }
+ ],
+ "deadlines": {
+  "errors": 2,
+  "deadlines": 38,
+  "timeout_waits": 38,
+  "resume": 24,
+  "resume_before": 24,
+  "resume_timeout": 12,
+  "timeout_ticks_late_max": 0
+ },
+ "deadline_errors": [
+  "Resume at 116430.788 us with ticks after a wait without a deadline",
+  "ResumeTimeout at 2346762.838 us without a deadline wait"
+ ],
+ "stable_points": 0,
+ "stable_classes": {},
+ "stable_note": null
+}

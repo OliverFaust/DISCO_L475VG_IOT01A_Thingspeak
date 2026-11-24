@@ -1,0 +1,5 @@
+WiFi/ISM43362 and LICENSE: CMSIS-Driver 2.11.0
+  https://github.com/ARM-software/CMSIS-Driver, tag 2.11.0 (commit 8d0170006e3064aa57fdd02eeb9cf13ed69fa0f0), unmodified.
+  Extracted with: git archive 2.11.0 WiFi/ISM43362 LICENSE | tar -x
+Include/Driver_Common.h, Driver_SPI.h, Driver_WiFi.h and Include/LICENSE.txt: CMSIS 6.4.0
+  https://github.com/ARM-software/CMSIS_6, tag v6.4.0 (commit af1b110e46a1720349f6f125e386e126767699bd), CMSIS/Driver/Include, unmodified.

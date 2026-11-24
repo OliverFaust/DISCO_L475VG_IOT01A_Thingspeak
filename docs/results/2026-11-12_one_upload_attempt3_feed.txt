@@ -1,0 +1,7 @@
+# tools/thingspeak_feed.sh 3, run on Ubuntu right after attempt 3 (channel: field1 only enabled)
+# channel 87****, last 3 entries, read 2026-11-12 18:27:54 UTC
+last_entry_id: 235572
+entry_id  created_at            field1     field2     field3    
+235570    2022-01-08T19:46:06Z  1          None       None      
+235571    2026-11-12T18:21:16Z  17.07      None       None      
+235572    2026-11-12T18:27:31Z  17.14      None       None      

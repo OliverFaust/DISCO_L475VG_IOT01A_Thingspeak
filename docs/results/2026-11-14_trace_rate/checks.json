@@ -1,0 +1,148 @@
+{
+ "ring": {
+  "puts": 11,
+  "gets": 11,
+  "gets_ok": 11
+ },
+ "ring_errors": [],
+ "ring_channels": {
+  "MainApp_Task(void*)::samples": {
+   "capacity": 1,
+   "policy": "KeepNewest",
+   "isr_puts": 0
+  },
+  "MainApp_Task(void*)::uplinkSamples": {
+   "capacity": 1,
+   "policy": "KeepNewest",
+   "isr_puts": 0
+  },
+  "MainApp_Task(void*)::status": {
+   "capacity": 8,
+   "policy": "KeepNewest",
+   "isr_puts": 0
+  }
+ },
+ "alt": {
+  "guards_described": 45,
+  "waits": 18,
+  "enabled_bits": 45
+ },
+ "alt_errors": [],
+ "alt_masks": [
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 4922",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 584910",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 589913",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 592597",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 594916",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 599919",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::console",
+   "guard_list": "MainApp_Task(void*)::samples ?, MainApp_Task(void*)::check ?, MainApp_Task(void*)::status ?, timeout 599969",
+   "mask": 15,
+   "guards": 4,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::sensors",
+   "guard_list": "timeout 5000",
+   "mask": 1,
+   "guards": 1,
+   "waits": 5
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 11988",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 1982",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 52304",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 57307",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 59991",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  },
+  {
+   "alt": "MainApp_Task(void*)::uplink",
+   "guard_list": "MainApp_Task(void*)::uplinkSamples ?, timeout 6985",
+   "mask": 3,
+   "guards": 2,
+   "waits": 1
+  }
+ ],
+ "deadlines": {
+  "errors": 3,
+  "deadlines": 18,
+  "timeout_waits": 18,
+  "resume_timeout": 6,
+  "timeout_ticks_late_max": 0,
+  "resume": 9,
+  "resume_before": 9
+ },
+ "deadline_errors": [
+  "ResumeTimeout at 3071023.800 us without a deadline wait",
+  "Resume at 3073020.675 us with ticks after a wait without a deadline",
+  "Resume at 3078518.875 us with ticks after a wait without a deadline"
+ ],
+ "stable_points": 0,
+ "stable_classes": {},
+ "stable_note": null
+}

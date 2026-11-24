@@ -1,0 +1,19 @@
+ 59.755 prvIdleTask (pvParameters=0x0) at ../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:3409
+ 59.761 3409			prvCheckTasksWaitingTermination();
+ 59.767 == B1 pressed in software (EXTI line 13)
+ 59.772 == running until the program halts at its trigger (at most 30 s)
+ 60.319 
+ 60.325 Program received signal SIGTRAP, Trace/breakpoint trap.
+ 60.330 trace_trigger_tick () at ../Core/Src/trace_trigger.c:80
+ 60.335 80	      __BKPT(0);                                 /* the debugger halts here; trace_dump.sh steps past it */
+ 60.341 #0  trace_trigger_tick () at ../Core/Src/trace_trigger.c:80
+ 60.347 80	      __BKPT(0);                                 /* the debugger halts here; trace_dump.sh steps past it */
+ 60.352 halted at pc = 0x80074a2, write_count = 23100
+ 60.472 $1 = {magic = 0x52505343, format = 0x1, record_size = 0x10, capacity = 0x400, policy = 0x0, write_count = 0x5a3c, clock_hz = 0x4c4b400, dropped = 0x0, dwt_ctrl = 0x40000001}
+ 60.476 TASKNAME 0x20001138 Sensors
+ 60.480 TASKNAME 0x20001a70 Console
+ 60.486 TASKNAME 0x20002ba8 Uplink
+ 60.491 TASKNAME 0x20003ad0 WiFi_ISM43362_A
+ 60.497 TASKNAME 0x2000a3cc IDLE
+ 60.502 [Inferior 1 (Remote target) detached]
+ 61.508 == wrote trace_out/ring.bin (16416 bytes) and trace_out/ring.names (5 names); the board is running again

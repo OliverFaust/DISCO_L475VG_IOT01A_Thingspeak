@@ -1,0 +1,615 @@
+{
+ "events_file": "events.csv",
+ "models": "/media/of6/c615665c-b372-4e0b-8c40-ca60b0369c46/DISCO_L475VG_IOT01A_Thingspeak/lib/csp4cmsis-trace/docs/formal",
+ "projections": [
+  {
+   "id": "alt0",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::uplink+0xe14",
+   "thread": "0x20002ba8",
+   "guards": "[buffered? MainApp_Task(void*)::uplinkSamples, timeout 24792]",
+   "selects": 1,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 24792 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [buffered? MainApp_Task(void*)::uplinkSamples, timeout 24792] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "alt1",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::sensors+0x6e0",
+   "thread": "0x20001138",
+   "guards": "[timeout 5000]",
+   "selects": 1,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 5000 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [timeout 5000] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "alt2",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::console+0x688",
+   "thread": "0x20001a70",
+   "guards": "[buffered? MainApp_Task(void*)::samples, channel? MainApp_Task(void*)::check, buffered? MainApp_Task(void*)::status, timeout 325078]",
+   "selects": 1,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 325078 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [buffered? MainApp_Task(void*)::samples, channel? MainApp_Task(void*)::check, buffered? MainApp_Task(void*)::status, timeout 325078] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "alt3",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::uplink+0xe14",
+   "thread": "0x20002ba8",
+   "guards": "[buffered? MainApp_Task(void*)::uplinkSamples, timeout 19789]",
+   "selects": 1,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 19789 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [buffered? MainApp_Task(void*)::uplinkSamples, timeout 19789] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "alt4",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::sensors+0x6e0",
+   "thread": "0x20001138",
+   "guards": "[timeout 5000]",
+   "selects": 1,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 5000 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [timeout 5000] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "alt5",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::console+0x688",
+   "thread": "0x20001a70",
+   "guards": "[buffered? MainApp_Task(void*)::samples, channel? MainApp_Task(void*)::check, buffered? MainApp_Task(void*)::status, timeout 320075]",
+   "selects": 1,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 320075 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [buffered? MainApp_Task(void*)::samples, channel? MainApp_Task(void*)::check, buffered? MainApp_Task(void*)::status, timeout 320075] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "alt6",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::uplink+0xe14",
+   "thread": "0x20002ba8",
+   "guards": "[buffered? MainApp_Task(void*)::uplinkSamples, timeout 14786]",
+   "selects": 1,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 14786 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [buffered? MainApp_Task(void*)::uplinkSamples, timeout 14786] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "alt7",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::sensors+0x6e0",
+   "thread": "0x20001138",
+   "guards": "[timeout 5000]",
+   "selects": 1,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 5000 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [timeout 5000] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "alt8",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::console+0x688",
+   "thread": "0x20001a70",
+   "guards": "[buffered? MainApp_Task(void*)::samples, channel? MainApp_Task(void*)::check, buffered? MainApp_Task(void*)::status, timeout 315072]",
+   "selects": 1,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 315072 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [buffered? MainApp_Task(void*)::samples, channel? MainApp_Task(void*)::check, buffered? MainApp_Task(void*)::status, timeout 315072] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "alt9",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::uplink+0xe14",
+   "thread": "0x20002ba8",
+   "guards": "[buffered? MainApp_Task(void*)::uplinkSamples, timeout 9783]",
+   "selects": 1,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 9783 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [buffered? MainApp_Task(void*)::uplinkSamples, timeout 9783] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "alt10",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::sensors+0x6e0",
+   "thread": "0x20001138",
+   "guards": "[timeout 5000]",
+   "selects": 1,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 5000 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [timeout 5000] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "alt11",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::console+0x688",
+   "thread": "0x20001a70",
+   "guards": "[buffered? MainApp_Task(void*)::samples, channel? MainApp_Task(void*)::check, buffered? MainApp_Task(void*)::status, timeout 310069]",
+   "selects": 1,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 310069 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [buffered? MainApp_Task(void*)::samples, channel? MainApp_Task(void*)::check, buffered? MainApp_Task(void*)::status, timeout 310069] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "alt12",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::uplink+0xe14",
+   "thread": "0x20002ba8",
+   "guards": "[buffered? MainApp_Task(void*)::uplinkSamples, timeout 4780]",
+   "selects": 1,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 4780 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [buffered? MainApp_Task(void*)::uplinkSamples, timeout 4780] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "alt13",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::sensors+0x6e0",
+   "thread": "0x20001138",
+   "guards": "[timeout 5000]",
+   "selects": 0,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 5000 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [timeout 5000] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "alt14",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::console+0x688",
+   "thread": "0x20001a70",
+   "guards": "[buffered? MainApp_Task(void*)::samples, channel? MainApp_Task(void*)::check, buffered? MainApp_Task(void*)::status, timeout 305066]",
+   "selects": 1,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 305066 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [buffered? MainApp_Task(void*)::samples, channel? MainApp_Task(void*)::check, buffered? MainApp_Task(void*)::status, timeout 305066] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "alt15",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::console+0x688",
+   "thread": "0x20001a70",
+   "guards": "[buffered? MainApp_Task(void*)::samples, channel? MainApp_Task(void*)::check, buffered? MainApp_Task(void*)::status, timeout 304942]",
+   "selects": 0,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 304942 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [buffered? MainApp_Task(void*)::samples, channel? MainApp_Task(void*)::check, buffered? MainApp_Task(void*)::status, timeout 304942] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "alt16",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::uplink+0xe14",
+   "thread": "0x20002ba8",
+   "guards": "[buffered? MainApp_Task(void*)::uplinkSamples, timeout 59991]",
+   "selects": 1,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 59991 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [buffered? MainApp_Task(void*)::uplinkSamples, timeout 59991] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "alt17",
+   "kind": "Alternative",
+   "name": "MainApp_Task(void*)::uplink+0xe14",
+   "thread": "0x20002ba8",
+   "guards": "[buffered? MainApp_Task(void*)::uplinkSamples, timeout 59991]",
+   "selects": 0,
+   "match": {
+    "alt_timeout_deadline": "unmatched: timeout 59991 ticks (the model's delays are 0..15)",
+    "alt_one_winner": "unmatched: guards [buffered? MainApp_Task(void*)::uplinkSamples, timeout 59991] (the model: two rendezvous input guards)"
+   },
+   "partner_outside": 0,
+   "owr_rounds_outside": 0
+  },
+  {
+   "id": "buf0",
+   "kind": "buffered channel",
+   "name": "MainApp_Task(void*)::uplinkSamples",
+   "capacity": 1,
+   "policy": "KeepNewest",
+   "writes": {
+    "offer": 5
+   },
+   "gets": {
+    "other": 1,
+    "alt": 5
+   },
+   "events": 11,
+   "match": {
+    "buffered_channel_v2 Part 1c SYS_C": "unmatched: the ALT reader has 2 guards and 6 select()s (the model: one each)",
+    "buffered_channel_v2 Part 3": "unmatched: policy KeepNewest; writes by offer (Part 3: blocking puts); gets by alt, other (Part 3: blocking gets)",
+    "buffered_channel_v2 Part 5": "unmatched: policy KeepNewest; an ALT with 2 guards (Part 5: one guard); offers",
+    "buffered_channel_v2 Part 2N SYS_KNE(1, -1, -1)": "matched",
+    "buffered_channel_v2 Part 2bN": "unmatched: policy KeepNewest (Part 2bN: KeepOldest)"
+   },
+   "checked": "Part 2N SYS_KNE(1, -1, -1)"
+  },
+  {
+   "id": "buf1",
+   "kind": "buffered channel",
+   "name": "MainApp_Task(void*)::samples",
+   "capacity": 1,
+   "policy": "KeepNewest",
+   "writes": {
+    "offer": 5
+   },
+   "gets": {
+    "other": 1,
+    "alt": 4
+   },
+   "events": 10,
+   "match": {
+    "buffered_channel_v2 Part 1c SYS_C": "unmatched: the ALT reader has 4 guards and 5 select()s (the model: one each)",
+    "buffered_channel_v2 Part 3": "unmatched: policy KeepNewest; writes by offer (Part 3: blocking puts); gets by alt, other (Part 3: blocking gets)",
+    "buffered_channel_v2 Part 5": "unmatched: policy KeepNewest; an ALT with 4 guards (Part 5: one guard); offers",
+    "buffered_channel_v2 Part 2N SYS_KNE(1, -1, -1)": "matched",
+    "buffered_channel_v2 Part 2bN": "unmatched: policy KeepNewest (Part 2bN: KeepOldest)"
+   },
+   "checked": "Part 2N SYS_KNE(1, -1, -1)"
+  },
+  {
+   "id": "buf2",
+   "kind": "buffered channel",
+   "name": "MainApp_Task(void*)::status",
+   "capacity": 8,
+   "policy": "KeepNewest",
+   "writes": {
+    "offer": 1
+   },
+   "gets": {
+    "alt": 1
+   },
+   "events": 2,
+   "match": {
+    "buffered_channel_v2 Part 1c SYS_C": "unmatched: the ALT reader has 4 guards and 5 select()s (the model: one each)",
+    "buffered_channel_v2 Part 3": "unmatched: policy KeepNewest; writes by offer (Part 3: blocking puts); gets by alt (Part 3: blocking gets)",
+    "buffered_channel_v2 Part 5": "unmatched: policy KeepNewest; an ALT with 4 guards (Part 5: one guard); offers",
+    "buffered_channel_v2 Part 2N": "unmatched: capacity 8 (the parameterised models are checked up to capacity 4)",
+    "buffered_channel_v2 Part 2bN": "unmatched: policy KeepNewest (Part 2bN: KeepOldest)"
+   }
+  }
+ ],
+ "isr_writers": {
+  "source": "default 0",
+  "channels": {}
+ },
+ "checks": [
+  {
+   "model": "buffered_channel_v2",
+   "config": "Part 2N SYS_KNE(1, -1, -1)",
+   "decls": [
+    "OBS_P = {| t_new, isr_new, rd |}",
+    "M_P = SYS_KNE(1, -1, -1) \\ diff(Events, OBS_P)"
+   ],
+   "assert": "M_P [T= REC_P",
+   "kind": "trace",
+   "rec": [
+    "rd.UNKNOWN",
+    "t_new",
+    "rd.0",
+    "t_new",
+    "rd.1",
+    "t_new",
+    "rd.2",
+    "t_new",
+    "rd.0",
+    "t_new",
+    "rd.1"
+   ],
+   "rows": [
+    1,
+    10,
+    24,
+    33,
+    47,
+    56,
+    70,
+    79,
+    93,
+    104,
+    129
+   ],
+   "length": 11,
+   "projection": "buf0",
+   "aux": [],
+   "file": "checks/00000_buf0_trace.csp",
+   "key": "c8eedcaf27a94014304c",
+   "prob": {
+    "result": "UNKNOWN",
+    "cpu_ms": null,
+    "states": 1,
+    "why": "no verdict in the output (exit status 0)",
+    "errors": [
+     "! An error occurred (source: haskell_csp) !",
+     "! Error while parsing CSP-M:  renameError:'/tmp/tmpp16r2vmi/check.csp'",
+     "! An error occurred (source: haskell_csp) !",
+     "! CSP-M Parse error message:  Unbound Identifier :UNKNOWN",
+     "! Line: 5 Column: 11 until Line: 5 Column: 12",
+     "! % *** Errors occurred while loading ! ***"
+    ],
+    "batch": 1
+   },
+   "verdict": "UNKNOWN"
+  },
+  {
+   "model": "buffered_channel_v2",
+   "config": "Part 2N SYS_KNE(1, -1, -1)",
+   "decls": [
+    "OBS_P = {| t_new, isr_new, rd |}",
+    "M_P = SYS_KNE(1, -1, -1) \\ diff(Events, OBS_P)"
+   ],
+   "assert": "M_P [T= REC_P",
+   "kind": "trace",
+   "rec": [
+    "t_new",
+    "rd.0",
+    "t_new",
+    "rd.1",
+    "t_new",
+    "rd.2",
+    "t_new",
+    "rd.0",
+    "t_new",
+    "rd.1"
+   ],
+   "rows": [
+    9,
+    12,
+    32,
+    35,
+    55,
+    58,
+    78,
+    81,
+    103,
+    106
+   ],
+   "length": 10,
+   "projection": "buf1",
+   "aux": [],
+   "key": "d79a66396776a69c373d",
+   "prob": {
+    "result": "PASS",
+    "cpu_ms": 116,
+    "states": 19,
+    "batch": 1
+   },
+   "verdict": "PASS"
+  },
+  {
+   "model": "buffered_channel_v2",
+   "config": "Part 2N SYS_KNE(1, -1, -1)",
+   "decls": [
+    "OBS_P = {| t_new, isr_new, rd |}",
+    "M_P = SYS_KNE(1, -1, -1) \\ diff(Events, OBS_P)"
+   ],
+   "assert": "M_P [T= REC_P",
+   "kind": "trace",
+   "rec": [
+    "t_new",
+    "rd.0",
+    "rd.0",
+    "t_new",
+    "rd.1",
+    "t_new",
+    "rd.2",
+    "t_new",
+    "rd.0",
+    "t_new",
+    "rd.1"
+   ],
+   "rows": [],
+   "length": 11,
+   "projection": "buf0",
+   "aux": [],
+   "mutation": "swap",
+   "mutation_desc": "swapped rows 1 (BufferedGet) and 10 (BufferedPut) (rows from 0)",
+   "mutation_model": "Part 2N",
+   "file": "checks/00002_buf0_swap.csp",
+   "key": "9a3e30fd6182479ef0ed",
+   "prob": {
+    "result": "FAIL",
+    "cpu_ms": 120,
+    "states": 9,
+    "counterexample": "[GO:,t_new,GO:,rd.0,GO:,rd.0, At_last_step_specification_can_do_one_of:,isr_new,t_new, Trace_of_the_left_specification:,GO:,t_new,GO:,rd.0]",
+    "batch": 1
+   },
+   "verdict": "FAIL",
+   "caught": true
+  },
+  {
+   "model": "buffered_channel_v2",
+   "config": "Part 2N SYS_KNE(1, -1, -1)",
+   "decls": [
+    "OBS_P = {| t_new, isr_new, rd |}",
+    "M_P = SYS_KNE(1, -1, -1) \\ diff(Events, OBS_P)"
+   ],
+   "assert": "M_P [T= REC_P",
+   "kind": "trace",
+   "rec": [
+    "t_new",
+    "rd.1",
+    "t_new",
+    "rd.1",
+    "t_new",
+    "rd.2",
+    "t_new",
+    "rd.0",
+    "t_new",
+    "rd.1"
+   ],
+   "rows": [],
+   "length": 10,
+   "projection": "buf1",
+   "aux": [],
+   "mutation": "get-id",
+   "mutation_desc": "first get: identity + 1",
+   "mutation_model": "Part 2N",
+   "file": "checks/00003_buf1_get-id.csp",
+   "key": "e1a5f78ac15662290ccf",
+   "prob": {
+    "result": "FAIL",
+    "cpu_ms": 117,
+    "states": 8,
+    "counterexample": "[GO:,t_new,GO:,rd.1, At_last_step_specification_can_do_one_of:,isr_new,rd.0,t_new, Trace_of_the_left_specification:,GO:,t_new]",
+    "batch": 1
+   },
+   "verdict": "FAIL",
+   "caught": true
+  }
+ ],
+ "coverage": {
+  "waits/resumes": {
+   "events": 34,
+   "covered": 22,
+   "share": 0.6471
+  },
+  "total": {
+   "events": 135,
+   "covered": 67,
+   "share": 0.4963
+  },
+  "buffered": {
+   "events": 23,
+   "covered": 22,
+   "share": 0.9565
+  },
+  "AltSelected": {
+   "events": 18,
+   "covered": 11,
+   "share": 0.6111
+  },
+  "other": {
+   "events": 60,
+   "covered": 12,
+   "share": 0.2
+  }
+ },
+ "uncovered": [
+  {
+   "kind": "waits/resumes",
+   "object": "MainApp_Task(void*)::sensors+0x6e0",
+   "events": 10
+  },
+  {
+   "kind": "other",
+   "object": "MainApp_Task(void*)::sensors+0x6e0",
+   "events": 10
+  },
+  {
+   "kind": "other",
+   "object": "MainApp_Task(void*)::uplinkSamples",
+   "events": 7
+  },
+  {
+   "kind": "other",
+   "object": "MainApp_Task(void*)::uplink+0xe14",
+   "events": 7
+  },
+  {
+   "kind": "other",
+   "object": "MainApp_Task(void*)::samples",
+   "events": 6
+  },
+  {
+   "kind": "other",
+   "object": "MainApp_Task(void*)::check",
+   "events": 6
+  },
+  {
+   "kind": "other",
+   "object": "MainApp_Task(void*)::status",
+   "events": 6
+  },
+  {
+   "kind": "other",
+   "object": "MainApp_Task(void*)::console+0x688",
+   "events": 6
+  },
+  {
+   "kind": "AltSelected",
+   "object": "MainApp_Task(void*)::sensors+0x6e0",
+   "events": 5
+  },
+  {
+   "kind": "waits/resumes",
+   "object": "MainApp_Task(void*)::uplink+0xe14",
+   "events": 1
+  },
+  {
+   "kind": "AltSelected",
+   "object": "MainApp_Task(void*)::uplink+0xe14",
+   "events": 1
+  },
+  {
+   "kind": "waits/resumes",
+   "object": "MainApp_Task(void*)::console+0x688",
+   "events": 1
+  }
+ ],
+ "verdicts": {
+  "trace UNKNOWN": 1,
+  "trace PASS": 1,
+  "swap FAIL": 1,
+  "get-id FAIL": 1
+ },
+ "prob": {
+  "runs": 5,
+  "mem_gb": 6.5,
+  "retried": 0,
+  "unknown_after_retry": 0
+ }
+}

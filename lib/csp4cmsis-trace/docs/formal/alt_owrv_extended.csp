@@ -1,0 +1,608 @@
+-- =============================================================================
+-- CSP4CMSIS one-winner ALT with re-verification (OWRV): the 3.x rendezvous
+-- ALT (alt_channel_sync.cpp, alternative.cpp; since 2.0.1). Written as the
+-- extensions required before implementation (review round 5); Part C added
+-- for 3.x. CSP-M (FDR4 dialect), checked with ProB 1.16.1; results at the
+-- end. Protocol as in alt_one_winner.csp:
+--  * per-ALT state word IDLE / ENABLING / WAITING / CLAIMED(c);
+--  * ALT-vs-ALT: whoever finds the other ALT registered and claimable
+--    (ENABLING or WAITING) claims BOTH state words in one critical section;
+--    a claim at activate() claims the partner's word only (the claimer has
+--    already disabled all its guards, so nobody can claim it any more);
+--  * the READER side performs the transfer; a writer-side ALT waits for it;
+--  * every wakeup is re-verified: disable all enabled guards; a CLAIMED guard
+--    wins, else the first ready guard (priority order), else a new round.
+--
+-- Part A (3a): symmetric crossing. A ALTs {c1!, c2?}, B ALTs {c1?, c2!} (B's
+--   guard order is a parameter: c1 first or c2 first); one select each; an
+--   optional stale flag. Correct: both select the SAME channel and exactly one
+--   communication happens. Mutation TOCTOU: the claim at enable() checks
+--   both state words in one critical section and writes them in a later one
+--   (check-then-act), i.e. the failure the atomic two-word claim prevents:
+--   both ALTs see each other claimable and claim crosswise.
+--   (A first mutation that only split the two WRITES passed: the first write
+--   already makes the partner unclaimable, and with two ALTs nobody else can
+--   interfere. It is not kept.)
+-- Part B (3b): mixed ALT. A ALTs {c0 rendezvous, c1 buffered}; a task partner
+--   on c0 (plain writer, or an ALT writer with one guard); an ISR writes one
+--   message into c1 (putFromISR: push, token release, registration snapshot
+--   and signal, atomic with respect to tasks); two selects; optional stale
+--   flag. The buffered guard is the verified 2.0 protocol (cb10b12): register
+--   (R) then token count (C); disable re-reads the count; activate() takes
+--   the token with timeout 0 or starts a new round. It never touches the
+--   ALT's state word.
+-- Part C (3.x): an ALT writer with two output guards; on each channel an
+--   ALT reader or a plain reader; two ALT readers may race to claim it.
+--
+-- Trace conformance (not book-facing). Events a CSP4CMSIS trace supplies:
+--   AltSelected (guard g) of A / B / W     -> x_sel.x.c.b, a_sel.g.b.o, m_wsel.c.b
+--                                             (the Bools are computed from the
+--                                             RendezvousDone events since the
+--                                             thread's previous AltSelected)
+--   AltSelected / Resume of a partner      -> w_done, m_done (b: a RendezvousDone
+--                                             names it on its channel)
+--   WaitAlt + Resume / ResumeTimeout       -> x_towait.x.true + x_wait.x,
+--                                             a_towait.true + a_wait, w_towait.true
+--                                             + w_wait, m_wtowait.true + m_wwait,
+--                                             m_rtowait.c.true + m_rwait.c (a_wait.g:
+--                                             the flag bit is not recorded, rename
+--                                             to a_wait)
+--   PutFromISR                             -> isr_put
+--   BufferedGet by A                       -> b_act.true
+--   WaitChannel(write) of a plain writer   -> p_out (its offer); WaitChannel(read)
+--                                             of a plain reader -> m_pin
+--   RendezvousDone                         -> the decision of a pair: x_en.x.c.2,
+--                                             x_claim, a_en0.2, w_en.2, m_wen.c.2,
+--                                             m_ren.c.2, m_rclaim, or the activate
+--                                             that takes or claims a partner
+--                                             (x_act.x.c.3, a_act0.2/.3, m_wact.c.2/.3,
+--                                             m_ract.c.3)
+-- Hidden for conformance (H): rounds, enable results 0/1, disables, the
+-- signals, the claims' second word, stale flags, x_xw/w_xw/m_wxw (the
+-- writer's end of the pair wait: RENDEZVOUS_FLAG), idle, bounds.
+-- Gaps: the activate events (x_act, a_act0, m_wact, m_ract) carry the
+-- decision but a trace's RendezvousDone does not say whether the pair was
+-- claimed earlier or now, so their mapping is not a pure renaming (the
+-- conformance step must compute it from the state word, i.e. replay);
+-- enable/disable results and state words are not recorded.
+-- =============================================================================
+
+IDL = 0
+EN = 1
+WT = 2
+CL = 3
+claimable(s) = s == EN or s == WT
+MAXR = 6
+
+g2((a, b), i) = if i == 0 then a else b
+s2((a, b), i, x) = if i == 0 then (x, b) else (a, x)
+
+-- =============================================================================
+-- Part A: symmetric crossing
+-- =============================================================================
+P2 = {0, 1}            -- 0 = A, 1 = B
+C2 = {1, 2}            -- channels
+OK = 0
+TOCTOU = 1
+
+-- direction: is process x the READER on channel c?  A reads c2, B reads c1
+reader(x, c) = if x == 0 then c == 2 else c == 1
+oth(x) = 1 - x
+-- per-channel registration tuples are indexed by channel - 1
+rg(t, c) = g2(t, c - 1)
+srg(t, c, v) = s2(t, c - 1, v)
+
+channel x_rnd : P2
+channel x_en : P2.C2.{0, 2, 3}        -- 0 registered, 2 claimed both, 3 (TOCTOU) decided to claim, nothing written
+channel x_claim : P2.C2               -- TOCTOU: write both words afterwards
+channel x_sig : P2                    -- wake the other process (after the section)
+channel x_towait : P2.Bool
+channel x_wait : P2
+channel x_dis : P2.C2.Bool.Bool       -- ready, claimed for this guard
+channel x_act : P2.C2.{0, 1, 3}       -- in/outActivate: 0 partner gone, 1 claimed pair, 3 claimed the other ALT now (signal it)
+channel x_xw : P2                     -- writer side: transfer done
+channel x_sel : P2.C2.Bool            -- select() returned c; exactly one communication so far, on c?
+channel x_stale : P2
+channel x_idle : P2
+channel bound_a
+
+-- ra/rb: A / B registered on (c1, c2); st/ch: state words and claimed
+-- channels of (A, B); xf: writer released; nc/lc: number of communications
+-- (capped at 2) and the channel of the last one; fl: thread flags
+STA(v, ra, rb, st, ch, xf, nc, lc, fl) =
+     ([] x : P2 @ x_rnd.x -> STA(v, ra, rb, s2(st, x, EN), ch, xf, nc, lc, s2(fl, x, false)))
+  [] ([] x : P2 @ [] c : C2 @ x_en.x.c!enres(v, x, c, ra, rb, st) ->
+        (if enres(v, x, c, ra, rb, st) == 0
+         then (if x == 0 then STA(v, srg(ra, c, true), rb, st, ch, xf, nc, lc, fl)
+               else STA(v, ra, srg(rb, c, true), st, ch, xf, nc, lc, fl))
+         else if enres(v, x, c, ra, rb, st) == 2
+         then STA(v, ra, rb, (CL, CL), (c, c), xf, nc, lc, fl)
+         else STA(v, ra, rb, st, ch, xf, nc, lc, fl)))
+  [] ([] x : P2 @ [] c : C2 @ x_claim.x.c -> STA(v, ra, rb, (CL, CL), (c, c), xf, nc, lc, fl))
+  [] ([] x : P2 @ x_sig.x -> STA(v, ra, rb, st, ch, xf, nc, lc, s2(fl, oth(x), true)))
+  [] ([] x : P2 @ x_towait.x!(g2(st, x) == EN) ->
+        STA(v, ra, rb, if g2(st, x) == EN then s2(st, x, WT) else st, ch, xf, nc, lc, fl))
+  [] ([] x : P2 @ g2(fl, x) & x_wait.x -> STA(v, ra, rb, st, ch, xf, nc, lc, s2(fl, x, false)))
+  [] ([] x : P2 @ [] c : C2 @ x_dis.x.c!(otherreg(x, c, ra, rb) and claimable(g2(st, oth(x))))
+                                       !(g2(st, x) == CL and g2(ch, x) == c) ->
+        (if x == 0 then STA(v, srg(ra, c, false), rb, st, ch, xf, nc, lc, fl)
+         else STA(v, ra, srg(rb, c, false), st, ch, xf, nc, lc, fl)))
+  [] ([] x : P2 @ [] c : C2 @ x_act.x.c!actk(x, c, ra, rb, st, ch) ->
+        (if actk(x, c, ra, rb, st, ch) == 0 then STA(v, ra, rb, st, ch, xf, nc, lc, fl)
+         else let st2 = if g2(st, x) == CL and g2(ch, x) == c then st else s2(st, oth(x), CL)
+                  ch2 = if g2(st, x) == CL and g2(ch, x) == c then ch else s2(ch, oth(x), c)
+              within
+              (if reader(x, c)                                  -- reader transfers, releases writer
+               then STA(v, ra, rb, st2, ch2, s2(xf, oth(x), true), if nc < 2 then nc + 1 else 2, c, fl)
+               else STA(v, ra, rb, st2, ch2, xf, nc, lc, fl))))   -- writer waits for the reader
+  [] ([] x : P2 @ g2(xf, x) & x_xw.x -> STA(v, ra, rb, st, ch, s2(xf, x, false), nc, lc, fl))
+  [] ([] x : P2 @ [] c : C2 @ x_sel.x.c!(nc == 1 and lc == c) -> STA(v, ra, rb, s2(st, x, IDL), ch, xf, nc, lc, fl))
+  [] ([] x : P2 @ x_stale.x -> STA(v, ra, rb, st, ch, xf, nc, lc, s2(fl, x, true)))
+
+otherreg(x, c, ra, rb) = if x == 0 then rg(rb, c) else rg(ra, c)
+enres(v, x, c, ra, rb, st) =
+  if otherreg(x, c, ra, rb) and g2(st, x) == EN and claimable(g2(st, oth(x)))
+  then (if v == TOCTOU then 3 else 2) else 0
+actk(x, c, ra, rb, st, ch) = if g2(st, x) == CL and g2(ch, x) == c then 1
+                             else if otherreg(x, c, ra, rb) and claimable(g2(st, oth(x))) then 3 else 0
+
+FINX(x) = x_idle.x -> FINX(x)
+
+-- process x with guard order (g1, gb), n = rounds used
+PX(v, x, g1, gb, n) =
+  if n >= MAXR then bound_a -> STOP else
+  x_rnd.x -> x_en.x.g1?e1 ->
+    (if e1 != 0 then PCLM(v, x, g1, gb, n + 1, g1, e1, false)
+     else x_en.x.gb?e2 ->
+       (if e2 != 0 then PCLM(v, x, g1, gb, n + 1, gb, e2, true)
+        else x_towait.x?w -> (if w then x_wait.x -> PDIS(v, x, g1, gb, n + 1, true)
+                              else PDIS(v, x, g1, gb, n + 1, true))))
+PCLM(v, x, g1, gb, n, c, e, en2) =
+  if e == 3 then x_claim.x.c -> x_sig.x -> PDIS(v, x, g1, gb, n, en2)
+  else x_sig.x -> PDIS(v, x, g1, gb, n, en2)
+PDIS(v, x, g1, gb, n, en2) =
+  x_dis.x.g1?r1?m1 ->
+    (if en2 then x_dis.x.gb?r2?m2 -> PDEC(v, x, g1, gb, n, r1, m1, r2, m2)
+     else PDEC(v, x, g1, gb, n, r1, m1, false, false))
+PDEC(v, x, g1, gb, n, r1, m1, r2, m2) =
+  if m1 then PACT(v, x, g1, gb, n, g1) else if m2 then PACT(v, x, g1, gb, n, gb)
+  else if r1 then PACT(v, x, g1, gb, n, g1) else if r2 then PACT(v, x, g1, gb, n, gb)
+  else PX(v, x, g1, gb, n)                                         -- stale: new round
+PACT(v, x, g1, gb, n, c) =
+  x_act.x.c?k ->
+    (if k == 0 then PX(v, x, g1, gb, n)
+     else if reader(x, c) then XSIG(x, k, x_sel.x.c?_ -> FINX(x))    -- released the writer
+     else XSIG(x, k, x_xw.x -> x_sel.x.c?_ -> FINX(x)))              -- wait for the reader
+-- the signal only for a claim at activate (3.x: wake is set only there, L172-177/L231-236)
+XSIG(x, k, P) = if k == 3 then x_sig.x -> P else P
+
+STALEA(s) = if s then (([] x : P2 @ x_stale.x -> SKIP) [] SKIP) else SKIP
+SA = {| x_rnd, x_en, x_claim, x_sig, x_towait, x_wait, x_dis, x_act, x_xw, x_sel, x_stale |}
+
+-- b1 = B's first guard (1: c1 then c2; 2: c2 then c1)
+SYSA(v, b1, s) =
+  (PX(v, 0, 1, 2, 0) ||| PX(v, 1, b1, 3 - b1, 0) ||| STALEA(s)) [| SA |]
+  STA(v, (false, false), (false, false), (IDL, IDL), (1, 1), (false, false), 0, 1, (false, false))
+
+OBSA = {| x_sel, x_idle |}
+SPECA = |~| c : C2 @ ((x_sel.0.c.true -> FINX(0)) ||| (x_sel.1.c.true -> FINX(1)))
+FREEA = diff(Events, union(SA, {| x_idle |}))
+
+-- =============================================================================
+-- Part B: mixed ALT (rendezvous guard + buffered guard, ISR on the buffered)
+-- =============================================================================
+AW = 0
+PW = 1
+channel a_start, a_rnd
+channel a_en0 : {0..2}                -- rendezvous: 0 registered, 1 plain writer pending, 2 claimed the ALT writer
+channel a_sigW
+channel b_reg                         -- buffered R: register (critical section)
+channel b_cnt : Bool                  -- buffered C: osSemaphoreGetCount(items) > 0
+channel a_towait : Bool
+channel a_wait : {0, 1}
+channel a_dis0 : Bool.Bool            -- rendezvous disable: ready, claimed
+channel b_dis : Bool                  -- buffered disable: unregister, token count > 0
+channel a_act0 : {0..3}               -- inActivate: 0 none, 1 claimed pair, 2 took the plain writer, 3 claimed the ALT writer now (signal it)
+channel b_act : Bool                  -- osSemaphoreAcquire(items, 0) + pop
+channel a_sel : {0, 1}.Bool.Bool      -- select() returned g; data of g? data of the other?
+channel p_out : Bool                  -- plain writer: pending (+ signal if A registered)
+channel p_sig, p_rel
+channel w_rnd
+channel w_en : {0..2}
+channel w_sigA, w_xw
+channel w_dis : Bool                 -- ALT writer disable: claimed?
+channel w_towait : Bool
+channel w_wait
+channel w_done : Bool
+channel isr_put                       -- ISR: push, release token, snapshot, signal (atomic)
+channel stale_a, stale_w
+channel idle, bound_b
+
+-- ast = A's state word; wst = ALT writer's state word; rreg = A registered on
+-- c0; wreg = ALT writer registered; pend/rel = plain writer; xf = ALT writer
+-- released; breg = A registered on the buffered channel; tok/cnt = items
+-- tokens / ring count; isrdone; d = data of (c0, c1) in this select; dl =
+-- task partner's value delivered; fA = A's flags (bit 0, bit 1); fW
+STB(ast, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, fA, fW) =
+     a_start -> STB(ast, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, (false, false), dl, fA, fW)
+  [] a_rnd -> STB(EN, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, (false, false), fW)
+  [] a_en0!ben0(ast, wst, wreg, pend) ->
+       (if ben0(ast, wst, wreg, pend) == 0 then STB(ast, wst, true, wreg, pend, rel, xf, breg, tok, cnt, d, dl, fA, fW)
+        else if ben0(ast, wst, wreg, pend) == 1 then STB(ast, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, fA, fW)
+        else STB(CL, CL, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, fA, fW))
+  [] a_sigW -> STB(ast, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, fA, true)
+  [] b_reg -> STB(ast, wst, rreg, wreg, pend, rel, xf, true, tok, cnt, d, dl, fA, fW)
+  [] b_cnt!(tok > 0) -> STB(ast, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, fA, fW)
+  [] a_towait!(ast == EN) -> STB(if ast == EN then WT else ast, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, fA, fW)
+  [] g2(fA, 0) & a_wait.0 -> STB(ast, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, (false, false), fW)
+  [] (not g2(fA, 0)) and g2(fA, 1) & a_wait.1 -> STB(ast, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, (false, false), fW)
+  [] a_dis0!(pend or (wreg and claimable(wst)))!(ast == CL) ->
+       STB(ast, wst, false, wreg, pend, rel, xf, breg, tok, cnt, d, dl, fA, fW)
+  [] b_dis!(tok > 0) -> STB(ast, wst, rreg, wreg, pend, rel, xf, false, tok, cnt, d, dl, fA, fW)
+  [] a_act0!(if ast == CL then 1 else if pend then 2 else if wreg and claimable(wst) then 3 else 0) ->
+       (if ast == CL or (not pend and wreg and claimable(wst))
+        then STB(ast, CL, rreg, false, pend, rel, true, breg, tok, cnt, s2(d, 0, true), true, fA, fW)
+        else if pend then STB(ast, wst, rreg, wreg, false, true, xf, breg, tok, cnt, s2(d, 0, true), true, fA, fW)
+        else STB(ast, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, fA, fW))
+  [] b_act!(tok > 0) ->
+       (if tok > 0 then STB(ast, wst, rreg, wreg, pend, rel, xf, breg, tok - 1, cnt - 1, s2(d, 1, true), dl, fA, fW)
+        else STB(ast, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, fA, fW))
+  [] ([] g : {0, 1} @ a_sel.g!g2(d, g)!g2(d, 1 - g) -> STB(IDL, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, fA, fW))
+  [] p_out!(rreg) ->
+       STB(ast, wst, rreg, wreg, true, rel, xf, breg, tok, cnt, d, dl, fA, fW)
+  [] p_sig -> STB(ast, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, s2(fA, 0, true), fW)
+  [] rel & p_rel -> STB(ast, wst, rreg, wreg, pend, false, xf, breg, tok, cnt, d, dl, fA, fW)
+  [] w_rnd -> STB(ast, EN, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, fA, false)
+  [] w_en!bwen(ast, wst, rreg) ->
+       (if bwen(ast, wst, rreg) == 0 then STB(ast, wst, rreg, true, pend, rel, xf, breg, tok, cnt, d, dl, fA, fW)
+        else STB(CL, CL, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, fA, fW))
+  [] w_sigA -> STB(ast, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, s2(fA, 0, true), fW)
+  [] w_towait!(wst == EN) -> STB(ast, if wst == EN then WT else wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, fA, fW)
+  [] fW & w_wait -> STB(ast, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, fA, false)
+  [] w_dis!(wst == CL) -> STB(ast, wst, rreg, false, pend, rel, xf, breg, tok, cnt, d, dl, fA, fW)
+  [] xf & w_xw -> STB(ast, wst, rreg, wreg, pend, rel, false, breg, tok, cnt, d, dl, fA, fW)
+  [] w_done!dl -> STB(ast, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, fA, fW)
+  [] cnt < 1 & isr_put ->
+       STB(ast, wst, rreg, wreg, pend, rel, xf, breg, tok + 1, cnt + 1, d, dl, if breg then s2(fA, 1, true) else fA, fW)
+  [] stale_a -> STB(ast, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, s2(fA, 0, true), fW)
+  [] stale_w -> STB(ast, wst, rreg, wreg, pend, rel, xf, breg, tok, cnt, d, dl, fA, true)
+
+ben0(ast, wst, wreg, pend) = if pend then 1 else if wreg and ast == EN and claimable(wst) then 2 else 0
+bwen(ast, wst, rreg) = if rreg and claimable(ast) and wst == EN then 2 else 0
+
+FIN = idle -> FIN
+
+-- A: two selects over {c0 (rendezvous), c1 (buffered)}; c = rounds used
+AB(n, c) = if n == 0 then FIN else a_start -> ABR(n, c)
+ABR(n, c) =
+  if c >= MAXR then bound_b -> STOP else
+  a_rnd -> a_en0?e ->
+    (if e == 2 then a_sigW -> ABDIS(n, c + 1, false)
+     else if e == 1 then ABDIS(n, c + 1, false)
+     else b_reg -> b_cnt?rdy ->
+       (if rdy then ABDIS(n, c + 1, true)
+        else a_towait?w -> (if w then a_wait?_ -> ABDIS(n, c + 1, true) else ABDIS(n, c + 1, true))))
+ABDIS(n, c, en1) =
+  a_dis0?r0?m0 -> (if en1 then b_dis?r1 -> ABDEC(n, c, r0, m0, r1) else ABDEC(n, c, r0, m0, false))
+ABDEC(n, c, r0, m0, r1) =
+  if m0 or r0 then a_act0?k -> (if k == 3 then a_sigW -> a_sel.0?_?_ -> AB(n - 1, c)
+                               else if k != 0 then a_sel.0?_?_ -> AB(n - 1, c) else ABR(n, c))
+  else if r1 then b_act?ok -> (if ok then a_sel.1?_?_ -> AB(n - 1, c) else ABR(n, c))
+  else ABR(n, c)
+
+-- task partners on c0
+PWB = p_out?sig -> (if sig then p_sig -> p_rel -> w_done?_ -> SKIP else p_rel -> w_done?_ -> SKIP)
+AWB = w_rnd -> w_en?e ->
+        (if e == 2 then w_sigA -> w_xw -> w_done?_ -> SKIP
+         else w_towait?b -> (if b then w_wait -> AWD else AWD))
+-- re-verify: claimed -> wait for A's transfer; otherwise (stale) a new round
+AWD = w_dis?m -> (if m then w_xw -> w_done?_ -> SKIP else AWB)
+ISR = isr_put -> SKIP
+STALEB(s) = if s then ((stale_a -> SKIP) [] (stale_w -> SKIP) [] SKIP) else SKIP
+SB = {| a_start, a_rnd, a_en0, a_sigW, b_reg, b_cnt, a_towait, a_wait, a_dis0, b_dis, a_act0, b_act, a_sel,
+        p_out, p_sig, p_rel, w_rnd, w_en, w_sigA, w_towait, w_wait, w_dis, w_xw, w_done, isr_put, stale_a, stale_w |}
+
+SYSB(kd, s) =
+  (AB(2, 0) ||| (if kd == AW then AWB else PWB) ||| ISR ||| STALEB(s)) [| SB |]
+  STB(IDL, IDL, false, false, false, false, false, false, 0, 0, (false, false), false, (false, false), false)
+
+OBSB = {| a_sel, w_done, idle |}
+ASPECB = (a_sel.0.true.false -> a_sel.1.true.false -> FIN) |~| (a_sel.1.true.false -> a_sel.0.true.false -> FIN)
+WSPECB = ((w_done.true -> a_sel.0.true.false -> STOP) [] (a_sel.0.true.false -> w_done.true -> STOP))
+         |~| (a_sel.0.true.false -> w_done.true -> STOP)
+SPECB = ASPECB [| {a_sel.0.true.false} |] WSPECB
+FREEB = diff(Events, union(SB, {idle, bound_b}))
+
+
+-- =============================================================================
+-- Part C: an ALT writer with two output guards (3.x: any guard of an
+--   Alternative may be an output guard). W ALTs {c1!, c2!} (priority c1),
+--   two selects. On channel i one reader that reads once: an ALT reader
+--   with one guard (AR; ChanInGuard) or a plain reader (PR; input()). With
+--   two ALT readers both may try to claim W at the same time. Optional
+--   stale flags. Code: RendezvousCore outEnable/outDisable/outActivate,
+--   inEnable/inDisable/inActivate, input() (alt_channel_sync.cpp).
+--   Correct: W's two selects return c1 and c2, each after exactly one
+--   communication, on that channel; each reader gets the data.
+--   Mutation RTOCTOU: an ALT reader checks that W is claimable in one
+--   critical section and claims both state words in a later one.
+-- =============================================================================
+AR = 0
+PR = 1
+RTOCTOU = 1
+CH = {1, 2}
+MAXW = 8                               -- W's rounds over both selects
+
+channel m_wrnd
+channel m_wen : CH.{0..2}              -- outEnable: 0 registered, 1 plain reader pending, 2 claimed AR_i (both words)
+channel m_wsigR : CH                   -- W wakes AR_i (after the section)
+channel m_wtowait : Bool               -- ENABLING -> WAITING (true), or already CLAIMED (false)
+channel m_wwait
+channel m_wdis : CH.Bool.Bool          -- outDisable: ready, claimed for this guard
+channel m_wact : CH.{0..3}             -- outActivate: 0 partner gone, 1 claimed pair, 2 took the plain reader, 3 claimed AR_i now
+channel m_wxw : CH                     -- W: the pair's reader has copied (pair_done_)
+channel m_wsel : CH.Bool               -- select() returned c; exactly one communication since the previous one, on c?
+channel m_rrnd : CH
+channel m_ren : CH.{0, 2, 3}           -- inEnable: 0 registered, 2 claimed W (both words), 3 RTOCTOU: decided to claim
+channel m_rclaim : CH                  -- RTOCTOU: writes both words afterwards
+channel m_rsigW : CH                   -- AR_i wakes W
+channel m_rtowait : CH.Bool
+channel m_rwait : CH
+channel m_rdis : CH.Bool.Bool          -- inDisable: ready, claimed
+channel m_ract : CH.{0, 1, 3}          -- inActivate: 0 partner gone, 1 claimed pair (copies), 3 claimed W now (copies)
+channel m_pin : CH.Bool                -- plain reader: pending; true = W registered (wake it)
+channel m_psig : CH
+channel m_prel : CH                    -- plain reader released (W copied)
+channel m_done : CH.Bool               -- reader i finished; did it get the data?
+channel m_stw
+channel m_str : CH
+channel m_idle, bound_c
+
+gc((a, b), c) = if c == 1 then a else b
+sc((a, b), c, x) = if c == 1 then (x, b) else (a, x)
+
+-- wst/wch: W's state word and the channel it is claimed for; rst: the ALT
+-- readers' state words; wreg: W registered on (c1, c2) (out_.alt);
+-- inr: AR_i registered (in_.alt); pend: plain reader pending
+-- (in_.pend_thread); rel: plain reader released; xf: pair done on c_i;
+-- nc/lc: communications since W's last select (capped at 2) and the
+-- channel of the last; got: reader i has the data; fw, fr: thread flags
+STC(v, wst, wch, rst, wreg, inr, pend, rel, xf, nc, lc, got, fw, fr) =
+     m_wrnd -> STC(v, EN, wch, rst, wreg, inr, pend, rel, xf, nc, lc, got, false, fr)
+  [] ([] c : CH @ m_wen.c!wenc(wst, rst, inr, pend, c) ->
+        (if wenc(wst, rst, inr, pend, c) == 0 then STC(v, wst, wch, rst, sc(wreg, c, true), inr, pend, rel, xf, nc, lc, got, fw, fr)
+         else if wenc(wst, rst, inr, pend, c) == 1 then STC(v, wst, wch, rst, wreg, inr, pend, rel, xf, nc, lc, got, fw, fr)
+         else STC(v, CL, c, sc(rst, c, CL), wreg, inr, pend, rel, xf, nc, lc, got, fw, fr)))
+  [] ([] c : CH @ m_wsigR.c -> STC(v, wst, wch, rst, wreg, inr, pend, rel, xf, nc, lc, got, fw, sc(fr, c, true)))
+  [] m_wtowait!(wst == EN) -> STC(v, if wst == EN then WT else wst, wch, rst, wreg, inr, pend, rel, xf, nc, lc, got, fw, fr)
+  [] fw & m_wwait -> STC(v, wst, wch, rst, wreg, inr, pend, rel, xf, nc, lc, got, false, fr)
+  [] ([] c : CH @ m_wdis.c!(gc(pend, c) or (gc(inr, c) and claimable(gc(rst, c))))!(wst == CL and wch == c) ->
+        STC(v, wst, wch, rst, sc(wreg, c, false), inr, pend, rel, xf, nc, lc, got, fw, fr))
+  [] ([] c : CH @ m_wact.c!wactc(wst, wch, rst, inr, pend, c) ->
+        (if wactc(wst, wch, rst, inr, pend, c) == 2
+         then STC(v, wst, wch, rst, wreg, inr, sc(pend, c, false), sc(rel, c, true), xf, cap(nc), c, sc(got, c, true), fw, fr)
+         else if wactc(wst, wch, rst, inr, pend, c) == 3
+         then STC(v, wst, wch, sc(rst, c, CL), wreg, inr, pend, rel, xf, nc, lc, got, fw, fr)
+         else STC(v, wst, wch, rst, wreg, inr, pend, rel, xf, nc, lc, got, fw, fr)))
+  [] ([] c : CH @ gc(xf, c) & m_wxw.c -> STC(v, wst, wch, rst, wreg, inr, pend, rel, sc(xf, c, false), nc, lc, got, fw, fr))
+  [] ([] c : CH @ m_wsel.c!(nc == 1 and lc == c) -> STC(v, IDL, wch, rst, wreg, inr, pend, rel, xf, 0, lc, got, fw, fr))
+  -- ALT readers
+  [] ([] c : CH @ m_rrnd.c -> STC(v, wst, wch, sc(rst, c, EN), wreg, inr, pend, rel, xf, nc, lc, got, fw, sc(fr, c, false)))
+  [] ([] c : CH @ m_ren.c!renc(v, wst, rst, wreg, c) ->
+        (if renc(v, wst, rst, wreg, c) == 0 then STC(v, wst, wch, rst, wreg, sc(inr, c, true), pend, rel, xf, nc, lc, got, fw, fr)
+         else if renc(v, wst, rst, wreg, c) == 2 then STC(v, CL, c, sc(rst, c, CL), wreg, inr, pend, rel, xf, nc, lc, got, fw, fr)
+         else STC(v, wst, wch, rst, wreg, inr, pend, rel, xf, nc, lc, got, fw, fr)))
+  [] ([] c : CH @ m_rclaim.c -> STC(v, CL, c, sc(rst, c, CL), wreg, inr, pend, rel, xf, nc, lc, got, fw, fr))
+  [] ([] c : CH @ m_rsigW.c -> STC(v, wst, wch, rst, wreg, inr, pend, rel, xf, nc, lc, got, true, fr))
+  [] ([] c : CH @ m_rtowait.c!(gc(rst, c) == EN) ->
+        STC(v, wst, wch, if gc(rst, c) == EN then sc(rst, c, WT) else rst, wreg, inr, pend, rel, xf, nc, lc, got, fw, fr))
+  [] ([] c : CH @ gc(fr, c) & m_rwait.c -> STC(v, wst, wch, rst, wreg, inr, pend, rel, xf, nc, lc, got, fw, sc(fr, c, false)))
+  [] ([] c : CH @ m_rdis.c!(gc(wreg, c) and claimable(wst))!(gc(rst, c) == CL) ->
+        STC(v, wst, wch, rst, wreg, sc(inr, c, false), pend, rel, xf, nc, lc, got, fw, fr))
+  [] ([] c : CH @ m_ract.c!ractc(wst, rst, wreg, c) ->
+        (if ractc(wst, rst, wreg, c) == 1
+         then STC(v, wst, wch, rst, wreg, inr, pend, rel, sc(xf, c, true), cap(nc), c, sc(got, c, true), fw, fr)
+         else if ractc(wst, rst, wreg, c) == 3
+         then STC(v, CL, c, rst, wreg, inr, pend, rel, sc(xf, c, true), cap(nc), c, sc(got, c, true), fw, fr)
+         else STC(v, wst, wch, rst, wreg, inr, pend, rel, xf, nc, lc, got, fw, fr)))
+  -- plain readers
+  [] ([] c : CH @ m_pin.c!gc(wreg, c) -> STC(v, wst, wch, rst, wreg, inr, sc(pend, c, true), rel, xf, nc, lc, got, fw, fr))
+  [] ([] c : CH @ m_psig.c -> STC(v, wst, wch, rst, wreg, inr, pend, rel, xf, nc, lc, got, true, fr))
+  [] ([] c : CH @ gc(rel, c) & m_prel.c -> STC(v, wst, wch, rst, wreg, inr, pend, sc(rel, c, false), xf, nc, lc, got, fw, fr))
+  [] ([] c : CH @ m_done.c!gc(got, c) -> STC(v, wst, wch, rst, wreg, inr, pend, rel, xf, nc, lc, got, fw, fr))
+  -- adversary
+  [] m_stw -> STC(v, wst, wch, rst, wreg, inr, pend, rel, xf, nc, lc, got, true, fr)
+  [] ([] c : CH @ m_str.c -> STC(v, wst, wch, rst, wreg, inr, pend, rel, xf, nc, lc, got, fw, sc(fr, c, true)))
+
+cap(n) = if n < 2 then n + 1 else 2
+-- outEnable: a plain reader pending; else claim AR_c if W is ENABLING and AR_c claimable
+wenc(wst, rst, inr, pend, c) = if gc(pend, c) then 1
+                               else if gc(inr, c) and wst == EN and claimable(gc(rst, c)) then 2 else 0
+-- outActivate
+wactc(wst, wch, rst, inr, pend, c) = if wst == CL and wch == c then 1
+                                     else if gc(pend, c) then 2
+                                     else if gc(inr, c) and claimable(gc(rst, c)) then 3 else 0
+-- inEnable (no plain writer in this part)
+renc(v, wst, rst, wreg, c) = if gc(wreg, c) and gc(rst, c) == EN and claimable(wst)
+                             then (if v == RTOCTOU then 3 else 2) else 0
+-- inActivate: claimed pair, or claim W now
+ractc(wst, rst, wreg, c) = if gc(rst, c) == CL then 1
+                           else if gc(wreg, c) and claimable(wst) then 3 else 0
+
+FINW = m_idle -> FINW
+
+-- W: n selects left, k = rounds used
+WC(n, k) = if n == 0 then FINW else WRC(n, k)
+WRC(n, k) =
+  if k >= MAXW then bound_c -> STOP else
+  m_wrnd -> m_wen.1?e1 ->
+    (if e1 != 0 then WCL(n, k + 1, 1, e1, false)
+     else m_wen.2?e2 ->
+       (if e2 != 0 then WCL(n, k + 1, 2, e2, true)
+        else m_wtowait?w -> (if w then m_wwait -> WDC(n, k + 1, true) else WDC(n, k + 1, true))))
+WCL(n, k, c, e, en2) = if e == 2 then m_wsigR.c -> WDC(n, k, en2) else WDC(n, k, en2)
+WDC(n, k, en2) =
+  m_wdis.1?r1?m1 -> (if en2 then m_wdis.2?r2?m2 -> WDE(n, k, r1, m1, r2, m2) else WDE(n, k, r1, m1, false, false))
+WDE(n, k, r1, m1, r2, m2) =
+  if m1 then WAC(n, k, 1) else if m2 then WAC(n, k, 2)
+  else if r1 then WAC(n, k, 1) else if r2 then WAC(n, k, 2)
+  else WRC(n, k)                                                     -- stale: new round
+WAC(n, k, c) =
+  m_wact.c?a ->
+    (if a == 0 then WRC(n, k)                                         -- partner gone: new round
+     else if a == 2 then m_wsel.c?_ -> WC(n - 1, k)                   -- copied to the plain reader, released it
+     else if a == 3 then m_wsigR.c -> m_wxw.c -> m_wsel.c?_ -> WC(n - 1, k)
+     else m_wxw.c -> m_wsel.c?_ -> WC(n - 1, k))                      -- claimed pair: the reader copies
+
+-- ALT reader on c (one guard, one select), k = rounds used
+ARC(v, c, k) =
+  if k >= MAXR then bound_c -> STOP else
+  m_rrnd.c -> m_ren.c?e ->
+    (if e == 2 then m_rsigW.c -> ARD(v, c, k + 1)
+     else if e == 3 then m_rclaim.c -> m_rsigW.c -> ARD(v, c, k + 1)
+     else m_rtowait.c?w -> (if w then m_rwait.c -> ARD(v, c, k + 1) else ARD(v, c, k + 1)))
+ARD(v, c, k) = m_rdis.c?r?m -> (if r or m then ARA(v, c, k) else ARC(v, c, k))
+ARA(v, c, k) = m_ract.c?a ->
+    (if a == 0 then ARC(v, c, k)
+     else if a == 3 then m_rsigW.c -> m_done.c?_ -> SKIP
+     else m_done.c?_ -> SKIP)
+-- plain reader on c
+PRC(c) = m_pin.c?s -> (if s then m_psig.c -> m_prel.c -> m_done.c?_ -> SKIP else m_prel.c -> m_done.c?_ -> SKIP)
+RDR(v, c, kd) = if kd == AR then ARC(v, c, 0) else PRC(c)
+
+STALEC(s) = if s then ((m_stw -> SKIP) [] ([] c : CH @ m_str.c -> SKIP) [] SKIP) else SKIP
+SC = {| m_wrnd, m_wen, m_wsigR, m_wtowait, m_wwait, m_wdis, m_wact, m_wxw, m_wsel, m_rrnd, m_ren, m_rclaim,
+        m_rsigW, m_rtowait, m_rwait, m_rdis, m_ract, m_pin, m_psig, m_prel, m_done, m_stw, m_str |}
+
+SYSC(v, k1, k2, s) =
+  (WC(2, 0) ||| RDR(v, 1, k1) ||| RDR(v, 2, k2) ||| STALEC(s)) [| SC |]
+  STC(v, IDL, 1, (IDL, IDL), (false, false), (false, false), (false, false), (false, false), (false, false),
+      0, 1, (false, false), false, (false, false))
+
+OBSC = {| m_wsel, m_done, m_idle |}
+WSPECC = (m_wsel.1.true -> m_wsel.2.true -> FINW) |~| (m_wsel.2.true -> m_wsel.1.true -> FINW)
+RSPECC(c) = ((m_done.c.true -> m_wsel.c.true -> STOP) [] (m_wsel.c.true -> m_done.c.true -> STOP))
+            |~| (m_wsel.c.true -> m_done.c.true -> STOP)
+SPECC = WSPECC [| {m_wsel.1.true, m_wsel.2.true} |] (RSPECC(1) ||| RSPECC(2))
+FREEC = diff(Events, union(SC, {m_idle, bound_c}))
+
+-- =============================================================================
+-- Trace conformance: the events a trace supplies (renamed as in the header)
+-- and the events hidden for a conformance check.
+-- =============================================================================
+SigmaObs = {| x_sel, x_towait, x_wait, a_sel, a_towait, a_wait, w_done, w_towait, w_wait, isr_put, b_act,
+              p_out, m_wsel, m_done, m_wtowait, m_wwait, m_rtowait, m_rwait, m_pin |}
+H = diff(Events, SigmaObs)
+
+-- =============================================================================
+-- Assertions
+-- =============================================================================
+-- Part A (3a). expected: PASS
+assert SPECA [FD= SYSA(OK, 1, true) \ diff(Events, OBSA)
+assert SPECA [FD= SYSA(OK, 2, true) \ diff(Events, OBSA)
+assert SYSA(OK, 1, true) :[deadlock free [F]]
+assert SYSA(OK, 2, true) :[deadlock free [F]]
+assert STOP [T= SYSA(OK, 1, true) \ diff(Events, {bound_a})
+assert STOP [T= SYSA(OK, 2, true) \ diff(Events, {bound_a})
+-- mutation: check-then-act claim, crossing guard orders. expected: FAILS
+assert SPECA [FD= SYSA(TOCTOU, 2, false) \ diff(Events, OBSA)
+-- the same mutation with identical guard orders: no crossing is possible
+-- (both try c1 first). expected: PASS -- shows the failure needs the crossing
+assert SPECA [FD= SYSA(TOCTOU, 1, false) \ diff(Events, OBSA)
+-- audit. expected: PASS
+assert STOP [T= SYSA(OK, 2, true) \ diff(Events, FREEA)
+
+-- Part B (3b). expected: PASS
+assert SPECB [FD= SYSB(PW, true) \ diff(Events, OBSB)
+assert SPECB [FD= SYSB(AW, true) \ diff(Events, OBSB)
+assert SYSB(PW, true) :[deadlock free [F]]
+assert SYSB(AW, true) :[deadlock free [F]]
+assert STOP [T= SYSB(AW, true) \ diff(Events, {bound_b})
+-- audit. expected: PASS
+assert STOP [T= SYSB(AW, true) \ diff(Events, FREEB)
+
+-- Part C (3.x: ALT writer with two output guards). expected: PASS
+assert SPECC [FD= SYSC(OK, AR, AR, true) \ diff(Events, OBSC)
+assert SPECC [FD= SYSC(OK, AR, PR, true) \ diff(Events, OBSC)
+assert SPECC [FD= SYSC(OK, PR, PR, true) \ diff(Events, OBSC)
+assert SYSC(OK, AR, AR, true) :[deadlock free [F]]
+assert SYSC(OK, AR, PR, true) :[deadlock free [F]]
+assert STOP [T= SYSC(OK, AR, AR, true) \ diff(Events, {bound_c})
+assert STOP [T= SYSC(OK, AR, PR, true) \ diff(Events, {bound_c})
+-- mutation: check-then-act claim by the ALT readers. expected: FAILS
+assert SPECC [FD= SYSC(RTOCTOU, AR, AR, false) \ diff(Events, OBSC)
+-- audit. expected: PASS
+assert STOP [T= SYSC(OK, AR, AR, true) \ diff(Events, FREEC)
+
+-- Ranges. ProB does not type-check channel values: an expression that
+-- computes a value outside a channel's declared type still produces the
+-- event. Each value-carrying channel of SigmaObs is checked once: the system
+-- produces only values of the declared type ({| c |} holds exactly those; an
+-- out-of-type event is not in Events, so it stays visible and RANGE refuses
+-- it). expected: PASS
+RANGE(A) = [] e : A @ e -> RANGE(A)
+assert RANGE({| x_sel |}) [T= SYSA(OK, 1, true) \ diff(Events, {| x_sel |})
+assert RANGE({| x_towait |}) [T= SYSA(OK, 1, true) \ diff(Events, {| x_towait |})
+assert RANGE({| x_wait |}) [T= SYSA(OK, 1, true) \ diff(Events, {| x_wait |})
+assert RANGE({| a_sel |}) [T= SYSB(AW, true) \ diff(Events, {| a_sel |})
+assert RANGE({| a_towait |}) [T= SYSB(AW, true) \ diff(Events, {| a_towait |})
+assert RANGE({| a_wait |}) [T= SYSB(AW, true) \ diff(Events, {| a_wait |})
+assert RANGE({| w_done |}) [T= SYSB(AW, true) \ diff(Events, {| w_done |})
+assert RANGE({| w_towait |}) [T= SYSB(AW, true) \ diff(Events, {| w_towait |})
+assert RANGE({| b_act |}) [T= SYSB(AW, true) \ diff(Events, {| b_act |})
+assert RANGE({| p_out |}) [T= SYSB(PW, true) \ diff(Events, {| p_out |})
+assert RANGE({| m_wsel |}) [T= SYSC(OK, AR, PR, true) \ diff(Events, {| m_wsel |})
+assert RANGE({| m_done |}) [T= SYSC(OK, AR, PR, true) \ diff(Events, {| m_done |})
+assert RANGE({| m_wtowait |}) [T= SYSC(OK, AR, PR, true) \ diff(Events, {| m_wtowait |})
+assert RANGE({| m_rtowait |}) [T= SYSC(OK, AR, PR, true) \ diff(Events, {| m_rtowait |})
+assert RANGE({| m_rwait |}) [T= SYSC(OK, AR, PR, true) \ diff(Events, {| m_rwait |})
+assert RANGE({| m_pin |}) [T= SYSC(OK, AR, PR, true) \ diff(Events, {| m_pin |})
+
+-- =============================================================================
+-- RESULTS (ProB 1.16.1-final 716929f, 2026-10-26, after the activates of Parts A
+-- and B signal only on a claim at activate; all as expected; each assertion
+-- checked alone with -csp_assertion, 8 at a time on 22 cores; states = ProB
+-- coverage STATES, s = CPU seconds)
+--  #  assertion                                            expected  ProB  states      s    note
+--  1  SPECA [FD= SYSA(OK, 1, true) \ diff(Events, OBSA)    PASS      PASS    648    4.8  
+--  2  SPECA [FD= SYSA(OK, 2, true) \ diff(Events, OBSA)    PASS      PASS    965    7.9  
+--  3  SYSA(OK, 1, true) :[deadlock free [F]]               PASS      PASS    640    4.4  
+--  4  SYSA(OK, 2, true) :[deadlock free [F]]               PASS      PASS    957    7.8  
+--  5  STOP [T= SYSA(OK, 1, true) \ diff(Events, {bound_a}) PASS      PASS    641    3.7  
+--  6  STOP [T= SYSA(OK, 2, true) \ diff(Events, {bound_a}) PASS      PASS    958    7.6  
+--  7  SPECA [FD= SYSA(TOCTOU, 2, false) \ diff(Events, OBS FAIL      FAIL    535    4.5  
+--  8  SPECA [FD= SYSA(TOCTOU, 1, false) \ diff(Events, OBS PASS      PASS    136    1.1  
+--  9  STOP [T= SYSA(OK, 2, true) \ diff(Events, FREEA)     PASS      PASS    958    9.6  
+-- 10  SPECB [FD= SYSB(PW, true) \ diff(Events, OBSB)       PASS      PASS   1793   13.1  
+-- 11  SPECB [FD= SYSB(AW, true) \ diff(Events, OBSB)       PASS      PASS   3705   22.2  
+-- 12  SYSB(PW, true) :[deadlock free [F]]                  PASS      PASS   1768   14.4  
+-- 13  SYSB(AW, true) :[deadlock free [F]]                  PASS      PASS   3680   20.0  
+-- 14  STOP [T= SYSB(AW, true) \ diff(Events, {bound_b})    PASS      PASS   3681   20.6  
+-- 15  STOP [T= SYSB(AW, true) \ diff(Events, FREEB)        PASS      PASS   3681   20.1  
+-- 16  SPECC [FD= SYSC(OK, AR, AR, true) \ diff(Events, OBS PASS      PASS  10729  118.1  
+-- 17  SPECC [FD= SYSC(OK, AR, PR, true) \ diff(Events, OBS PASS      PASS   6406   56.9  
+-- 18  SPECC [FD= SYSC(OK, PR, PR, true) \ diff(Events, OBS PASS      PASS   3186   25.5  
+-- 19  SYSC(OK, AR, AR, true) :[deadlock free [F]]          PASS      PASS  10639  107.7  
+-- 20  SYSC(OK, AR, PR, true) :[deadlock free [F]]          PASS      PASS   6316   52.9  
+-- 21  STOP [T= SYSC(OK, AR, AR, true) \ diff(Events, {boun PASS      PASS  10640  103.2  
+-- 22  STOP [T= SYSC(OK, AR, PR, true) \ diff(Events, {boun PASS      PASS   6317   53.3  
+-- 23  SPECC [FD= SYSC(RTOCTOU, AR, AR, false) \ diff(Event FAIL      FAIL   4498   24.2  m_done.1.true, m_wsel.1.true, m_done.2.true, then refuses m_wsel.2.true
+-- 24  STOP [T= SYSC(OK, AR, AR, true) \ diff(Events, FREEC PASS      PASS  10640  101.1  
+-- Ranges:
+-- 25  RANGE({| x_sel |}) [T= SYSA(OK, 1, true) \ diff(Even PASS      PASS     642    3.1
+-- 26  RANGE({| x_towait |}) [T= SYSA(OK, 1, true) \ diff(E PASS      PASS     642    4.2
+-- 27  RANGE({| x_wait |}) [T= SYSA(OK, 1, true) \ diff(Eve PASS      PASS     642    3.4
+-- 28  RANGE({| a_sel |}) [T= SYSB(AW, true) \ diff(Events, PASS      PASS    3682   27.7
+-- 29  RANGE({| a_towait |}) [T= SYSB(AW, true) \ diff(Even PASS      PASS    3682   27.3
+-- 30  RANGE({| a_wait |}) [T= SYSB(AW, true) \ diff(Events PASS      PASS    3682   24.3
+-- 31  RANGE({| w_done |}) [T= SYSB(AW, true) \ diff(Events PASS      PASS    3682   23.3
+-- 32  RANGE({| w_towait |}) [T= SYSB(AW, true) \ diff(Even PASS      PASS    3682   26.9
+-- 33  RANGE({| b_act |}) [T= SYSB(AW, true) \ diff(Events, PASS      PASS    3682   19.2
+-- 34  RANGE({| p_out |}) [T= SYSB(PW, true) \ diff(Events, PASS      PASS    1770   10.9
+-- 35  RANGE({| m_wsel |}) [T= SYSC(OK, AR, PR, true) \ dif PASS      PASS    6318   58.8
+-- 36  RANGE({| m_done |}) [T= SYSC(OK, AR, PR, true) \ dif PASS      PASS    6318   59.4
+-- 37  RANGE({| m_wtowait |}) [T= SYSC(OK, AR, PR, true) \  PASS      PASS    6318   55.0
+-- 38  RANGE({| m_rtowait |}) [T= SYSC(OK, AR, PR, true) \  PASS      PASS    6318   58.5
+-- 39  RANGE({| m_rwait |}) [T= SYSC(OK, AR, PR, true) \ di PASS      PASS    6318   49.6
+-- 40  RANGE({| m_pin |}) [T= SYSC(OK, AR, PR, true) \ diff PASS      PASS    6318   55.2
+-- =============================================================================

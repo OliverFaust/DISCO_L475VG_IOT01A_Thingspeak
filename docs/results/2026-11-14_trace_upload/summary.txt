@@ -1,0 +1,21 @@
+events: 875 (CSP4CMSIS 151, other 724); trailing bytes in log: 0
+time stamps: monotonic (0 decreases)
+time_s: first 0.0, last 25.4999762
+      19  CSP AltDeadline
+      48  CSP AltGuard
+      20  CSP AltSelected
+      13  CSP BufferedGet
+      13  CSP BufferedPut
+      12  CSP Resume
+       7  CSP ResumeTimeout
+      19  CSP WaitAlt
+       2  EventRecorder 
+      26  RTOS Heartbeat
+     348  RTOS TaskSwitchedIn
+     348  RTOS TaskSwitchedOut
+ring slots: PASS; 13 puts, 13 gets (13 read their put's slot), 0 overwrites (0 evicted the oldest put's slot), 0 dropped (0 without slot)
+ALT offers: PASS; 19 waits, 46 enabled guards, 0 unresolved, 48 guards described
+ALT deadlines: FAIL 3; 19 timeout waits (19 AltDeadline), 6 ResumeTimeout (at most 0 ticks after the deadline), 10 Resume (10 before the deadline, 0 at it, 0 after)
+stable points: 0 {}
+ring notes: 1 (0 truncated data events)
+  0.00000000  ring: 54788 records overwritten, 0 dropped before this point (write count 55812, capacity 1024)

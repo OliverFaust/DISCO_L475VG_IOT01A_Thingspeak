@@ -1,0 +1,17 @@
+prvIdleTask (pvParameters=0x0) at ../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:3432
+3432				if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ tskIDLE_PRIORITY ] ) ) > ( UBaseType_t ) 1 )
+Breakpoint 1 at 0x8003072: buffered_channel.h:200. (3 locations)
+Note: automatically using hardware breakpoints for read-only addresses.
+STM32 Successfully completed reset operation (System reset)
+== running until the breakpoint is hit (at most 300 s)
+
+Breakpoint 1.3, csp::internal::BufferedChannel<Sample, 1u, (csp::BufferPolicy)1>::offer (this=0x200005f4 <(anonymous namespace)::MainApp_Task(void*)::uplinkSamples>, src=0x200010bc <(anonymous namespace)::MainApp_Task(void*)::sensors+1940>) at ../lib/csp4cmsis-trace/csp4cmsis/inc/csp/buffered_channel.h:200
+200	                    CSP4CMSIS_BUF_TRACE(CSP4CMSIS_EVT_OVERWROTE_OLDEST,
+206	                csp_exit_critical(s);
+halted at pc = 0x800332e, write_count = 16665
+$1 = {magic = 0x52505343, format = 0x1, record_size = 0x10, capacity = 0x400, policy = 0x0, write_count = 0x4119, clock_hz = 0x4c4b400, dropped = 0x0, dwt_ctrl = 0x40000001}
+TASKNAME 0x20001138 Sensors
+TASKNAME 0x20002ba8 Uplink
+TASKNAME 0x2000a3cc IDLE
+[Inferior 1 (Remote target) detached]
+== wrote trace_out/ring.bin (16416 bytes) and trace_out/ring.names (3 names); the board is running again

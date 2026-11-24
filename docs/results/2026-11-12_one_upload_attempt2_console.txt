@@ -1,0 +1,37 @@
+# Console capture
+# masked:    tools/mask_log.py (API key: all but 4 characters; MAC/BSSID: last 3 bytes); SSID masked by the firmware
+# date:      2026-11-12 18:21:55 UTC
+# commit:    caad2a3-dirty
+# elf:       Debug/DISCO_L475VG_IOT01A_Thingspeak.elf (sha256 d53dbdc7c0fe7c13...)
+# compiler:  GCC: (GNU Tools for STM32 14.3.rel1.20251027-0700) 14.3.1 20250623
+# tool:      STM32CubeProgrammer version: 2.22.0
+# flash:     STM32_Programmer_CLI -c port=SWD -w Debug/DISCO_L475VG_IOT01A_Thingspeak.elf -v
+# reset:     STM32_Programmer_CLI -c port=SWD -hardRst
+# probe:     ST-LINK firmware V2J46M31
+# serial:    ST-LINK virtual COM port (/dev/ttyACM0), 115200 8N1, captured for 45 s from before the reset
+# after the capture, read over SWD (program running):
+#   __sbrk_heap_end                = 0x00000000   (0x00000000: malloc() was never called)
+#   xMinimumEverFreeBytesRemaining = 0x00000280   (0x00000000: the FreeRTOS heap was never used)
+# ----------------------------------------------------------------------------------------
+
+DISCO_L475VG_IOT01A_Thingspeak -- phase 3 step 2: one ThingSpeak update
+[    0.014 s] sample: T = 17.07 C  RH = 74.08 %  p = 978.90 hPa
+[    0.833 s] Wi-Fi Initialize/PowerControl: OK
+[    5.631 s] join "Vod***********" (WPA2): OK (4795 ms)
+[    5.637 s] IP address (DHCP): 192.168.1.28
+[    5.756 s] resolve api.thingspeak.com: OK -> 44.214.53.171 (116 ms)
+[    5.860 s] connect 44.214.53.171:80: OK
+[    5.864 s] request (134 bytes, key masked):
+    GET /update?api_key=CJJZ************&field1=17.07&field2=74.08&field3=978.90 HTTP/1.1
+    Host: api.thingspeak.com
+    Connection: close
+    
+    
+[    5.887 s] sent 134 of 134 bytes: OK
+[    6.013 s] received 942 bytes in 124 ms
+[    6.017 s] status line: HTTP/1.1 200 OK
+[    6.021 s] ThingSpeak entry id: 235571
+[    6.028 s] SocketClose: OK
+[    6.035 s] Deactivate: OK
+[    6.037 s] FreeRTOS heap: free 640 of 1024 bytes, minimum ever free 640 bytes
+[    6.044 s] One-upload test finished.

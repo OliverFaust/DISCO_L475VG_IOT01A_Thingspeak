@@ -1,0 +1,9 @@
+Note: automatically using hardware breakpoints for read-only addresses.
+after trace_trigger(2000): state - uwTick = 2000
+B1 pressed in software while armed
+
+Program received signal SIGTRAP, Trace/breakpoint trap.
+trace_trigger_tick () at ../Core/Src/trace_trigger.c:80
+stopped: state - armed deadline = 0 (0 means: B1 did not re-arm), uwTick - deadline = 0
+#0  trace_trigger_tick () at ../Core/Src/trace_trigger.c:80
+[Inferior 1 (Remote target) detached]
