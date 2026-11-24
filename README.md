@@ -94,5 +94,5 @@ Notes for upstream projects: [docs/upstream/](docs/upstream/).
 | `DISCO_L475VG_IOT01A_Thingspeak.ioc` | STM32CubeMX configuration (pins, clocks, FreeRTOS) |
 | `Drivers/`, `Middlewares/` | ST HAL, CMSIS, board support, Arm's ISM43362 Wi-Fi driver, FreeRTOS |
 | `lib/csp4cmsis/` | CSP4CMSIS 3.1.0 (Debug and Release); `lib/csp4cmsis-trace/`: tracing version (Debug-Trace) |
-| `tools/` | flash and capture, ThingSpeak feed, trace dump and decode, secrets check |
+| `tools/` | flash and capture, ThingSpeak feed, trace dump and decode, secrets checks (files and history, pre-push hook) |
 | `docs/` | the documentation above |

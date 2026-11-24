@@ -173,4 +173,46 @@ Press the black **RESET** button (B2) on the board. If the board already holds t
 you should now see its start banner (chapter 3); with any other program, whatever it prints, or
 nothing. If nothing ever appears, check the port name and that you are in the group `dialout` (1.4).
 
+---
+
+## 1.6 Before you push: keep your secrets out of git
+
+You will put your Wi-Fi password and your ThingSpeak keys into two git-ignored files:
+`Core/Inc/app_secrets.h` (chapter 3) and `tools/thingspeak_host.env` (chapter 2). If you push your copy
+to GitHub or another server, two scripts check that none of these values is in it:
+
+- `tools/check_secrets.sh`, **before every commit:** the files you are about to commit, all tracked
+  files, and `docs/results/`.
+- `tools/check_history.sh`, **before every push:** every commit of the history and every commit
+  message. A password that was committed once and deleted in a later commit is still in the history,
+  and a push publishes all of it.
+
+Both print which value was found and how often, never the value itself. Passwords and keys are
+errors (exit status 1). The SSID, the channel ID and unmasked MAC addresses in `docs/results/` are
+warnings. Values still equal to the template's placeholders are skipped.
+
+Let git run the history check by itself on every push: install the pre-push hook once per clone.
+
+```bash
+cp tools/git-hooks/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+```
+
+`.git/hooks/` is not part of the repository, so each clone needs this step. From then on, `git push`
+first runs `tools/check_history.sh` on the commits it is about to push, and stops if it finds a
+password or a key. You should now see, after your secrets files exist:
+
+```
+$ tools/check_history.sh
+check_history: clean (9 value(s) checked in 72 commit(s): no password or key in files or messages)
+```
+
+Your numbers will differ. Before you have created the secrets files, the script says `nothing to
+check against` and the hook lets the push through.
+
+- **If a password or a key is found,** do not push. Change the password or the key: create a new key
+  on ThingSpeak (chapter 2). That is the only safe fix once it may have been seen. Removing it from
+  the history needs a history rewrite, e.g. `git filter-repo`, which is beyond this guide.
+- **Skipping the check:** `git push --no-verify` skips the hook. Use it only if you know why.
+- **Windows:** use Git Bash (not tested).
+
 Next: chapter 2 (the ThingSpeak channel).
