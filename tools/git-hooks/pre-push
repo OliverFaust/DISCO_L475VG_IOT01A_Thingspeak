@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# pre-push -- git hook: run tools/check_history.sh on the commits being pushed; stop the push if it
+# finds a password or a key. Install once per clone (docs/01, 1.6):
+#
+#   cp tools/git-hooks/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+#
+# Git passes one line per ref on stdin: <local ref> <local sha> <remote ref> <remote sha>.
+# Deleting a remote branch pushes no commits and is not checked. Bypass (only if you are sure):
+# git push --no-verify.
+zero=0000000000000000000000000000000000000000
+shas=()
+while read -r _ local_sha _ _; do
+  [ "$local_sha" = "$zero" ] || shas+=("$local_sha")
+done
+[ ${#shas[@]} -gt 0 ] || exit 0
+root=$(git rev-parse --show-toplevel)
+if [ ! -x "$root/tools/check_history.sh" ]; then
+  echo "pre-push: $root/tools/check_history.sh not found or not executable; push stopped" >&2
+  exit 1
+fi
+"$root/tools/check_history.sh" "${shas[@]}"
+rc=$?
+case $rc in
+  0) exit 0 ;;
+  2) echo "pre-push: nothing to check against (no secrets files); push allowed" >&2; exit 0 ;;
+  *) echo "pre-push: secrets found in the history; push stopped (docs/01, 1.6)" >&2; exit 1 ;;
+esac
